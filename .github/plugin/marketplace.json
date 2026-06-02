@@ -1,0 +1,12 @@
+{
+  "name": "modernize-plugins",
+  "metadata": {
+    "description": "Code modernization plugins for GitHub Copilot",
+    "version": "1.0.0-preview"
+  },
+  "owner": {
+    "name": "Microsoft"
+  },
+  "plugins": [
+  ]
+}
