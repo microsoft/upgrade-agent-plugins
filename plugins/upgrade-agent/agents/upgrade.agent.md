@@ -13,6 +13,7 @@ mcp-servers:
     ]
     cwd: '~'
     tools: ['*']
+    deferTools: 'never'
     env:
       APPMOD_CALLER_TYPE: copilot-cli
 ---
