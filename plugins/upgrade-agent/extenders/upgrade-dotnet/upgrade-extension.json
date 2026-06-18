@@ -1,0 +1,15 @@
+{
+  "id": "upgrade-dotnet",
+  "displayName": ".NET Upgrade",
+  "version": "1.0.0",
+  "mcp": {
+    "command": "dnx",
+    "args": [
+      "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp",
+      "--prerelease",
+      "--yes",
+      "--ignore-failed-sources"
+    ]
+  },
+  "traits": ".NET|CSharp|VisualBasic|DotNetCore"
+}

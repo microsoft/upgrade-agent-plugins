@@ -1,12 +1,18 @@
 {
-  "name": "modernize-plugins",
+  "name": "upgrade-agent-plugins",
   "metadata": {
-    "description": "Code modernization plugins for GitHub Copilot",
-    "version": "1.0.0-preview"
+    "description": "GitHub Copilot upgrade plugins",
+    "version": "1.1.92-preview"
   },
   "owner": {
     "name": "Microsoft"
   },
   "plugins": [
+    {
+      "name": "upgrade-agent",
+      "source": "./plugins/upgrade-agent",
+      "description": "AI-powered upgrade assistant for upgrading and migrating applications. Helps modernize legacy code and upgrade .NET applications to current frameworks.",
+      "version": "1.1.92-preview"
+    }
   ]
 }
