@@ -1,6 +1,6 @@
 {
   "name": "upgrade-agent",
-  "version": "1.1.93-preview",
+  "version": "1.1.103-preview",
   "description": "AI-powered upgrade assistant for upgrading and migrating applications. Helps modernize legacy code and upgrade .NET applications to current frameworks.",
   "author": {
     "name": "Microsoft"
