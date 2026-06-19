@@ -10,15 +10,17 @@ A GitHub Copilot plugin marketplace for AI-assisted application upgrades — hel
 
 This opens the Copilot app to confirm your intention to add the marketplace: 
 
-<img width="411" height="252" alt="image" src="https://github.com/user-attachments/assets/5de46475-f881-489b-91a6-e0dd14959185" />
+<img width="411" height="252" alt="image" src="assets/Copilot-App-Allow-Add-Marketplace.png" />
 
 Once allowed, it will pre-populate the marketplace form: 
 
-<img width="670" height="336" alt="image" src="https://github.com/user-attachments/assets/24e391e9-89bd-42ea-ab64-7b59f59ae1b6" />
+<img width="670" height="336" alt="image" src="assets/Copilot-App-Add-Marketplace.png" />
 
 After adding the marketplace, installing the plugin is a single click from within the UI:
 
-<img width="650" height="131" alt="image" src="https://github.com/user-attachments/assets/7a68182a-6804-4d3e-b6c7-f8c0c200362d" />
+<img width="650" height="131" alt="image" src="assets/Copilot-App-Install-Plugin.png" />
+
+_Note: Prior to v1.0.3 of the GitHub Copilot App, you will need to restart the app after installing the plugin before you can use the GitHub Copilot upgrade agent._
 
 ### Copilot CLI
 
