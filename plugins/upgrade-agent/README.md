@@ -37,7 +37,7 @@ upgrade-agent/
 │   └── upgrade.agent.md
 ├── extenders/
 │   └── upgrade-dotnet/
-│       ├── modernize/
+│       ├── upgrade/
 │       │   └── skills/
 │       │       ├── lazy/
 │       │       │   ├── cloud/
@@ -320,7 +320,7 @@ upgrade-agent/
 │   └── scripts/
 │       ├── track-telemetry.ps1
 │       └── track-telemetry.sh
-├── modernize/
+├── upgrade/
 │   └── skills/
 │       ├── generic/
 │       │   └── creating-skills/
