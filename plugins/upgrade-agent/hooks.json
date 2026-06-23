@@ -5,7 +5,7 @@
       {
         "type": "command",
         "bash": "bash hooks/scripts/track-telemetry.sh",
-        "powershell": "powershell -File hooks/scripts/track-telemetry.ps1"
+        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File hooks/scripts/track-telemetry.ps1"
       }
     ]
   }

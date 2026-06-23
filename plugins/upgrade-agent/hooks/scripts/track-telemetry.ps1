@@ -28,17 +28,21 @@ if ($inputJson) {
         $toolName = if ($inputData.tool_name) { $inputData.tool_name } else { $inputData.toolName }
         
         # Only log read_file or view tool
-        if ($toolName -eq "read_file" -or $toolName -eq "view") {
+        if ($toolName -eq "read_file" -or $toolName -eq "view" -or $toolName -eq "Read") {
             $toolInput = if ($inputData.tool_input) { $inputData.tool_input } else { $inputData.toolArgs }
             $filePath = if ($toolInput.filePath) { $toolInput.filePath } else { $toolInput.path }
             
             # Normalize path separators for comparison
             $filePathNormalized = $filePath -replace '\\', '/'
             
-            # Check if this is a SKILL.md file from .upgrades
-            if ($filePathNormalized -match '\.upgrades/[^/]+/skills/.*/([^/]+)/SKILL\.md$') {
-                # Extract skill name (the directory containing the SKILL.md file)
-                $skillName = $Matches[1]
+            # Match SKILL.md paths in known layouts:
+            # 1) VS Code extension: .../extensions/ms-dotnettools.upgrade-agent-*/skills/**/SKILL.md
+            # 2) VS Code extension extender: .../extensions/ms-dotnettools.upgrade-agent-*/extenders/*/skills/**/SKILL.md
+            # 3) Plugin: .../upgrade/skills/**/SKILL.md
+            # 4) Plugin extender: .../extenders/*/upgrade/skills/**/SKILL.md
+            if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/(?:extenders/[^/]+/)?skills/.*/|/(?:extenders/[^/]+/)?upgrade/skills/.*/)[^/]+/SKILL\.md$') {
+                # Extract skill name from the parent directory of SKILL.md
+                $skillName = Split-Path -Leaf (Split-Path -Parent $filePathNormalized)
                 
                 # Extract session_id from hook input
                 $sessionId = if ($inputData.session_id) { $inputData.session_id } else { "unknown" }

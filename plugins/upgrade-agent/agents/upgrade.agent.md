@@ -16,6 +16,14 @@ mcp-servers:
     deferTools: 'never'
     env:
       APPMOD_CALLER_TYPE: copilot-cli
+      # Disable MCP Apps (SEP-1865) UI for the plugin-hosted server. The GitHub
+      # Copilot App mounts MCP App UIs only on tool completion, which deadlocks
+      # the blocking confirm_options/show_upgrade_options pattern (the tool blocks
+      # waiting for a UI callback that never renders). Forcing the text-based
+      # fallback here keeps the plugin host usable until the host is fixed. The
+      # VS Code extension registers its own server (see orchestrator/vscode
+      # extension.ts) and leaves this unset, so it keeps MCP Apps.
+      APPMOD_DISABLE_MCP_APPS: 'true'
 ---
 
 # Upgrade Agent

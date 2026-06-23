@@ -175,8 +175,8 @@ Plan.md only defines top-level tasks. If the plan includes subtask-like structur
 - **Read files directly** — tool APIs may have cached/stale state. Always read the markdown files yourself.
 - **Edit files directly** — write to tasks.md, task.md files, and folders yourself. The tools will recalculate state from the updated files on their next invocation.
 - **Do not use `complete_task()` / `start_task()`** — those tools are for normal workflow execution, not bulk reconciliation. Direct edits are correct here.
-- **Emoji format** — task lines use markdown list syntax: `- {emoji} {taskId}: {description}` with 3-space indentation per nesting level.
-- **Subtask indentation** — depth 1 = 3 spaces, depth 2 = 6 spaces, etc.
+- **Emoji format** — task lines use markdown list syntax: `- {emoji} {taskId}: {description}` with 2-space indentation per nesting level.
+- **Subtask indentation** — depth 1 = 2 spaces, depth 2 = 4 spaces, etc.
 
 ## Checklist
 

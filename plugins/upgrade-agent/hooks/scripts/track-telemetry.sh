@@ -98,10 +98,14 @@ fi
 # Normalize path separators for comparison
 FILE_PATH_NORMALIZED="${FILE_PATH//\\//}"
 
-# Check if this is a SKILL.md file from .upgrades
-if echo "$FILE_PATH_NORMALIZED" | grep -qE '\.upgrades/[^/]+/skills/.*/([^/]+)/SKILL\.md$'; then
-    # Extract skill name (the directory containing the SKILL.md file)
-    SKILL_NAME=$(echo "$FILE_PATH_NORMALIZED" | sed -E 's|.*\.upgrades/[^/]+/skills/.*/([^/]+)/SKILL\.md$|\1|')
+# Match SKILL.md paths in known layouts:
+# 1) VS Code extension: .../extensions/ms-dotnettools.upgrade-agent-*/skills/**/SKILL.md
+# 2) VS Code extension extender: .../extensions/ms-dotnettools.upgrade-agent-*/extenders/*/skills/**/SKILL.md
+# 3) Plugin: .../upgrade/skills/**/SKILL.md
+# 4) Plugin extender: .../extenders/*/upgrade/skills/**/SKILL.md
+if echo "$FILE_PATH_NORMALIZED" | grep -qiE '(/extensions/ms-dotnettools\.upgrade-agent-[^/]+/(extenders/[^/]+/)?skills/.*/|/(extenders/[^/]+/)?upgrade/skills/.*/)[^/]+/SKILL\.md$'; then
+    # Extract skill name from the parent directory of SKILL.md
+    SKILL_NAME=$(basename "$(dirname "$FILE_PATH_NORMALIZED")")
 
     # Extract session_id from hook input
     SESSION_ID=$(extract_field "$INPUT" session_id)
