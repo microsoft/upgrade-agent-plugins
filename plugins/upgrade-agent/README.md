@@ -316,6 +316,8 @@ upgrade-agent/
 │       │           └── webforms-to-blazor-upgrade/
 │       │               └── SKILL.md
 │       └── upgrade-extension.json
+├── extensions/
+│   └── modernize-dashboard/
 ├── hooks/
 │   └── scripts/
 │       ├── track-telemetry.ps1

@@ -1,0 +1,5773 @@
+<!doctype html>
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Code Upgrade</title>
+<style>
+:root {
+	/* === Structural tokens (never themed by the host) ===
+	 * Shape scale, font, and the backwards-compat aliases. The aliases point at
+	 * the canonical color tokens, so they follow whatever those resolve to — the
+	 * host-injected theme when embedded, or the standalone dark fallback below. */
+
+	/* Shape scale */
+	--radius-small: 4px;
+	--radius-compact: 6px;
+	--radius-medium: 8px;
+	--radius-large: 12px;
+	--radius-full: 9999px;
+
+	/* Control border hover/active aren't part of the host token set; map them
+	 * onto an emphasized border so they still follow the theme. */
+	--border-color-control-hover: var(--border-color-emphasis, #8b949e);
+	--border-color-control-active: var(--border-color-emphasis, #8b949e);
+
+	/* Backwards-compat aliases (older selectors reference these short names). */
+	--fg: var(--text-color-default);
+	--fg-muted: var(--text-color-muted);
+	--bg: var(--background-color-default);
+	--bg-subtle: var(--background-color-muted);
+	--border: var(--border-color-default);
+	--accent: var(--text-color-accent);
+	/* Static fallback for color-mix-less browsers, then the canonical mix. */
+	--accent-bg: rgba(88, 166, 255, 0.16);
+	--accent-bg: color-mix(in srgb, var(--text-color-accent) 16%, transparent);
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+/* === Canonical GitHub App canvas tokens (standalone dark fallback) ===
+ * Mirrors the GitHub Copilot canvas Primer palette. When the GitHub App canvas
+ * host injects its theme it sets `data-color-mode` on <html> and supplies these
+ * same token names with the user's light/dark values, so this block is skipped
+ * and the host theme wins. Standalone (CLI / browser) uses this dark palette. */
+:root:not([data-color-mode]) {
+	color-scheme: dark;
+
+	/* Text */
+	--text-color-default: #e6edf3;
+	--text-color-muted: #8b949e;
+	--text-color-accent: #58a6ff;
+	--text-color-success: #3fb950;
+	--text-color-attention: #d29922;
+	--text-color-danger: #f85149;
+	--text-color-on-emphasis: #ffffff;
+	--text-color-control-placeholder: #6e7681;
+	--text-color-control-disabled: #6e7681;
+
+	/* Backgrounds */
+	--background-color-default: #0d1117;
+	--background-color-muted: #161b22;
+	--background-color-overlay: #161b22;
+	--background-color-control-rest: #21262d;
+	--background-color-control-hover: #30363d;
+	--background-color-control-active: #282e33;
+	--background-color-control-disabled: #161b22;
+	--background-color-neutral-muted: #30363d;
+
+	/* Borders */
+	--border-color-default: #30363d;
+	--border-color-muted: rgba(240, 246, 252, 0.12);
+	--border-color-control-rest: #30363d;
+	--border-color-control-hover: #8b949e;
+	--border-color-control-active: #8b949e;
+	--border-color-control-danger: #f85149;
+	--outline-color-focus-default: #58a6ff;
+
+	/* Status surfaces (semantic tints) */
+	--background-color-success-muted: #0f2a17;
+	--background-color-attention-muted: #2d230c;
+	--background-color-danger-muted: #2d1117;
+
+	/* Button: primary (green) */
+	--background-color-button-primary-rest: #238636;
+	--background-color-button-primary-hover: #2ea043;
+	--background-color-button-primary-active: #238636;
+	--text-color-button-primary-rest: #ffffff;
+	--border-color-button-primary-rest: rgba(240, 246, 252, 0.1);
+	--border-color-button-primary-hover: #238636;
+	--border-color-button-primary-active: #1a7f37;
+
+	/* Button: default (neutral surface) */
+	--background-color-button-default-rest: #21262d;
+	/* Static fallback for browsers without color-mix() support. */
+	--background-color-button-default-hover: #2a3038;
+	--background-color-button-default-hover: color-mix(in srgb, var(--text-color-default) 4%, var(--background-color-button-default-rest));
+	--background-color-button-default-active: #2f353e;
+	--background-color-button-default-active: color-mix(in srgb, var(--text-color-default) 6%, var(--background-color-button-default-rest));
+	--text-color-button-default-rest: #e6edf3;
+	--text-color-button-default-hover: #e6edf3;
+	--text-color-button-default-active: #e6edf3;
+	--border-color-button-default-rest: rgba(240, 246, 252, 0.12);
+	--border-color-button-default-hover: var(--border-color-button-default-rest);
+	--border-color-button-default-active: rgba(240, 246, 252, 0.18);
+
+	/* Button: invisible (transparent, used for icon-only chrome buttons) */
+	--background-color-button-invisible-rest: transparent;
+	/* Static fallback then color-mix override. */
+	--background-color-button-invisible-hover: rgba(230, 237, 243, 0.04);
+	--background-color-button-invisible-hover: color-mix(in srgb, var(--text-color-default) 4%, transparent);
+	--background-color-button-invisible-active: rgba(230, 237, 243, 0.06);
+	--background-color-button-invisible-active: color-mix(in srgb, var(--text-color-default) 6%, transparent);
+	--text-color-button-invisible-rest: #c9d1d9;
+	--text-color-button-invisible-hover: #e6edf3;
+	--text-color-button-invisible-active: #e6edf3;
+	--border-color-button-invisible-rest: transparent;
+	--border-color-button-invisible-hover: transparent;
+}
+
+/* Native controls (scrollbars, form fields) follow the host's chosen mode. */
+:root[data-color-mode="light"] {
+	color-scheme: light;
+}
+:root[data-color-mode="dark"] {
+	color-scheme: dark;
+}
+:root[data-color-mode="auto"] {
+	color-scheme: light dark;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	background: var(--background-color-default);
+	color: var(--text-color-default);
+	font-size: 13px;
+	line-height: 1.4;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	user-select: none;
+	cursor: default;
+}
+
+/* Match the host app's desktop selection model: chrome is non-selectable; only
+ * explicitly-marked content (markdown bodies, code, snippets) is copyable. */
+body ::selection {
+	background: color-mix(in srgb, var(--text-color-accent) 30%, transparent);
+	color: inherit;
+}
+
+[data-selectable="true"],
+.md,
+.md-code,
+.md-table,
+.scenario-instructions,
+.scenario-description,
+.task-details,
+.tasks-overview,
+.issues-incident-snippet,
+.issues-incident-loc,
+.issues-incident-desc,
+.proj-path,
+.proj-name,
+.proj-tfm,
+.diag-path,
+.deps-table td,
+.assess-table td,
+.dep-cell-path,
+.dep-cell-name,
+pre.overview,
+.activity .detail,
+.meta,
+input,
+textarea,
+[contenteditable]:not([contenteditable="false"]) {
+	user-select: text;
+	cursor: text;
+}
+
+.topbar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	min-height: 44px;
+	padding: 0 14px;
+	border-bottom: 1px solid var(--border-color-muted);
+	background: var(--background-color-muted);
+}
+
+.topbar-left {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.topbar-right {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.topbar .title {
+	font-weight: 600;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.topbar-icon {
+	background: var(--background-color-button-invisible-rest);
+	color: var(--text-color-button-invisible-rest);
+	border: 1px solid var(--border-color-button-invisible-rest);
+	border-radius: var(--radius-medium);
+	padding: 4px 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+	transition: background-color 150ms, color 150ms;
+}
+
+.topbar-icon:hover {
+	background: var(--background-color-button-invisible-hover);
+	color: var(--text-color-button-invisible-hover);
+}
+
+.topbar-icon:active,
+.topbar-icon[aria-pressed="true"] {
+	background: var(--background-color-button-invisible-active);
+	color: var(--text-color-button-invisible-active);
+}
+
+.topbar-icon:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+/* Header progress strip — subtle and right-aligned in the topbar. Layout:
+   bar first, label second, both pushed to the right with a discreet hover. */
+.header-progress {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 2px 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	color: var(--fg-muted);
+	font-size: 11px;
+	cursor: pointer;
+	text-align: right;
+	font-family: inherit;
+	flex: 0 1 320px;
+	min-width: 0;
+	margin-left: auto;
+}
+
+.header-progress[hidden] {
+	display: none;
+}
+
+.header-progress:hover {
+	background: var(--bg-subtle);
+	color: var(--fg);
+	border-color: var(--border);
+}
+
+.header-progress:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+
+.header-progress-bar {
+	flex: 1;
+	height: 4px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 2px;
+	overflow: hidden;
+	min-width: 60px;
+}
+
+.header-progress-fill {
+	display: block;
+	height: 100%;
+	background: var(--text-color-accent);
+	opacity: 0.7;
+	transition: width 200ms ease, opacity 150ms ease, background-color 150ms ease;
+	width: 0;
+}
+
+.header-progress:hover .header-progress-fill {
+	opacity: 1;
+}
+
+.header-progress-label {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 55%;
+	opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+	.topbar { flex-wrap: wrap; }
+	.header-progress {
+		flex: 1 1 100%;
+		margin: 4px 0 0;
+		order: 99;
+	}
+}
+
+/* Footer (was the old topbar status line + diagnostics/refresh icons). */
+.footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 4px 14px;
+	border-top: 1px solid var(--border);
+	background: var(--bg-subtle);
+	color: var(--fg-muted);
+	font-size: 11px;
+	min-height: 22px;
+}
+
+.footer-status {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+}
+
+.footer .topbar-icon,
+.footer .refresh {
+	font-size: 12px;
+	padding: 2px 6px;
+}
+
+/* Diagnostics overlay (was a tab). */
+.diagnostics-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.diagnostics-overlay[hidden] {
+	display: none;
+}
+
+.diagnostics-overlay-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.diagnostics-overlay-card {
+	position: relative;
+	max-width: 720px;
+	max-height: 80vh;
+	width: calc(100% - 40px);
+	overflow: auto;
+	background: var(--background-color-overlay);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.diagnostics-overlay-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--border);
+	background: var(--bg-subtle);
+}
+
+.diagnostics-overlay-head h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.diagnostics-overlay-close {
+	background: transparent;
+	border: none;
+	color: var(--fg-muted);
+	font-size: 20px;
+	cursor: pointer;
+	padding: 0 6px;
+}
+
+.diagnostics-overlay-close:hover {
+	color: var(--fg);
+}
+
+#diagnostics-overlay-body {
+	padding: 14px 16px;
+}
+
+.tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--border);
+}
+
+.tabs .spacer {
+	flex: 1;
+}
+
+.tab,
+.refresh {
+	background: var(--background-color-button-invisible-rest);
+	color: var(--text-color-button-invisible-rest);
+	border: 1px solid transparent;
+	border-radius: var(--radius-medium);
+	padding: 4px 10px;
+	font: inherit;
+	cursor: pointer;
+	transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+.tab[aria-selected="true"] {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+	border-color: var(--text-color-accent);
+}
+
+.tab:hover,
+.refresh:hover {
+	background: var(--background-color-button-invisible-hover);
+	color: var(--text-color-button-invisible-hover);
+}
+
+.tab[aria-selected="true"]:hover {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+}
+
+.tab:focus-visible,
+.refresh:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+main {
+	flex: 1;
+	overflow: auto;
+	padding: 12px 16px;
+}
+
+.panel h2 {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.meta {
+	color: var(--fg-muted);
+	font-size: 11px;
+	margin-bottom: 8px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	word-break: break-all;
+}
+
+.empty {
+	color: var(--fg-muted);
+	font-style: italic;
+}
+
+.activity {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.activity li {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--border);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	display: grid;
+	grid-template-columns: max-content max-content max-content 1fr;
+	gap: 4px 10px;
+	align-items: baseline;
+}
+
+.activity li.activity-task-failed .ev {
+	color: var(--text-color-danger, #f85149);
+}
+
+.activity li.activity-task .ev {
+	color: var(--text-color-success, #3fb950);
+}
+
+.activity li.activity-build .ev {
+	color: var(--text-color-attention, #d29922);
+}
+
+.activity li.activity-commit .ev {
+	color: var(--text-color-done, #a371f7);
+}
+
+.activity li.activity-branch .ev {
+	color: var(--text-color-accent, #58a6ff);
+}
+
+.activity li.activity-phase .ev {
+	color: var(--fg);
+	background: var(--bg-subtle);
+	padding: 0 4px;
+	border-radius: 3px;
+}
+
+.activity li .ts {
+	color: var(--fg-muted);
+}
+
+.activity li .ev {
+	color: var(--accent);
+	font-weight: 600;
+}
+
+.activity li .tag {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-size: 11px;
+	color: var(--fg-muted);
+}
+
+.activity li .detail {
+	color: var(--fg);
+}
+
+.projects {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 4px;
+}
+
+.projects li {
+	padding: 6px 10px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	display: grid;
+	grid-template-columns: 1fr max-content;
+	grid-template-areas:
+		"name tfm"
+		"path path";
+	gap: 2px 8px;
+}
+
+.projects li .proj-name {
+	grid-area: name;
+	font-weight: 600;
+}
+
+.projects li .proj-tfm {
+	grid-area: tfm;
+	color: var(--accent);
+}
+
+.projects li .proj-path {
+	grid-area: path;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+.tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.tile {
+	border: 1px solid var(--border);
+	background: var(--bg-subtle);
+	border-radius: 6px;
+	padding: 8px 12px;
+}
+
+.tile-value {
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.tile-label {
+	color: var(--fg-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.tile.sev-medium {
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.tile.sev-high {
+	border-color: var(--text-color-danger, #f85149);
+}
+
+.tile.sev-high .tile-value {
+	color: var(--text-color-danger, #f85149);
+}
+
+.bars {
+	margin: 12px 0;
+}
+
+.bars h4 {
+	margin: 0 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.bar-row {
+	display: grid;
+	grid-template-columns: 120px 1fr 40px;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 3px;
+	font-size: 12px;
+}
+
+.bar-label {
+	color: var(--fg);
+}
+
+.bar-trough {
+	height: 10px;
+	background: var(--bg-subtle);
+	border-radius: 5px;
+	overflow: hidden;
+	display: block;
+}
+
+.bar-fill {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+}
+
+.bar-fill.bar-high {
+	background: var(--text-color-danger, #f85149);
+}
+
+.bar-fill.bar-medium {
+	background: var(--text-color-attention, #d29922);
+}
+
+.bar-fill.bar-low {
+	background: var(--text-color-accent, #58a6ff);
+}
+
+.bar-fill.bar-info {
+	background: var(--text-color-done, #a371f7);
+}
+
+.bar-fill.bar-cat {
+	background: var(--accent);
+}
+
+.bar-value {
+	text-align: right;
+	color: var(--fg-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.assess-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 8px;
+	font-size: 12px;
+}
+
+.assess-table th,
+.assess-table td {
+	border-bottom: 1px solid var(--border);
+	padding: 4px 8px;
+	text-align: left;
+}
+
+.assess-table th {
+	color: var(--fg-muted);
+	font-weight: 500;
+	text-transform: uppercase;
+	font-size: 10px;
+	letter-spacing: 0.04em;
+}
+
+.assess-table td.num,
+.assess-table th.num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.assess-table .tag {
+	background: var(--accent-bg);
+	color: var(--accent);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-size: 10px;
+	margin-left: 4px;
+}
+
+.kv {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin-bottom: 12px;
+}
+
+.kv dt {
+	color: var(--fg-muted);
+	font-weight: 500;
+}
+
+.kv dd {
+	margin: 0;
+}
+
+pre.json {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	padding: 10px;
+	overflow: auto;
+	font-size: 11px;
+	max-height: 60vh;
+}
+
+.badge {
+display: inline-block;
+padding: 0 6px;
+border-radius: 3px;
+font-size: 11px;
+font-weight: 600;
+}
+
+.badge.compat-ok {
+background: var(--background-color-success-muted, #0f2a17);
+color: var(--text-color-success, #3fb950);
+}
+
+.badge.compat-bad {
+background: var(--background-color-danger-muted, #2d1117);
+color: var(--text-color-danger, #f85149);
+}
+
+.badge.compat-unk {
+background: var(--bg-subtle);
+color: var(--fg-muted);
+}
+
+td.sev-medium {
+color: var(--text-color-attention, #d29922);
+font-weight: 600;
+}
+
+td.sev-high {
+color: var(--text-color-danger, #f85149);
+font-weight: 600;
+}
+
+.progress {
+display: grid;
+grid-template-columns: 1fr max-content;
+gap: 10px;
+align-items: center;
+margin-bottom: 12px;
+}
+
+.progress .bar-trough {
+height: 8px;
+}
+
+pre.overview {
+background: var(--bg-subtle);
+border: 1px solid var(--border);
+border-radius: 6px;
+padding: 10px;
+white-space: pre-wrap;
+font-family: inherit;
+font-size: 12px;
+margin: 4px 0 12px;
+}
+
+ol.tasks {
+list-style: none;
+margin: 0;
+padding: 0;
+}
+
+ol.tasks-sub {
+margin-left: 22px;
+border-left: 1px dashed var(--border);
+padding-left: 10px;
+margin-top: 2px;
+}
+
+li.task {
+	display: block;
+	padding: 0;
+	border-bottom: 1px solid var(--border);
+	font-size: 12px;
+}
+
+li.task .task-header {
+	display: grid;
+	grid-template-columns: 18px 18px max-content 1fr;
+	gap: 6px 10px;
+	align-items: baseline;
+	padding: 6px 8px;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: none;
+	color: inherit;
+	font: inherit;
+}
+
+li.task .task-header-clickable {
+	cursor: pointer;
+}
+
+li.task .task-header-clickable:hover {
+	background: var(--bg-subtle);
+}
+
+li.task .task-chevron {
+	color: var(--fg-muted);
+	text-align: center;
+	transition: color 100ms;
+	font-family: inherit;
+}
+
+li.task .task-header-clickable:hover .task-chevron {
+	color: var(--accent);
+}
+
+li.task .task-state {
+	text-align: center;
+}
+
+li.task .task-id {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+li.task .task-name {
+	color: var(--fg);
+}
+
+li.task-complete .task-name {
+	color: var(--fg-muted);
+	text-decoration: line-through;
+}
+
+li.task-in-progress .task-name {
+	font-weight: 600;
+}
+
+li.task-failed .task-name {
+	color: var(--text-color-danger, #f85149);
+}
+
+li.task-skipped .task-name {
+	color: var(--text-color-attention, #d29922);
+}
+
+.diag-path {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+	word-break: break-all;
+}
+
+.task-details {
+	margin: 0 8px 12px 40px;
+	padding: 12px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 12px;
+	line-height: 1.5;
+	max-height: 60vh;
+	overflow: auto;
+}
+
+.task-details .md-h {
+	margin: 12px 0 6px;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.task-details .md-h:first-child {
+	margin-top: 0;
+}
+
+.task-details p {
+	margin: 6px 0;
+}
+
+.task-details .md-ul,
+.task-details .md-ol {
+	margin: 6px 0;
+	padding-left: 22px;
+}
+
+.task-details li {
+	margin: 2px 0;
+}
+
+.task-details code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.task-details .md-code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 8px 10px;
+	margin: 8px 0;
+	font-size: 11px;
+	overflow: auto;
+	white-space: pre;
+}
+
+.task-details .md-code code {
+	background: transparent;
+	border: none;
+	padding: 0;
+}
+
+/* Canonical markdown body typography — used wherever .md is applied (e.g.,
+ * Assessment > Summary, Tasks > progress-details). 13px body, 16px H1, 14px
+ * H2, 13px H3 per the gist's typography guidance. */
+.md {
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--text-color-default);
+}
+.md .md-h {
+	margin: 16px 0 8px;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--text-color-default);
+}
+/* Keep a heading clear of the panel's top edge when scrolled to via a
+   table-of-contents anchor link. */
+.md-h {
+	scroll-margin-top: 12px;
+}
+.md-anchor {
+	cursor: pointer;
+}
+.md h1.md-h { font-size: 16px; }
+.md h2.md-h { font-size: 14px; }
+.md h3.md-h,
+.md h4.md-h,
+.md h5.md-h,
+.md h6.md-h { font-size: 13px; }
+.md p {
+	margin: 6px 0;
+}
+.md .md-code {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-medium);
+	padding: 8px 10px;
+	margin: 8px 0;
+	overflow: auto;
+}
+.md code {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 12px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	padding: 1px 4px;
+	border-radius: 3px;
+}
+.md .md-ul,
+.md .md-ol {
+	margin: 4px 0 8px 22px;
+	padding: 0;
+}
+
+/* GFM-style tables anywhere markdown is rendered. */
+.md-table {
+	border-collapse: collapse;
+	margin: 10px 0;
+	width: 100%;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.md-table th,
+.md-table td {
+	border: 1px solid var(--border);
+	padding: 4px 8px;
+	text-align: left;
+	vertical-align: top;
+}
+
+.md-table thead th {
+	background: var(--bg-subtle);
+	font-weight: 600;
+}
+
+.md-table tbody tr:nth-child(even) {
+	background: var(--bg-subtle);
+}
+
+/* Popover anchored under an icon-action button in a panel title row. */
+.assessment-title-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	position: relative;
+}
+.assessment-title-row h2 { margin: 0; flex: 1; }
+.assessment-title-actions {
+	display: inline-flex;
+	gap: 4px;
+}
+
+.popover {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 6px);
+	z-index: 20;
+	width: min(360px, calc(100vw - 32px));
+	background: var(--background-color-overlay);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-medium);
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+	padding: 10px 14px 14px;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+.popover[hidden] { display: none; }
+.popover-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+.popover-head h3 {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.popover-close {
+	background: transparent;
+	border: none;
+	color: var(--fg-muted);
+	font-size: 16px;
+	cursor: pointer;
+	padding: 0 4px;
+}
+.popover-close:hover { color: var(--fg); }
+.popover dl.glossary {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin: 4px 0 0;
+}
+.popover dl.glossary dt {
+	font-weight: 600;
+	color: var(--fg);
+}
+.popover dl.glossary dd {
+	margin: 0;
+}
+
+.icon-action {
+	background: var(--background-color-button-invisible-rest);
+	color: var(--text-color-button-invisible-rest);
+	border: 1px solid var(--border-color-button-invisible-rest);
+	border-radius: var(--radius-medium);
+	padding: 4px 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+	transition: background-color 150ms, color 150ms;
+}
+.icon-action:hover {
+	background: var(--background-color-button-invisible-hover);
+	color: var(--text-color-button-invisible-hover);
+}
+.icon-action:active,
+.icon-action[aria-pressed="true"] {
+	background: var(--background-color-button-invisible-active);
+	color: var(--text-color-button-invisible-active);
+}
+.icon-action:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+/* Two-column summary layout: tiles + categories on the left, bars on the right. */
+.assessment-summary-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	gap: 14px;
+	margin: 10px 0 4px;
+}
+.assessment-summary-left,
+.assessment-summary-right {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+@media (max-width: 720px) {
+	.assessment-summary-grid { grid-template-columns: 1fr; }
+}
+
+/* Dependencies tab — Projects "scope" header (separate from dep-type tiles). */
+.deps-scope {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin: 12px 0 4px;
+	padding: 10px 14px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+}
+.deps-scope-num {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--accent);
+	font-variant-numeric: tabular-nums;
+}
+.deps-scope-label {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+.deps-tiles {
+	margin-top: 8px;
+}
+.tile-with-help {
+	cursor: help;
+}
+.tile-help {
+	margin-top: 4px;
+	font-size: 10px;
+	color: var(--fg-muted);
+	line-height: 1.35;
+}
+
+/* Click-to-Assessment link on the per-project incident count. */
+.incidents-link {
+	background: transparent;
+	border: none;
+	color: var(--accent);
+	cursor: pointer;
+	font-variant-numeric: tabular-nums;
+	font: inherit;
+	padding: 0;
+	text-decoration: underline dotted;
+}
+.incidents-link:hover {
+	color: var(--fg);
+	text-decoration-style: solid;
+}
+.th-help-icon {
+	color: var(--fg-muted);
+	font-size: 11px;
+	cursor: help;
+}
+
+/* Inline help banner that sits above table-style panels — matches the visual
+ * weight of the Dependencies "scope" header. */
+.panel-help {
+	margin: 8px 0 10px;
+	padding: 8px 12px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-medium);
+	line-height: 1.45;
+}
+.panel-help strong { color: var(--fg); font-weight: 600; }
+
+/* scenario-instructions.md rendered on the Options tab. */
+.scenario-instructions {
+	font-size: 13px;
+	line-height: 1.55;
+}
+.scenario-instructions.empty {
+	color: var(--fg-muted);
+	padding: 6px 0;
+}
+.scenario-instructions .md-h {
+	margin: 14px 0 6px;
+	font-size: 14px;
+	font-weight: 600;
+}
+.scenario-instructions h3.md-h { font-size: 13px; }
+.scenario-instructions ul,
+.scenario-instructions ol {
+	margin: 4px 0 8px 18px;
+	padding: 0;
+}
+.scenario-instructions code {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	padding: 1px 4px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+.task-details a {
+	color: var(--accent);
+}
+
+.task-details strong {
+	font-weight: 600;
+}
+
+.action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 32px;
+	background: var(--background-color-button-default-rest);
+	color: var(--text-color-button-default-rest);
+	border: 1px solid var(--border-color-button-default-rest);
+	border-radius: var(--radius-medium);
+	padding: 0 12px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 150ms, color 150ms, border-color 150ms, box-shadow 150ms;
+}
+
+.action-btn:hover:not(:disabled) {
+	background: var(--background-color-button-default-hover);
+	color: var(--text-color-button-default-hover);
+	border-color: var(--border-color-button-default-hover);
+}
+
+.action-btn:active:not(:disabled),
+.action-btn[aria-pressed="true"] {
+	background: var(--background-color-button-default-active);
+	border-color: var(--border-color-button-default-active);
+}
+
+.action-btn:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+.action-btn:disabled,
+.action-btn[aria-busy="true"] {
+	opacity: 0.6;
+	cursor: progress;
+}
+
+/* Icons inside non-primary buttons are muted per the canonical spec. */
+.action-btn:not(.action-btn-primary) svg {
+	color: var(--text-color-muted);
+}
+
+.explain-btn {
+	padding: 2px 8px;
+	font-size: 11px;
+}
+
+.toast {
+	position: fixed;
+	bottom: 16px;
+	right: 16px;
+	max-width: 360px;
+	padding: 10px 14px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	font-size: 12px;
+	z-index: 1000;
+}
+
+.toast[data-kind="error"] {
+	border-left-color: var(--text-color-danger, #f85149);
+}
+
+.toast[data-kind="info"] {
+	border-left-color: var(--accent);
+}
+
+/* Options tab */
+.option-card {
+	background: var(--background-color-muted);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	padding: 14px 16px;
+	margin-bottom: 14px;
+}
+
+.option-card h3 {
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.option-card .option-help {
+	color: var(--fg-muted);
+	font-size: 12px;
+	margin: 4px 0 12px;
+	line-height: 1.4;
+}
+
+.option-row {
+	display: grid;
+	grid-template-columns: 110px 1fr;
+	gap: 10px;
+	align-items: center;
+	padding: 4px 0;
+}
+
+.option-label {
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.option-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	align-items: center;
+}
+
+.option-radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.option-radio input {
+	cursor: pointer;
+}
+
+.mode-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: var(--radius-full);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: capitalize;
+	background: var(--background-color-neutral-muted);
+	border: 1px solid var(--border-color-muted);
+	color: var(--text-color-muted);
+}
+
+.mode-badge[data-mode="guided"] {
+	background: var(--accent-bg);
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.mode-badge[data-mode="automatic"] {
+	background: var(--background-color-success-muted, #0f2a17);
+	color: var(--text-color-success, #3fb950);
+	border-color: var(--text-color-success, #3fb950);
+}
+
+.setting-row {
+	display: grid;
+	grid-template-columns: 180px 1fr auto;
+	gap: 10px;
+	align-items: center;
+	padding: 6px 0;
+	border-top: 1px solid var(--border-color-muted);
+}
+
+.setting-row:first-of-type {
+	border-top: none;
+}
+
+.setting-label {
+	color: var(--text-color-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.setting-value {
+	font-size: 13px;
+	word-break: break-word;
+}
+
+.setting-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.setting-action-btn {
+	font-size: 11px;
+	padding: 3px 10px;
+}
+
+.setting-notes {
+	margin: 10px 0 0;
+	padding-left: 18px;
+	color: var(--text-color-muted);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.setting-notes li {
+	margin: 2px 0;
+}
+
+/* Scenario tab: hero (framework banner + phase stepper + description) */
+#scenario-active-hero {
+	margin-bottom: 16px;
+}
+
+.framework-banner {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	margin-bottom: 14px;
+}
+
+.scenario-id-label {
+	color: var(--fg-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.framework-arrow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.framework-pill {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 6px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.framework-pill.source {
+	color: var(--fg-muted);
+}
+
+.framework-pill.target {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.framework-sep {
+	color: var(--fg-muted);
+	font-weight: 400;
+}
+
+/* Phase stepper */
+.phase-stepper {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0;
+	padding: 12px 4px;
+	margin-bottom: 16px;
+}
+
+.phase {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	color: var(--fg);
+	white-space: nowrap;
+}
+
+.phase-clickable {
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.phase-clickable:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.phase-clickable:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+.framework-on-target {
+	background: var(--accent-bg);
+	border-radius: 6px;
+	padding: 4px 10px;
+}
+
+.framework-check {
+	color: var(--text-color-success, #3fb950);
+	font-weight: 700;
+}
+
+.phase-num {
+	color: var(--fg-muted);
+	font-variant-numeric: tabular-nums;
+	font-size: 10px;
+}
+
+.phase-glyph {
+	font-size: 12px;
+	line-height: 1;
+}
+
+.phase-label {
+	font-weight: 500;
+}
+
+.phase.phase-complete {
+	background: var(--background-color-success-muted, #0f2a17);
+	border-color: var(--text-color-success, #3fb950);
+	color: var(--text-color-success, #3fb950);
+}
+
+.phase.phase-in-progress {
+	background: var(--accent-bg);
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.phase.phase-failed {
+	background: var(--background-color-danger-muted, #2d1117);
+	border-color: var(--text-color-danger, #f85149);
+	color: var(--text-color-danger, #f85149);
+}
+
+.phase.phase-skipped {
+	color: var(--text-color-attention, #d29922);
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.phase-connector {
+	flex: 0 0 18px;
+	height: 1px;
+	background: var(--border);
+	margin: 0 4px;
+}
+
+/* Markdown description body */
+.scenario-description {
+	padding: 12px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.scenario-description .md-h {
+	margin: 8px 0 4px;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.scenario-description .md-h:first-child {
+	margin-top: 0;
+}
+
+.scenario-description p {
+	margin: 6px 0;
+}
+
+.scenario-description code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.scenario-description a {
+	color: var(--accent);
+}
+
+.scenario-description ul,
+.scenario-description ol {
+	margin: 6px 0;
+	padding-left: 22px;
+}
+
+/* Projects tab: summary tiles + table */
+.projects-tiles {
+	margin-bottom: 12px;
+}
+
+.projects-table {
+	width: 100%;
+	margin-top: 8px;
+}
+
+.projects-table td .proj-name {
+	font-weight: 600;
+}
+
+.projects-table td .proj-path {
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	margin-top: 2px;
+}
+
+.projects-table .proj-tfm {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.projects-table .proj-tfm.tfm-on-target {
+	color: var(--text-color-success, #3fb950);
+	font-weight: 600;
+}
+
+.projects-table tr.has-incidents {
+	/* Currently no row-level styling beyond td.sev-medium; reserved for future use */
+}
+
+/* Dependencies tab: target framework banner, breakdown bar, legend */
+.deps-banner {
+	margin-bottom: 14px;
+}
+
+.deps-breakdown-heading {
+	margin: 14px 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.compat-stack {
+	display: flex;
+	width: 100%;
+	height: 22px;
+	border-radius: 4px;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	background: var(--bg-subtle);
+	margin-bottom: 8px;
+}
+
+.compat-seg {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-color-on-emphasis, #ffffff);
+	font-size: 11px;
+	font-weight: 600;
+	min-width: 0;
+}
+
+/* Compatibility breakdown bar segments. Saturated emphasis fills carry white
+ * on-emphasis text — the canonical GitHub colored-chip pattern, so contrast
+ * holds in both light and dark host themes. */
+.compat-seg-valid {
+	background: var(--background-color-success-emphasis, #238636);
+}
+
+.compat-seg-partial {
+	background: var(--background-color-attention-emphasis, #9e6a03);
+}
+
+.compat-seg-incompatible {
+	background: var(--background-color-danger-emphasis, #da3633);
+}
+
+.compat-seg-unknown {
+	background: var(--text-color-control-placeholder);
+	color: var(--text-color-on-emphasis);
+}
+
+.compat-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 14px;
+	font-size: 12px;
+}
+
+.compat-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.compat-swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+}
+
+/* Assessment sub-tabs + categories + features list */
+.subtabs {
+	display: flex;
+	gap: 4px;
+	margin: 14px 0 10px;
+	border-bottom: 1px solid var(--border);
+}
+
+.subtabs[hidden] {
+	display: none;
+}
+
+.subtab {
+	background: transparent;
+	color: var(--fg-muted);
+	border: none;
+	border-bottom: 2px solid transparent;
+	padding: 6px 12px;
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	margin-bottom: -1px;
+}
+
+.subtab[aria-selected="true"] {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
+.subtab:hover:not([aria-selected="true"]) {
+	color: var(--fg);
+}
+
+.section-subhead {
+	margin: 14px 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.categories-tiles .tile {
+	background: var(--bg);
+}
+
+.features-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+
+.feature-item {
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	background: var(--bg-subtle);
+}
+
+.feature-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.feature-id {
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.feature-count {
+	color: var(--fg-muted);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.feature-projects {
+	list-style: none;
+	margin: 8px 0 0;
+	padding-left: 0;
+	display: grid;
+	gap: 2px;
+	font-size: 12px;
+}
+
+.feature-projects li {
+	display: flex;
+	justify-content: space-between;
+	color: var(--fg-muted);
+	padding: 2px 0;
+}
+
+.feature-projects .proj-name {
+	color: var(--fg);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+/* Issues explorer (Assessment > Issues sub-tab) */
+.issues-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0 12px;
+}
+
+.issues-search, .issues-group-select {
+	font-size: 13px;
+	min-height: 32px;
+	padding: 0 12px;
+	border: 1px solid var(--border-color-control-rest);
+	border-radius: var(--radius-medium);
+	background: var(--background-color-default);
+	color: var(--text-color-default);
+	margin-left: 4px;
+	transition: border-color 150ms, box-shadow 150ms;
+}
+
+.issues-search::placeholder {
+	color: var(--text-color-control-placeholder);
+}
+
+.issues-search:focus,
+.issues-group-select:focus {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+.issues-search {
+	min-width: 240px;
+}
+
+.issues-status {
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.issues-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.issues-group {
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--bg-subtle);
+}
+
+.issues-group[open] {
+	background: var(--bg);
+}
+
+.issues-group-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+}
+
+.issues-group-head::-webkit-details-marker {
+	display: none;
+}
+
+.issues-group-head::before {
+	content: "▸";
+	color: var(--fg-muted);
+	font-size: 10px;
+	width: 10px;
+	display: inline-block;
+}
+
+.issues-group[open] .issues-group-head::before {
+	content: "▾";
+}
+
+.issues-group-label-txt {
+	flex: 1;
+	font-weight: 500;
+	font-size: 13px;
+}
+
+.issues-group-count {
+	font-variant-numeric: tabular-nums;
+	color: var(--fg-muted);
+	font-size: 12px;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+}
+
+.issues-incident-list {
+	list-style: none;
+	margin: 0;
+	padding: 0 10px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.issues-incident {
+	border-top: 1px solid var(--border);
+	padding-top: 8px;
+}
+
+.issues-incident-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.issues-incident-rule {
+	font-weight: 500;
+	font-size: 13px;
+}
+
+.issues-incident-project {
+	margin-left: auto;
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.issues-incident-loc {
+	margin-top: 4px;
+	color: var(--fg-muted);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.issues-incident-snippet {
+	display: block;
+	margin-top: 4px;
+	padding: 6px 8px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+	overflow-x: auto;
+	white-space: pre;
+}
+
+.issues-incident-desc {
+	margin-top: 4px;
+	color: var(--fg);
+	font-size: 12px;
+}
+
+.sev-badge {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: var(--radius-compact);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	border: 1px solid transparent;
+}
+
+/* Status badges follow the canonical "muted bg + bright text" pattern so the
+ * label stays readable. All combinations clear WCAG AA at 11px/600.
+ *   danger    on danger-muted    ≈ 6.0:1
+ *   attention on attention-muted ≈ 6.5:1
+ *   accent    on background-muted ≈ 5.5:1
+ *   muted     on background-muted ≈ 4.7:1
+ */
+.sev-badge.sev-mandatory {
+	background: var(--background-color-danger-muted);
+	color: var(--text-color-danger);
+	border-color: color-mix(in srgb, var(--text-color-danger) 40%, transparent);
+}
+.sev-badge.sev-optional {
+	background: var(--background-color-attention-muted);
+	color: var(--text-color-attention);
+	border-color: color-mix(in srgb, var(--text-color-attention) 40%, transparent);
+}
+.sev-badge.sev-potential {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+	border-color: color-mix(in srgb, var(--text-color-accent) 40%, transparent);
+}
+.sev-badge.sev-information {
+	background: var(--background-color-neutral-muted);
+	color: var(--text-color-muted);
+	border-color: var(--border-color-muted);
+}
+
+/* Overview landing tab — single column so every card spans full width. */
+.overview-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-top: 10px;
+}
+
+.overview-card {
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	padding: 12px 14px;
+	background: var(--background-color-muted);
+}
+
+.overview-card h3 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+
+.overview-scenario-head {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	margin-bottom: 10px;
+}
+
+.overview-scenario-id {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.overview-scenario-tfm {
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.overview-scenario-on-target {
+	color: var(--text-color-success, #3fb950);
+	font-weight: 600;
+}
+
+/* Larger "at a glance" tiles — each is a clickable button that navigates to
+   the relevant tab. Three columns at wide widths, one at narrow. */
+.overview-tile-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+	gap: 10px;
+}
+
+.overview-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 14px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	color: var(--fg);
+	text-align: left;
+	font-family: inherit;
+	cursor: pointer;
+	transition: border-color 120ms ease, background 120ms ease;
+}
+
+.overview-tile:hover {
+	border-color: var(--accent);
+	background: var(--accent-bg);
+}
+
+.overview-tile:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.overview-tile.sev-high {
+	border-left: 3px solid var(--text-color-danger, #f85149);
+}
+
+.overview-tile.sev-medium {
+	border-left: 3px solid var(--text-color-attention, #d29922);
+}
+
+.overview-tile-top {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.overview-tile-value {
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+
+.overview-tile-label {
+	font-size: 13px;
+	color: var(--fg-muted);
+	font-weight: 500;
+}
+
+.overview-tile-help {
+	font-size: 11px;
+	color: var(--fg-muted);
+	line-height: 1.4;
+}
+
+.overview-progress {
+	margin-bottom: 8px;
+}
+
+.overview-progress-trough {
+	width: 100%;
+	height: 8px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.overview-progress-fill {
+	height: 100%;
+	background: var(--accent);
+	transition: width 200ms ease;
+}
+
+.overview-progress-label {
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.overview-activity-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	max-height: 280px;
+	overflow-y: auto;
+}
+
+/* Scenario picker card grid */
+.scenario-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+	gap: 12px;
+	margin-top: 10px;
+}
+
+.scenario-card {
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	padding: 12px 14px;
+	background: var(--background-color-muted);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.scenario-card.is-active {
+	border-color: var(--text-color-accent);
+	box-shadow: 0 0 0 1px var(--text-color-accent);
+}
+
+.scenario-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.scenario-card-title {
+	font-weight: 600;
+	font-size: 14px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.scenario-card-target {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.scenario-card-status {
+	font-size: 12px;
+	color: var(--fg);
+}
+
+.scenario-card-phases {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.scenario-phase-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	border: 1px solid var(--border);
+	background: var(--bg);
+}
+
+.scenario-phase-dot.phase-complete {
+	background: var(--text-color-success, #3fb950);
+	border-color: var(--text-color-success, #3fb950);
+}
+
+.scenario-phase-dot.phase-in-progress {
+	background: var(--accent);
+	border-color: var(--accent);
+}
+
+.scenario-phase-dot.phase-failed {
+	background: var(--text-color-danger, #f85149);
+	border-color: var(--text-color-danger, #f85149);
+}
+
+.scenario-phase-dot.phase-skipped {
+	background: var(--text-color-attention, #d29922);
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.scenario-card-description {
+	font-size: 12px;
+	color: var(--fg-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	line-clamp: 3;
+	overflow: hidden;
+}
+
+/* Projects graph (force-directed bubble chart) */
+.projects-graph-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 12px 0 6px;
+	min-height: 18px;
+}
+
+.projects-graph-status {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.projects-graph-host {
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg-subtle);
+	overflow: hidden;
+}
+
+.projects-graph-svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+.projects-graph-edge {
+	stroke: var(--border);
+	stroke-width: 1.5;
+	stroke-opacity: 0.6;
+}
+
+.projects-graph-node circle {
+	stroke: var(--bg);
+	stroke-width: 1.5;
+	cursor: default;
+}
+
+.projects-graph-label {
+	font-size: 10px;
+	fill: var(--fg);
+	pointer-events: none;
+}
+
+.projects-graph-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin-top: 10px;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.projects-graph-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.projects-graph-legend-swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	border: 1px solid var(--bg);
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+	<div class="topbar-left">
+		<div class="title">Code Upgrade</div>
+	</div>
+	<button type="button" class="header-progress" id="header-progress" hidden title="Open Scenario tab">
+		<span class="header-progress-bar"><span class="header-progress-fill" id="header-progress-fill"></span></span>
+		<span class="header-progress-label" id="header-progress-label"></span>
+	</button>
+</header>
+<nav class="tabs" role="tablist">
+<button class="tab" data-panel="overview" role="tab" aria-selected="true">Overview</button>
+<button class="tab" data-panel="scenario" role="tab">Scenario</button>
+<button class="tab" data-panel="tasks" role="tab">Tasks</button>
+<button class="tab" data-panel="projects" role="tab">Projects</button>
+<button class="tab" data-panel="dependencies" role="tab">Dependencies</button>
+<button class="tab" data-panel="assessment" role="tab">Assessment</button>
+<button class="tab" data-panel="options" role="tab">Options</button>
+<!-- Activity tab disabled for now -->
+<!-- <button class="tab" data-panel="activity" role="tab">Activity</button> -->
+<span class="spacer"></span>
+</nav>
+<main>
+<section class="panel" id="panel-overview" data-panel="overview">
+<h2>Overview</h2>
+<div class="overview-grid">
+	<section class="overview-card overview-scenario" id="overview-scenario">
+		<h3>Scenario</h3>
+		<div class="overview-scenario-body" id="overview-scenario-body"></div>
+	</section>
+	<section class="overview-card overview-metrics" id="overview-metrics">
+		<h3>At a glance</h3>
+		<div class="overview-tile-grid" id="overview-metric-tiles"></div>
+	</section>
+</div>
+</section>
+<section class="panel" id="panel-activity" data-panel="activity" hidden>
+<h2>Activity</h2>
+<div class="meta" id="activity-meta"></div>
+<ol class="activity" id="activity-list"></ol>
+</section>
+<section class="panel" id="panel-tasks" data-panel="tasks" hidden>
+<h2>Tasks</h2>
+<div id="tasks-content" class="empty">No tasks.md found.</div>
+</section>
+<section class="panel" id="panel-scenario" data-panel="scenario" hidden>
+<h2>Scenario</h2>
+<nav class="subtabs" id="scenario-subtabs" role="tablist" aria-label="Scenario views" hidden>
+	<button type="button" class="subtab" id="scenario-tab-active" data-subtab="active" role="tab" aria-controls="scenario-active" aria-selected="true" tabindex="0">Active</button>
+	<button type="button" class="subtab" id="scenario-tab-picker" data-subtab="picker" role="tab" aria-controls="scenario-picker" aria-selected="false" tabindex="-1">All scenarios</button>
+</nav>
+<div id="scenario-active" class="subtab-panel" role="tabpanel" aria-labelledby="scenario-tab-active">
+	<div id="scenario-active-hero" hidden>
+		<div class="framework-banner" id="scenario-framework-banner"></div>
+		<div class="phase-stepper" id="scenario-phase-stepper" role="list" aria-label="Scenario phases"></div>
+		<div class="scenario-description md-body" id="scenario-description"></div>
+	</div>
+	<div id="scenario-content" class="empty">No scenario detected.</div>
+</div>
+<div id="scenario-picker" class="subtab-panel" role="tabpanel" aria-labelledby="scenario-tab-picker" hidden></div>
+</section>
+<section class="panel" id="panel-projects" data-panel="projects" hidden>
+<h2>Projects</h2>
+<div class="tiles" id="projects-tiles" hidden></div>
+<div class="meta" id="projects-meta"></div>
+<nav hidden role="tablist" class="subtabs" id="projects-subtabs" aria-label="Projects views">
+	<button type="button" class="subtab" id="projects-tab-table" data-subtab="table" role="tab" aria-controls="projects-table-panel" aria-selected="true" tabindex="0">Table</button>
+	<button type="button" class="subtab" id="projects-tab-graph" data-subtab="graph" role="tab" aria-controls="projects-graph-panel" aria-selected="false" tabindex="-1">Graph</button>
+</nav>
+<div id="projects-table-panel" class="subtab-panel" role="tabpanel" aria-labelledby="projects-tab-table" data-subtab="table">
+	<p class="panel-help" id="projects-help" hidden>
+	<strong>Incidents</strong> are individual locations in code that triggered an assessment rule.
+	One project may have many incidents across multiple rules.
+</p>
+<table class="assess-table projects-table" id="projects-table" hidden>
+	<thead>
+		<tr>
+			<th>Project</th>
+			<th>Framework</th>
+			<th>Kind</th>
+			<th class="num">Incidents</th>
+		</tr>
+	</thead>
+	<tbody id="projects-tbody"></tbody>
+</table>
+<ul class="projects" id="projects-list" hidden></ul>
+</div>
+<div id="projects-graph-panel" class="subtab-panel" role="tabpanel" aria-labelledby="projects-tab-graph" data-subtab="graph" hidden>
+	<div class="projects-graph-toolbar" id="projects-graph-toolbar"></div>
+	<div class="projects-graph-host" id="projects-graph-host"></div>
+	<div class="projects-graph-legend" id="projects-graph-legend"></div>
+</div>
+</section>
+<section class="panel" id="panel-dependencies" data-panel="dependencies" hidden>
+<h2>Dependencies</h2>
+<div id="dependencies-content" class="empty">No dependencies-health.json found.</div>
+</section>
+<section class="panel" id="panel-assessment" data-panel="assessment" hidden>
+<div class="assessment-title-row">
+	<h2>Assessment</h2>
+	<div class="assessment-title-actions">
+		<button type="button" class="icon-action" id="assessment-glossary-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="assessment-glossary-popover" title="What do these terms mean?" aria-label="Show glossary of assessment terms">
+			<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+				<circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+				<path fill="currentColor" d="M7.5 6.5h1V12h-1z"/>
+				<circle cx="8" cy="4.5" r="0.9" fill="currentColor"/>
+			</svg>
+		</button>
+		<button type="button" class="icon-action" id="assessment-share-btn" data-action="share_assessment_as_gist" hidden title="Share as private gist…" aria-label="Share assessment as a private GitHub gist">
+			<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+				<path fill="currentColor" d="M12 1.5a2.5 2.5 0 100 4 2.5 2.5 0 000-4zM4 6a2.5 2.5 0 100 4 2.5 2.5 0 000-4zm8 4.5a2.5 2.5 0 100 4 2.5 2.5 0 000-4zM5.7 6.7l4.6-2.4M5.7 9.3l4.6 2.4" stroke="currentColor" stroke-width="1.2" fill="none"/>
+			</svg>
+		</button>
+	</div>
+	<div class="popover" id="assessment-glossary-popover" role="dialog" aria-labelledby="assessment-glossary-popover-title" hidden>
+		<header class="popover-head">
+			<h3 id="assessment-glossary-popover-title">Assessment terms</h3>
+			<button type="button" class="popover-close" id="assessment-glossary-popover-close" aria-label="Close glossary">×</button>
+		</header>
+		<dl class="glossary">
+			<dt>Issue</dt><dd>A distinct rule that fired at least once. One issue can have many incidents.</dd>
+			<dt>Incident</dt><dd>A single location in code that triggered a rule. The total incident count is what you usually care about when sizing effort.</dd>
+			<dt>Mandatory</dt><dd>An issue that <em>must</em> be addressed for the upgrade to succeed. Other severities are advisory.</dd>
+			<dt>Feature</dt><dd>A higher-level capability (WCF, Remoting, etc.) that the assessment detected — usually a group of related rules.</dd>
+			<dt>Category</dt><dd>How rules are grouped on the JSON side (NuGet, Api, Project, …) for top-line statistics.</dd>
+		</dl>
+	</div>
+</div>
+<div id="assessment-summary"></div>
+<nav class="subtabs" id="assessment-subtabs" role="tablist" aria-label="Assessment views" hidden>
+<button type="button" class="subtab" id="assessment-tab-summary" data-subtab="summary" role="tab" aria-controls="assessment-summary-md" aria-selected="true" tabindex="0">Summary</button>
+<button type="button" class="subtab" id="assessment-tab-issues" data-subtab="issues" role="tab" aria-controls="assessment-issues" aria-selected="false" tabindex="-1">Issues</button>
+<button type="button" class="subtab" id="assessment-tab-features" data-subtab="features" role="tab" aria-controls="assessment-features" aria-selected="false" tabindex="-1">Features</button>
+</nav>
+<div id="assessment-summary-md" class="subtab-panel md" role="tabpanel" aria-labelledby="assessment-tab-summary" data-subtab="summary"></div>
+<div id="assessment-issues" class="subtab-panel" role="tabpanel" aria-labelledby="assessment-tab-issues" data-subtab="issues" hidden></div>
+<div id="assessment-features" class="subtab-panel" role="tabpanel" aria-labelledby="assessment-tab-features" data-subtab="features" hidden></div>
+<div id="assessment-content" class="empty">No assessment.json found.</div>
+</section>
+<section class="panel" id="panel-options" data-panel="options" hidden>
+	<h2>Options</h2>
+	<p class="panel-help" id="options-empty-hint" hidden>
+		No active scenario detected — open one to view and adjust its options.
+	</p>
+	<div id="options-sections"></div>
+</section>
+<section class="panel" id="panel-diagnostics" data-panel="diagnostics" hidden>
+<h2>Diagnostics</h2>
+<div id="diagnostics-content" class="empty">Loading…</div>
+</section>
+</main>
+<footer class="footer" id="footer">
+	<div class="footer-status" id="status">connecting…</div>
+	<div class="footer-actions">
+		<button type="button" class="topbar-icon" id="open-diagnostics" title="Diagnostics" aria-label="Open Diagnostics">
+			<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+				<path fill="currentColor" d="M8 2a6 6 0 100 12 6 6 0 000-12zm0 1.5a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 1.5a.75.75 0 01.75.75v3a.75.75 0 11-1.5 0v-3A.75.75 0 018 5zm0 6a.9.9 0 110 1.8.9.9 0 010-1.8z"/>
+			</svg>
+		</button>
+		<button type="button" class="refresh" id="refresh" title="Refresh" aria-label="Refresh dashboard">↻</button>
+	</div>
+</footer>
+<div class="diagnostics-overlay" id="diagnostics-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="diagnostics-overlay-title">
+	<div class="diagnostics-overlay-backdrop" id="diagnostics-overlay-backdrop"></div>
+	<div class="diagnostics-overlay-card" role="document">
+		<header class="diagnostics-overlay-head">
+			<h2 id="diagnostics-overlay-title">Diagnostics</h2>
+			<button type="button" class="diagnostics-overlay-close" id="diagnostics-overlay-close" title="Close" aria-label="Close diagnostics">×</button>
+		</header>
+		<div id="diagnostics-overlay-body"></div>
+	</div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script type="module">
+// Copyright (c) Microsoft Corporation. All rights reserved.
+
+const statusEl = document.getElementById("status");
+const refreshBtn = document.getElementById("refresh");
+
+const panels = Array.from(document.querySelectorAll("section.panel"));
+const tabs = Array.from(document.querySelectorAll(".tab"));
+
+function setPanel(panel) {
+	// Diagnostics is no longer a tab — clicking it (or relaying via SSE/MCP)
+	// opens the overlay and leaves the underlying tab selection unchanged.
+	if (panel === "diagnostics") {
+		openDiagnosticsOverlay();
+		return;
+	}
+	for (const tab of tabs) {
+		tab.setAttribute("aria-selected", tab.dataset.panel === panel ? "true" : "false");
+	}
+	for (const section of panels) {
+		// The diagnostics panel still exists in the DOM (hidden) so the overlay
+		// can clone its rendered content. Skip it during tab routing.
+		if (section.dataset.panel === "diagnostics") {
+			section.hidden = true;
+			continue;
+		}
+		section.hidden = section.dataset.panel !== panel;
+	}
+}
+
+const initialPanel = new URLSearchParams(window.location.search).get("panel") ?? "overview";
+const instanceId = new URLSearchParams(window.location.search).get("instanceId") ?? "default";
+setPanel(initialPanel);
+
+for (const tab of tabs) {
+	tab.addEventListener("click", () => setPanel(tab.dataset.panel));
+}
+
+// Sub-tabs (currently only Assessment: Issues / Features).
+// Derives the panel-id prefix from the container's id (assessment-subtabs →
+// assessment) so this generalizes to future sub-tab groups.
+function setSubTab(container, subtab) {
+	const prefix = container.id.replace(/-subtabs$/, "");
+	const buttons = container.querySelectorAll(".subtab");
+	let activeBtn = null;
+	for (const b of buttons) {
+		const isActive = b.dataset.subtab === subtab;
+		b.setAttribute("aria-selected", isActive ? "true" : "false");
+		b.setAttribute("tabindex", isActive ? "0" : "-1");
+		if (isActive) activeBtn = b;
+	}
+	const root = container.parentElement;
+	const panels = root.querySelectorAll(".subtab-panel");
+	for (const p of panels) {
+		// Match by data-subtab attribute when present, otherwise fall back to
+		// the id convention <prefix>-<subtab>. The data-subtab path lets a
+		// container reuse panel ids that collide with non-panel descendants
+		// (e.g., #projects-table is already the <table> element).
+		const key = p.dataset.subtab ?? p.id.replace(new RegExp(`^${prefix}-`), "");
+		p.hidden = key !== subtab;
+	}
+	return activeBtn;
+}
+
+function _getActiveSubTab(container) {
+	const selected = container.querySelector('.subtab[aria-selected="true"]');
+	return selected?.dataset.subtab ?? container.querySelector(".subtab")?.dataset.subtab ?? null;
+}
+
+const subtabContainers = [...document.querySelectorAll(".subtabs[role='tablist']")];
+for (const container of subtabContainers) {
+	const buttons = [...container.querySelectorAll(".subtab")];
+	for (const btn of buttons) {
+		btn.addEventListener("click", () => {
+			const next = setSubTab(container, btn.dataset.subtab);
+			next?.focus();
+			// If the Projects > Graph sub-tab just became visible, re-run the
+			// (possibly deferred) graph render using the last cached args.
+			if (btn.dataset.subtab === "graph" && _lastGraphArgs) {
+				const { state, joined, target } = _lastGraphArgs;
+				_lastGraphArgs = null;
+				renderProjectsGraph(state, joined, target);
+			}
+		});
+		btn.addEventListener("keydown", (event) => {
+			let target = null;
+			if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+				event.preventDefault();
+				const i = buttons.indexOf(btn);
+				target = buttons[(i + 1) % buttons.length];
+			} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+				event.preventDefault();
+				const i = buttons.indexOf(btn);
+				target = buttons[(i - 1 + buttons.length) % buttons.length];
+			} else if (event.key === "Home") {
+				event.preventDefault();
+				target = buttons[0];
+			} else if (event.key === "End") {
+				event.preventDefault();
+				target = buttons[buttons.length - 1];
+			}
+			if (target) {
+				setSubTab(container, target.dataset.subtab);
+				target.focus();
+			}
+		});
+	}
+}
+
+refreshBtn.addEventListener("click", () => {
+	fetch(`./api/state?instanceId=${encodeURIComponent(instanceId)}`)
+		.then((r) => r.json())
+		.then(render)
+		.catch((err) => (statusEl.textContent = `error: ${err.message}`));
+});
+
+// Toast helper for action feedback.
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+function showToast(message, kind = "info") {
+	toastEl.textContent = message;
+	toastEl.dataset.kind = kind;
+	toastEl.hidden = false;
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => {
+		toastEl.hidden = true;
+	}, 4000);
+}
+
+// POST an action through the canvas's /action endpoint. Returns { result, state }.
+// On success, immediately re-render with the returned snapshot so the UI doesn't
+// have to wait for the SSE push to catch up.
+//
+// IMPORTANT: We preserve/restore `innerHTML` rather than `textContent`. Icon-only
+// buttons (e.g., the Assessment share button) have an SVG child — setting
+// `textContent = "Working…"` destroys it, and restoring `textContent = ""`
+// leaves the button permanently blank. innerHTML round-trips both text labels
+// and SVG content safely. (For label-only buttons we still want the visible
+// "Working…" affordance, so when the button has any text content we substitute
+// a text node; for icon-only we just toggle aria-busy.)
+async function postAction(actionName, input, { button } = {}) {
+	let savedHTML;
+	const isIconOnly = button && !button.textContent?.trim();
+	if (button) {
+		savedHTML = button.innerHTML;
+		button.disabled = true;
+		button.setAttribute("aria-busy", "true");
+		if (!isIconOnly) {
+			button.textContent = "Working…";
+		}
+	}
+	try {
+		const r = await fetch("./action", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ instanceId, actionName, input }),
+		});
+		const body = await r.json();
+		if (!r.ok || body.error) {
+			throw new Error(body.error ?? `HTTP ${r.status}`);
+		}
+		if (body.state) render(body.state);
+		if (body.result?.status) {
+			showToast(body.result.status, "info");
+		}
+		return body.result;
+	} catch (err) {
+		showToast(`Failed: ${err.message ?? err}`, "error");
+		throw err;
+	} finally {
+		if (button) {
+			button.disabled = false;
+			button.removeAttribute("aria-busy");
+			if (!isIconOnly && savedHTML !== undefined) {
+				button.innerHTML = savedHTML;
+			}
+		}
+	}
+}
+
+// Wire up declarative action buttons (data-action attributes in the markup).
+// Covers both .action-btn (visible labels) and .icon-action (icon-only).
+for (const btn of document.querySelectorAll("[data-action]")) {
+	btn.addEventListener("click", () => {
+		const action = btn.dataset.action;
+		const input = {};
+		if (btn.dataset.mode) input.mode = btn.dataset.mode;
+		postAction(action, Object.keys(input).length ? input : undefined, { button: btn });
+	});
+}
+
+// Delegated handler for dynamically-rendered Explain buttons in the
+// Dependencies tab (they get rebuilt on every render so we can't attach
+// listeners directly).
+document.addEventListener("click", (event) => {
+	const btn = event.target.closest?.(".explain-btn");
+	if (!btn || !btn.dataset.package) return;
+	postAction("explain_dependency", { packageName: btn.dataset.package }, { button: btn });
+});
+
+// Mode tracking: localStorage-backed, keyed by scenarioId. The canvas can't
+// authoritatively *know* which mode the agent is operating in (it's a
+// conversation property, not stored anywhere on disk), but we can remember
+// the user's last explicit pick and surface that as "current mode" so the UI
+// only shows the relevant switch-to-the-other button.
+const MODE_KEY_PREFIX = "modernize-dashboard:mode:";
+function loadMode(scenarioId) {
+	if (!scenarioId) return null;
+	try {
+		const v = localStorage.getItem(MODE_KEY_PREFIX + scenarioId);
+		return v === "guided" || v === "automatic" ? v : null;
+	} catch {
+		return null;
+	}
+}
+function saveMode(scenarioId, mode) {
+	if (!scenarioId) return;
+	try {
+		localStorage.setItem(MODE_KEY_PREFIX + scenarioId, mode);
+	} catch {
+		// ignore
+	}
+}
+
+let activeScenarioIdForMode = null;
+
+// ---- Scenario-instructions parser (mirrors lib/scenario-instructions.mjs) ----
+const _SI_HEADER_RE = /^(##{1,2})\s+(.+?)\s*$/;
+const _SI_SETTING_BOLD_RE = /^\s*-\s+\*\*([^*]+?)\*\*\s*[:：]\s*(.*\S)?\s*$/;
+const _SI_SETTING_PLAIN_RE = /^\s*-\s+([A-Za-z][\w \-/]*?)\s*[:：]\s*(.*\S)?\s*$/;
+const _SI_PLAIN_BULLET_RE = /^\s*-\s+(.*\S)\s*$/;
+
+function _stripInlineMarkdown(s) {
+	if (typeof s !== "string") return "";
+	return s
+		.replace(/\*\*([^*]+?)\*\*/g, "$1")
+		.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, "$1$2")
+		.replace(/`([^`]+?)`/g, "$1")
+		.replace(/\\([\\`*_{}\[\]()#+\-.!])/g, "$1");
+}
+
+function _parseScenarioInstructions(content) {
+	if (typeof content !== "string" || !content.trim()) return [];
+	const lines = content.replace(/\r\n/g, "\n").split("\n");
+	const startIdx = /^#\s+.+$/.test(lines[0] ?? "") ? 1 : 0;
+	const sections = [];
+	let current = null;
+	for (let i = startIdx; i < lines.length; i++) {
+		const line = lines[i];
+		const headerMatch = _SI_HEADER_RE.exec(line);
+		if (headerMatch) {
+			current = { level: headerMatch[1].length, title: _stripInlineMarkdown(headerMatch[2]), items: [] };
+			sections.push(current);
+			continue;
+		}
+		if (!current) {
+			if (line.trim() === "") continue;
+			current = { level: 2, title: "", items: [] };
+			sections.push(current);
+		}
+		const settingMatch = _SI_SETTING_BOLD_RE.exec(line) ?? _SI_SETTING_PLAIN_RE.exec(line);
+		if (settingMatch) {
+			current.items.push({
+				kind: "setting",
+				label: settingMatch[1].trim(),
+				value: _stripInlineMarkdown((settingMatch[2] ?? "").trim()),
+				raw: line.trim(),
+			});
+			continue;
+		}
+		const bulletMatch = _SI_PLAIN_BULLET_RE.exec(line);
+		if (bulletMatch) {
+			current.items.push({ kind: "text", text: _stripInlineMarkdown(bulletMatch[1].trim()) });
+			continue;
+		}
+		if (line.trim() !== "") {
+			current.items.push({ kind: "text", text: _stripInlineMarkdown(line.trim()) });
+		}
+	}
+	return sections;
+}
+
+function _findSetting(sections, label) {
+	if (!Array.isArray(sections) || typeof label !== "string") return null;
+	const target = label.toLowerCase();
+	for (const section of sections) {
+		for (const item of section.items ?? []) {
+			if (item.kind === "setting" && item.label.toLowerCase() === target) {
+				return item.value || null;
+			}
+		}
+	}
+	return null;
+}
+
+// Normalize "Automatic", "automatic", "Auto" → "automatic"; "Guided" → "guided".
+function _normalizeMode(value) {
+	if (typeof value !== "string") return null;
+	const v = value.toLowerCase().trim();
+	if (v.startsWith("auto")) return "automatic";
+	if (v.startsWith("guid")) return "guided";
+	return null;
+}
+
+// Settings that have a "Change" action attached. Each entry maps a setting
+// label (case-insensitive) to a per-setting action factory invoked with the
+// row context (current value + active scenario id + effective normalized
+// runtime value). Returning `null` from the factory hides the button (e.g.,
+// when the current value can't be safely toggled).
+function _settingAction(label, ctx) {
+	const l = (label ?? "").toLowerCase();
+	if (l === "flow mode") {
+		const current = ctx?.effectiveMode;
+		// Hide the toggle when the current value is something we don't
+		// recognize (e.g., "Hybrid", "Manual", or any future mode). Sending
+		// `switch_mode` blind would silently push the user into automatic.
+		if (current !== "automatic" && current !== "guided") {
+			return null;
+		}
+		const next = current === "automatic" ? "guided" : "automatic";
+		return {
+			label: `Switch to ${next === "guided" ? "Guided" : "Automatic"}`,
+			handler: async () => {
+				try {
+					await postAction("switch_mode", { mode: next });
+					// Remember the user's choice locally so the row reflects
+					// the new mode immediately, even before the markdown source
+					// updates on the next agent turn.
+					if (ctx?.scenarioId) {
+						saveMode(ctx.scenarioId, next);
+					}
+					// Force a re-render so the row picks up the override.
+					if (typeof lastState !== "undefined" && lastState) {
+						renderOptions(lastState);
+					}
+				} catch {
+					// postAction surfaces its own error toast.
+				}
+			},
+		};
+	}
+	return null;
+}
+
+function renderOptions(state) {
+	activeScenarioIdForMode = state.activeScenarioId ?? null;
+	const emptyHint = document.getElementById("options-empty-hint");
+	const root = document.getElementById("options-sections");
+	if (!root) return;
+	root.innerHTML = "";
+
+	if (!state.activeScenarioId) {
+		emptyHint.hidden = false;
+		return;
+	}
+	emptyHint.hidden = true;
+
+	const md = state.scenarioInstructions;
+	const sections = md && typeof md.content === "string" ? _parseScenarioInstructions(md.content) : [];
+
+	// Resolve the effective Flow Mode. Order of precedence:
+	//   1. Markdown is the source of truth when present and recognized.
+	//   2. Local override (from a recent Switch click) when markdown is
+	//      missing or unknown — covers the latency before the agent rewrites
+	//      scenario-instructions.md.
+	//   3. null otherwise (button hides; user has no current mode to toggle).
+	const modeFromMd = _normalizeMode(_findSetting(sections, "Flow Mode"));
+	const storedMode = state.activeScenarioId ? loadMode(state.activeScenarioId) : null;
+	const effectiveMode = modeFromMd ?? storedMode ?? null;
+	// Keep storage in sync with markdown when the file has caught up so the
+	// override doesn't linger forever. Only writes on actual change to avoid
+	// noisy storage thrash on every SSE re-render.
+	if (modeFromMd && state.activeScenarioId && modeFromMd !== storedMode) {
+		saveMode(state.activeScenarioId, modeFromMd);
+	}
+
+	if (sections.length === 0) {
+		const empty = document.createElement("p");
+		empty.className = "panel-help";
+		empty.textContent = "No scenario-instructions.md found in the active scenario folder.";
+		root.append(empty);
+		return;
+	}
+
+	for (const section of sections) {
+		const card = document.createElement("section");
+		card.className = "option-card";
+		if (section.title) {
+			const h3 = document.createElement("h3");
+			h3.textContent = section.title;
+			card.append(h3);
+		}
+
+		const settings = section.items.filter((i) => i.kind === "setting");
+		const texts = section.items.filter((i) => i.kind === "text");
+
+		// Render settings as a key/value table-like list, each with an optional action.
+		for (const item of settings) {
+			const row = document.createElement("div");
+			row.className = "setting-row";
+			const label = document.createElement("div");
+			label.className = "setting-label";
+			label.textContent = item.label;
+			const value = document.createElement("div");
+			value.className = "setting-value";
+			// For Flow Mode specifically, prefer the effective runtime value
+			// over the literal markdown text so the row reflects a pending
+			// Switch click before the markdown source catches up.
+			const isFlowMode = (item.label ?? "").toLowerCase() === "flow mode";
+			const displayValue = isFlowMode && effectiveMode
+				? (effectiveMode === "guided" ? "Guided" : "Automatic")
+				: (item.value || "—");
+			value.textContent = displayValue;
+			row.append(label, value);
+			const action = _settingAction(item.label, {
+				value: item.value,
+				scenarioId: state.activeScenarioId,
+				effectiveMode,
+			});
+			if (action) {
+				const actions = document.createElement("div");
+				actions.className = "setting-actions";
+				const btn = document.createElement("button");
+				btn.type = "button";
+				btn.className = "action-btn setting-action-btn";
+				btn.textContent = action.label;
+				btn.addEventListener("click", () => action.handler());
+				actions.append(btn);
+				row.append(actions);
+			}
+			card.append(row);
+		}
+
+		// Render plain text bullets as a muted notes list under the settings.
+		if (texts.length > 0) {
+			const notes = document.createElement("ul");
+			notes.className = "setting-notes";
+			for (const t of texts) {
+				const li = document.createElement("li");
+				li.textContent = t.text;
+				notes.append(li);
+			}
+			card.append(notes);
+		}
+
+		root.append(card);
+	}
+}
+
+// ---- Scenario tab helpers (mirrors lib/scenario.mjs; tested in unit tests) ----
+function _detectSourceFramework(projects) {
+	if (!Array.isArray(projects) || projects.length === 0) return null;
+	const counts = new Map();
+	for (const p of projects) {
+		for (const tfm of p.targetFrameworks ?? []) {
+			counts.set(tfm, (counts.get(tfm) ?? 0) + 1);
+		}
+	}
+	if (counts.size === 0) return null;
+	let best = null;
+	let bestCount = -1;
+	for (const [tfm, n] of counts) {
+		if (n > bestCount) {
+			best = tfm;
+			bestCount = n;
+		}
+	}
+	return best;
+}
+function _scenarioTargetFramework(sc) {
+	return sc?.properties?.UpgradeTargetFramework ?? sc?.properties?.upgradeTargetFramework ?? null;
+}
+// Returns true when *every* project's frameworks include the target. Uses the
+// same suffixed/base equivalence as classifyStatus: net10.0-windows counts as
+// net10.0, but two different platform suffixes do NOT count as equivalent.
+function _allProjectsOnTarget(projects, target) {
+	if (!Array.isArray(projects) || projects.length === 0) return false;
+	if (typeof target !== "string" || !target) return false;
+	const tLc = target.toLowerCase();
+	const tDash = tLc.indexOf("-");
+	const tBase = tDash < 0 ? tLc : tLc.slice(0, tDash);
+	const tHasSuffix = tDash >= 0;
+	return projects.every((p) => {
+		const list = Array.isArray(p?.targetFrameworks) ? p.targetFrameworks : [];
+		if (list.length === 0) return false;
+		return list.some((f) => {
+			if (typeof f !== "string") return false;
+			const fLc = f.toLowerCase();
+			if (fLc === tLc) return true;
+			const fDash = fLc.indexOf("-");
+			const fHasSuffix = fDash >= 0;
+			if (tHasSuffix === fHasSuffix) return false;
+			const fBase = fDash < 0 ? fLc : fLc.slice(0, fDash);
+			return fBase === tBase;
+		});
+	});
+}
+function _scenarioPhases(sc) {
+	const states = sc?.properties?.taskStates ?? sc?.properties?.TaskStates ?? null;
+	if (!states || typeof states !== "object") return [];
+	return Object.entries(states).map(([id, state]) => ({
+		id,
+		state: typeof state === "string" ? state : "NotStarted",
+		label: _humanizePhaseId(id),
+	}));
+}
+function _humanizePhaseId(id) {
+	if (typeof id !== "string") return "";
+	const stripped = id.replace(/^\d+(?:\.\d+)*-?/, "");
+	const words = stripped.split(/[-_\s]+/).filter(Boolean);
+	return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+function _phaseStateClass(state) {
+	switch (state) {
+		case "Complete":
+		case "Completed":
+			return "complete";
+		case "InProgress":
+		case "In Progress":
+		case "InProgres":
+			return "in-progress";
+		case "Failed":
+			return "failed";
+		case "Skipped":
+			return "skipped";
+		default:
+			return "not-started";
+	}
+}
+function _phaseStateGlyph(state) {
+	switch (_phaseStateClass(state)) {
+		case "complete": return "✓";
+		case "in-progress": return "●";
+		case "failed": return "✕";
+		case "skipped": return "⊘";
+		default: return "○";
+	}
+}
+
+// Expose scenario helpers on window for the inline-helper-sync E2E test.
+// Tests use them to verify the inline copies stay in sync with lib/scenario.mjs.
+// Safe in production — adds five lookup properties to a global the iframe owns.
+window.__modernizeDashboard = {
+	_detectSourceFramework,
+	_scenarioTargetFramework,
+	_scenarioPhases,
+	_humanizePhaseId,
+	_phaseStateClass,
+	_phaseStateGlyph,
+	_joinProjectsWithAssessment,
+	_computeCompatibilityBreakdown,
+	_computeDepsMetrics,
+	_categorizeCompatibility,
+	_aggregateFeatures,
+	_topCategories,
+	_buildScenarioCard,
+	_countPhases,
+	_sortScenariosForPicker,
+	_flattenIncidents,
+	_incidentMatchesSearch,
+	_groupIncidents,
+	_detectSourceFromProjects,
+	_computeTaskSummary,
+	_pickAssessmentSummary,
+	_pickDepsSummary,
+	_buildOverview,
+	_buildProjectsGraph,
+	_layoutGraph,
+	_gClassifyStatus,
+	renderMarkdown,
+};
+
+function renderScenario(state) {
+	const hero = document.getElementById("scenario-active-hero");
+	const list = document.getElementById("scenario-content");
+	const subtabs = document.getElementById("scenario-subtabs");
+	const scenarios = Array.isArray(state.scenarios) ? state.scenarios : [];
+
+	// Show sub-tabs whenever there is at least one scenario; otherwise hide.
+	if (scenarios.length > 0) {
+		subtabs.hidden = false;
+		// Default to the Active sub-tab if nothing previously selected.
+		setSubTab(subtabs, _getActiveSubTab(subtabs) ?? "active");
+	} else {
+		subtabs.hidden = true;
+	}
+
+	// Always render the picker card grid so switching tabs is instant.
+	renderScenarioPicker(state);
+
+	const active = scenarios.find((s) => s.id === state.activeScenarioId) ?? null;
+
+	if (!active) {
+		hero.hidden = true;
+		list.className = "empty";
+		list.innerHTML = "";
+		list.textContent = scenarios.length === 0
+			? "No scenarios detected."
+			: "No active scenario detected. Choose one from All scenarios.";
+		return;
+	}
+
+	hero.hidden = false;
+
+	// Banner: source → target framework, OR "already on target" when matched.
+	const banner = document.getElementById("scenario-framework-banner");
+	const source = _detectSourceFramework(state.projects);
+	const target = _scenarioTargetFramework(active);
+	const allOnTarget = _allProjectsOnTarget(state.projects, target);
+	banner.innerHTML = "";
+	if (source || target) {
+		banner.style.display = "";
+		const idLabel = document.createElement("div");
+		idLabel.className = "scenario-id-label";
+		idLabel.textContent = active.id;
+		banner.append(idLabel);
+		if (allOnTarget && target) {
+			const ok = document.createElement("div");
+			ok.className = "framework-arrow framework-on-target";
+			const check = document.createElement("span");
+			check.className = "framework-check";
+			check.textContent = "✓";
+			check.setAttribute("aria-hidden", "true");
+			const txt = document.createElement("span");
+			txt.className = "framework-pill target";
+			txt.textContent = `All projects on ${target}`;
+			ok.append(check, txt);
+			banner.append(ok);
+		} else {
+			const arrow = document.createElement("div");
+			arrow.className = "framework-arrow";
+			const src = document.createElement("span");
+			src.className = "framework-pill source";
+			src.textContent = source ?? "?";
+			const sep = document.createElement("span");
+			sep.className = "framework-sep";
+			sep.textContent = "→";
+			const tgt = document.createElement("span");
+			tgt.className = "framework-pill target";
+			tgt.textContent = target ?? "?";
+			arrow.append(src, sep, tgt);
+			banner.append(arrow);
+		}
+	} else {
+		banner.style.display = "none";
+	}
+
+	// Phase stepper. Each phase pill is clickable: jumps to Tasks tab.
+	const stepper = document.getElementById("scenario-phase-stepper");
+	stepper.innerHTML = "";
+	const phases = _scenarioPhases(active);
+	if (phases.length === 0) {
+		stepper.style.display = "none";
+	} else {
+		stepper.style.display = "";
+		phases.forEach((phase, i) => {
+			const item = document.createElement("button");
+			item.type = "button";
+			item.className = `phase phase-${_phaseStateClass(phase.state)} phase-clickable`;
+			item.setAttribute("aria-label", `${phase.label}: ${phase.state}. Click to open Tasks tab.`);
+			item.title = "Open Tasks tab";
+			item.addEventListener("click", () => setPanel("tasks"));
+			const glyph = document.createElement("span");
+			glyph.className = "phase-glyph";
+			glyph.textContent = _phaseStateGlyph(phase.state);
+			glyph.setAttribute("aria-hidden", "true");
+			const label = document.createElement("span");
+			label.className = "phase-label";
+			label.textContent = phase.label;
+			const num = document.createElement("span");
+			num.className = "phase-num";
+			num.textContent = String(i + 1);
+			item.append(num, glyph, label);
+			stepper.append(item);
+			if (i < phases.length - 1) {
+				const connector = document.createElement("span");
+				connector.className = "phase-connector";
+				connector.setAttribute("aria-hidden", "true");
+				stepper.append(connector);
+			}
+		});
+	}
+
+	// Markdown description.
+	const desc = document.getElementById("scenario-description");
+	desc.innerHTML = "";
+	if (active.description && typeof active.description === "string") {
+		desc.innerHTML = renderMarkdown(active.description);
+		desc.style.display = "";
+	} else {
+		desc.style.display = "none";
+	}
+
+	// Active hero is rendered. The "other scenarios" list is now superseded
+	// by the All scenarios sub-tab (renderScenarioPicker called at the top).
+	list.className = "";
+	list.innerHTML = "";
+}
+
+// ---- Scenario picker helpers (mirrors lib/scenario-picker.mjs) ----
+function _countPhases(phases) {
+	const counts = { total: 0, complete: 0, inProgress: 0, failed: 0, skipped: 0, notStarted: 0 };
+	if (!Array.isArray(phases)) return counts;
+	for (const p of phases) {
+		if (!p || typeof p !== "object") continue;
+		counts.total++;
+		const c = _phaseStateClass(p.state);
+		switch (c) {
+			case "complete": counts.complete++; break;
+			case "in-progress": counts.inProgress++; break;
+			case "failed": counts.failed++; break;
+			case "skipped": counts.skipped++; break;
+			default: counts.notStarted++; break;
+		}
+	}
+	return counts;
+}
+function _buildScenarioCard(scenario, activeScenarioId) {
+	if (!scenario || typeof scenario !== "object") return null;
+	const phases = _scenarioPhases(scenario);
+	const counts = _countPhases(phases);
+	let status;
+	if (counts.total === 0) status = "Not started";
+	else if (counts.complete === counts.total) status = `Complete (${counts.complete} / ${counts.total})`;
+	else if (counts.failed > 0) status = `${counts.failed} failed / ${counts.total}`;
+	else if (counts.inProgress > 0) status = `${counts.complete} / ${counts.total} complete · ${counts.inProgress} in progress`;
+	else status = `${counts.complete} / ${counts.total} complete`;
+	return {
+		id: scenario.id,
+		isActive: scenario.id === activeScenarioId,
+		target: _scenarioTargetFramework(scenario),
+		description: typeof scenario.description === "string" ? scenario.description : null,
+		phases,
+		status,
+		counts,
+		mtime: scenario.mtime ?? 0,
+	};
+}
+function _sortScenariosForPicker(scenarios, activeId) {
+	if (!Array.isArray(scenarios)) return [];
+	const clean = scenarios.filter((s) => s && typeof s === "object");
+	return clean.sort((a, b) => {
+		const aActive = a.id === activeId ? 1 : 0;
+		const bActive = b.id === activeId ? 1 : 0;
+		if (aActive !== bActive) return bActive - aActive;
+		return (b.mtime ?? 0) - (a.mtime ?? 0);
+	});
+}
+
+function renderScenarioPicker(state) {
+	const root = document.getElementById("scenario-picker");
+	root.innerHTML = "";
+	const scenarios = Array.isArray(state.scenarios) ? state.scenarios : [];
+	if (scenarios.length === 0) {
+		const empty = document.createElement("div");
+		empty.className = "empty";
+		empty.textContent = "No scenarios detected.";
+		root.append(empty);
+		return;
+	}
+	const sorted = _sortScenariosForPicker(scenarios, state.activeScenarioId);
+	const grid = document.createElement("div");
+	grid.className = "scenario-cards";
+	for (const sc of sorted) {
+		const card = _buildScenarioCard(sc, state.activeScenarioId);
+		if (!card) continue;
+		const el = document.createElement("article");
+		el.className = "scenario-card" + (card.isActive ? " is-active" : "");
+		el.setAttribute("aria-label", `Scenario ${card.id}${card.isActive ? " (active)" : ""}`);
+
+		const head = document.createElement("div");
+		head.className = "scenario-card-head";
+		const title = document.createElement("div");
+		title.className = "scenario-card-title";
+		title.textContent = card.id;
+		head.append(title);
+		if (card.isActive) {
+			const badge = document.createElement("span");
+			badge.className = "tag";
+			badge.textContent = "active";
+			head.append(badge);
+		}
+		el.append(head);
+
+		if (card.target) {
+			const tfm = document.createElement("div");
+			tfm.className = "scenario-card-target";
+			const arrow = document.createElement("span");
+			arrow.className = "framework-pill target";
+			arrow.textContent = card.target;
+			tfm.append(document.createTextNode("Target: "), arrow);
+			el.append(tfm);
+		}
+
+		const status = document.createElement("div");
+		status.className = "scenario-card-status";
+		status.textContent = card.status;
+		el.append(status);
+
+		// Mini phase indicator.
+		if (card.phases.length > 0) {
+			const minis = document.createElement("div");
+			minis.className = "scenario-card-phases";
+			for (const phase of card.phases) {
+				const dot = document.createElement("span");
+				dot.className = `scenario-phase-dot phase-${_phaseStateClass(phase.state)}`;
+				dot.title = `${phase.label}: ${phase.state}`;
+				dot.setAttribute("aria-hidden", "true");
+				minis.append(dot);
+			}
+			el.append(minis);
+		}
+
+		if (card.description) {
+			const desc = document.createElement("div");
+			desc.className = "scenario-card-description";
+			desc.textContent = card.description;
+			el.append(desc);
+		}
+
+		grid.append(el);
+	}
+	root.append(grid);
+}
+
+// ---- Projects join helper (mirrors lib/projects-join.mjs; tested in unit + sync tests) ----
+function _normalizeProjectPath(p) {
+	if (typeof p !== "string") return "";
+	return p.replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
+}
+function _projBasename(p) {
+	if (typeof p !== "string") return "";
+	const norm = p.replace(/\\/g, "/");
+	const slash = norm.lastIndexOf("/");
+	const base = slash < 0 ? norm : norm.slice(slash + 1);
+	return base.replace(/\.[a-z]+proj$/i, "");
+}
+function _projDirname(p) {
+	if (typeof p !== "string") return "";
+	const norm = p.replace(/\\/g, "/");
+	const slash = norm.lastIndexOf("/");
+	return slash < 0 ? "" : norm.slice(0, slash);
+}
+function _ruleInstanceCount(ap) {
+	if (!ap) return 0;
+	if (Array.isArray(ap.ruleInstances)) return ap.ruleInstances.length;
+	if (Array.isArray(ap.RuleInstances)) return ap.RuleInstances.length;
+	if (typeof ap.issues === "number") return ap.issues;
+	return 0;
+}
+function _tfmsEquivalent(a, b) {
+	if (typeof a !== "string" || typeof b !== "string") return false;
+	const la = a.toLowerCase();
+	const lb = b.toLowerCase();
+	if (la === lb) return true;
+	const aDash = la.indexOf("-");
+	const bDash = lb.indexOf("-");
+	if ((aDash >= 0) === (bDash >= 0)) return false;
+	const baseA = aDash < 0 ? la : la.slice(0, aDash);
+	const baseB = bDash < 0 ? lb : lb.slice(0, bDash);
+	return baseA === baseB;
+}
+function _joinProjectsWithAssessment(diskProjects, assessment, scenarioTarget) {
+	const disk = Array.isArray(diskProjects) ? diskProjects : [];
+	const diskByPath = new Map();
+	for (const p of disk) {
+		if (p && typeof p === "object" && typeof p.projectPath === "string") {
+			diskByPath.set(_normalizeProjectPath(p.projectPath), p);
+		}
+	}
+	const assessProjects = Array.isArray(assessment?.projects) ? assessment.projects : [];
+	const enriched = [];
+	for (const ap of assessProjects) {
+		if (!ap || typeof ap !== "object") continue;
+		const projectPath = typeof ap.path === "string" ? ap.path : "";
+		const diskMatch = diskByPath.get(_normalizeProjectPath(projectPath)) ?? null;
+		const frameworks = Array.isArray(ap.frameworks)
+			? ap.frameworks.filter((f) => typeof f === "string")
+			: (Array.isArray(diskMatch?.targetFrameworks) ? diskMatch.targetFrameworks : []);
+		const projectKind = typeof ap.projectKind === "string" ? ap.projectKind : null;
+		const onTarget = scenarioTarget != null && frameworks.some((f) => _tfmsEquivalent(f, scenarioTarget));
+		enriched.push({
+			name: (typeof ap.appName === "string" && ap.appName) ? ap.appName : _projBasename(projectPath),
+			projectPath,
+			directoryPath: _projDirname(projectPath),
+			targetFrameworks: frameworks,
+			kind: projectKind ?? diskMatch?.kind ?? null,
+			assessmentKind: projectKind,
+			isSdk: typeof ap.isSdk === "boolean" ? ap.isSdk : !!diskMatch?.isSdk,
+			incidents: _ruleInstanceCount(ap),
+			issues: typeof ap.issues === "number" ? ap.issues : 0,
+			storyPoints: typeof ap.storyPoints === "number" ? ap.storyPoints : 0,
+			startingProject: !!ap.startingProject,
+			onTarget,
+		});
+	}
+	const projectsCount = enriched.length;
+	const tfmUpgraded = enriched.filter((p) => p.onTarget).length;
+	const totalIncidents = enriched.reduce((sum, p) => sum + (p.incidents ?? 0), 0);
+	return { summary: { projectsCount, tfmUpgraded, totalIncidents }, projects: enriched };
+}
+
+// ---- Overview helpers (mirrors lib/overview.mjs) ----
+function _detectSourceFromProjects(projects) {
+	if (!Array.isArray(projects)) return null;
+	const counts = new Map();
+	for (const p of projects) {
+		const frameworks = Array.isArray(p?.targetFrameworks) ? p.targetFrameworks
+			: Array.isArray(p?.frameworks) ? p.frameworks
+			: [];
+		for (const f of frameworks) {
+			if (typeof f === "string" && f) counts.set(f, (counts.get(f) ?? 0) + 1);
+		}
+	}
+	let best = null; let bestCount = 0;
+	for (const [k, v] of counts) {
+		if (v > bestCount) { best = k; bestCount = v; }
+	}
+	return best;
+}
+
+function _computeTaskSummary(t) {
+	if (!t || !Array.isArray(t.tasks)) return null;
+	const counts = { Complete: 0, InProgress: 0, NotStarted: 0, Skipped: 0, Failed: 0 };
+	for (const task of t.tasks) {
+		const k = typeof task?.state === "string" ? task.state : "NotStarted";
+		counts[k] = (counts[k] ?? 0) + 1;
+	}
+	const total = t.tasks.length;
+	const pct = total ? Math.round((counts.Complete / total) * 100) : 0;
+	return { total, complete: counts.Complete, inProgress: counts.InProgress, failed: counts.Failed, pct };
+}
+
+function _pickAssessmentSummary(a) {
+	if (!a || !a.counts) return null;
+	return { projects: a.counts.projects ?? 0, incidents: a.counts.incidents ?? 0, mandatory: a.counts.mandatory ?? 0 };
+}
+
+function _pickDepsSummary(d) {
+	if (!d) return null;
+	const c = d.counts ?? {};
+	let incompatible = 0;
+	if (Array.isArray(d.packages)) {
+		for (const p of d.packages) {
+			if (p && p.isCompatible === false) incompatible++;
+		}
+	}
+	return {
+		packages: c.distinctPackages ?? (Array.isArray(d.packages) ? d.packages.length : 0),
+		drift: c.versionDrift ?? 0,
+		incompatible,
+		targetFramework: d.targetFramework ?? null,
+	};
+}
+
+function _buildOverview(state, activityLimit) {
+	const s = state ?? {};
+	const limit = Number.isFinite(activityLimit) ? Math.max(0, Math.trunc(activityLimit)) : 8;
+	const list = Array.isArray(s.scenarios) ? s.scenarios : [];
+	const active = list.find((sc) => sc && sc.id === s.activeScenarioId) ?? null;
+	let scenario = null;
+	if (active) {
+		const phases = _scenarioPhases(active);
+		const counts = _countPhases(phases);
+		const target = _scenarioTargetFramework(active);
+		scenario = {
+			id: active.id,
+			target,
+			source: _detectSourceFromProjects(s.projects),
+			phases,
+			counts,
+			description: typeof active.description === "string" ? active.description : null,
+			allOnTarget: _allProjectsOnTarget(s.projects, target),
+		};
+	}
+	return {
+		scenario,
+		tasks: _computeTaskSummary(s.tasks),
+		assessment: _pickAssessmentSummary(s.assessment),
+		dependencies: _pickDepsSummary(s.dependencies),
+		activity: Array.isArray(s.activity) ? s.activity.slice(0, limit) : [],
+		activitySources: Array.isArray(s.activitySources) ? s.activitySources : [],
+	};
+}
+
+function renderHeaderProgress(state) {
+	const root = document.getElementById("header-progress");
+	const fill = document.getElementById("header-progress-fill");
+	const label = document.getElementById("header-progress-label");
+	const tasks = _computeTaskSummary(state.tasks);
+	if (!tasks || tasks.total === 0) {
+		root.hidden = true;
+		return;
+	}
+	root.hidden = false;
+	fill.style.width = `${tasks.pct}%`;
+	const parts = [`${tasks.complete}/${tasks.total} tasks (${tasks.pct}%)`];
+	if (tasks.inProgress > 0) parts.push(`${tasks.inProgress} in progress`);
+	if (tasks.failed > 0) parts.push(`${tasks.failed} failed`);
+	label.textContent = parts.join(" · ");
+	root.setAttribute("aria-label",
+		`Upgrade progress: ${tasks.complete} of ${tasks.total} tasks complete. Click to open Scenario tab.`);
+}
+
+const headerProgressEl = document.getElementById("header-progress");
+if (headerProgressEl) {
+	headerProgressEl.addEventListener("click", () => {
+		setPanel("scenario");
+		document.getElementById("panel-scenario")?.scrollIntoView({ behavior: "smooth", block: "start" });
+	});
+}
+
+// Diagnostics overlay (was a tab — now opens from a header icon).
+// Uses `var` for the opener tracker so initial bootstrap (setPanel("diagnostics")
+// from a `?panel=diagnostics` URL) can call openDiagnosticsOverlay before this
+// block's `let` would have initialized.
+var _diagnosticsOpenerEl = null;
+
+function openDiagnosticsOverlay() {
+	const overlay = document.getElementById("diagnostics-overlay");
+	const body = document.getElementById("diagnostics-overlay-body");
+	const panel = document.getElementById("panel-diagnostics");
+	if (!overlay || !body) return;
+	const wasOpen = !overlay.hidden;
+	if (!wasOpen) {
+		// Remember who triggered the overlay so we can return focus on close.
+		_diagnosticsOpenerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		// Lock background scroll while modal is open.
+		document.body.style.overflow = "hidden";
+	}
+	body.innerHTML = "";
+	if (panel) {
+		const clone = panel.cloneNode(true);
+		const h2 = clone.querySelector("h2");
+		if (h2) h2.remove();
+		clone.removeAttribute("hidden");
+		clone.removeAttribute("id");
+		body.append(clone);
+	}
+	overlay.hidden = false;
+	if (!wasOpen) {
+		// Move focus into the dialog so the ARIA modal contract holds.
+		document.getElementById("diagnostics-overlay-close")?.focus();
+	}
+}
+
+function closeDiagnosticsOverlay() {
+	const overlay = document.getElementById("diagnostics-overlay");
+	if (!overlay || overlay.hidden) return;
+	overlay.hidden = true;
+	document.body.style.overflow = "";
+	// Restore focus to whatever was focused before the overlay opened.
+	if (_diagnosticsOpenerEl && document.contains(_diagnosticsOpenerEl)) {
+		_diagnosticsOpenerEl.focus();
+	} else {
+		document.getElementById("open-diagnostics")?.focus();
+	}
+	_diagnosticsOpenerEl = null;
+}
+
+function isDiagnosticsOverlayOpen() {
+	const overlay = document.getElementById("diagnostics-overlay");
+	return !!overlay && !overlay.hidden;
+}
+
+// Focus trap: keep Tab navigation inside the dialog while it's open.
+function _focusableInOverlay(overlay) {
+	return Array.from(overlay.querySelectorAll(
+		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+	)).filter((el) => !el.hidden && el.offsetParent !== null);
+}
+
+document.getElementById("open-diagnostics")?.addEventListener("click", openDiagnosticsOverlay);
+
+// Assessment glossary popover (click outside / Esc / close button to dismiss).
+// Manages focus: on open, moves focus into the popover (the close button) so
+// keyboard/AT users land inside the role="dialog" container. On close, returns
+// focus to the trigger so the user doesn't lose their place in the page.
+function toggleGlossaryPopover(force) {
+	const pop = document.getElementById("assessment-glossary-popover");
+	const btn = document.getElementById("assessment-glossary-btn");
+	if (!pop || !btn) return;
+	const open = typeof force === "boolean" ? force : pop.hidden;
+	pop.hidden = !open;
+	btn.setAttribute("aria-expanded", open ? "true" : "false");
+	if (open) {
+		document.getElementById("assessment-glossary-popover-close")?.focus();
+	} else {
+		// Only restore focus if the focus is currently inside the popover —
+		// otherwise we'd steal focus from wherever the user moved next.
+		if (pop.contains(document.activeElement)) {
+			btn.focus();
+		}
+	}
+}
+document.getElementById("assessment-glossary-btn")?.addEventListener("click", (e) => {
+	e.stopPropagation();
+	toggleGlossaryPopover();
+});
+document.getElementById("assessment-glossary-popover-close")?.addEventListener("click", () => toggleGlossaryPopover(false));
+document.addEventListener("click", (e) => {
+	const pop = document.getElementById("assessment-glossary-popover");
+	if (!pop || pop.hidden) return;
+	if (e.target instanceof Element && (pop.contains(e.target) || e.target.closest("#assessment-glossary-btn"))) return;
+	toggleGlossaryPopover(false);
+});
+document.addEventListener("keydown", (e) => {
+	if (e.key !== "Escape") return;
+	const pop = document.getElementById("assessment-glossary-popover");
+	if (pop && !pop.hidden) toggleGlossaryPopover(false);
+});
+document.getElementById("diagnostics-overlay-close")?.addEventListener("click", closeDiagnosticsOverlay);
+document.getElementById("diagnostics-overlay-backdrop")?.addEventListener("click", closeDiagnosticsOverlay);
+document.addEventListener("keydown", (e) => {
+	if (e.key === "Escape" && isDiagnosticsOverlayOpen()) {
+		e.preventDefault();
+		closeDiagnosticsOverlay();
+		return;
+	}
+	if (e.key === "Tab" && isDiagnosticsOverlayOpen()) {
+		const overlay = document.getElementById("diagnostics-overlay");
+		if (!overlay) return;
+		const focusables = _focusableInOverlay(overlay);
+		if (focusables.length === 0) return;
+		const first = focusables[0];
+		const last = focusables[focusables.length - 1];
+		const active = document.activeElement;
+		if (e.shiftKey && active === first) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && active === last) {
+			e.preventDefault();
+			first.focus();
+		} else if (!overlay.contains(active)) {
+			// Focus escaped the dialog (e.g., dynamic content swap) — pull it back in.
+			e.preventDefault();
+			first.focus();
+		}
+	}
+});
+
+function renderOverview(state) {
+	const ov = _buildOverview(state, 8);
+	renderOverviewScenario(ov.scenario);
+	renderOverviewMetrics(ov);
+}
+
+function renderOverviewScenario(s) {
+	const body = document.getElementById("overview-scenario-body");
+	body.innerHTML = "";
+	if (!s) {
+		body.className = "empty";
+		body.textContent = "No active scenario detected.";
+		return;
+	}
+	body.className = "";
+	// Header line: id + source → target OR "All projects on <tfm>".
+	const head = document.createElement("div");
+	head.className = "overview-scenario-head";
+	const idEl = document.createElement("span");
+	idEl.className = "overview-scenario-id";
+	idEl.textContent = s.id;
+	head.append(idEl);
+	if (s.allOnTarget && s.target) {
+		const tfm = document.createElement("span");
+		tfm.className = "overview-scenario-tfm overview-scenario-on-target";
+		tfm.textContent = `✓ All projects on ${s.target}`;
+		head.append(tfm);
+	} else if (s.source || s.target) {
+		const arrow = document.createElement("span");
+		arrow.className = "overview-scenario-tfm";
+		arrow.textContent = `${s.source ?? "?"} → ${s.target ?? "?"}`;
+		head.append(arrow);
+	}
+	body.append(head);
+
+	// Progress bar (% complete) + textual status.
+	if (s.counts.total > 0) {
+		const progress = document.createElement("div");
+		progress.className = "overview-progress";
+		const trough = document.createElement("div");
+		trough.className = "overview-progress-trough";
+		const fill = document.createElement("div");
+		fill.className = "overview-progress-fill";
+		const pct = Math.round((s.counts.complete / s.counts.total) * 100);
+		fill.style.width = `${pct}%`;
+		trough.append(fill);
+		const lbl = document.createElement("div");
+		lbl.className = "overview-progress-label";
+		const parts = [`${s.counts.complete} / ${s.counts.total} complete (${pct}%)`];
+		if (s.counts.inProgress > 0) parts.push(`${s.counts.inProgress} in progress`);
+		if (s.counts.failed > 0) parts.push(`${s.counts.failed} failed`);
+		lbl.textContent = parts.join(" · ");
+		progress.append(trough, lbl);
+		body.append(progress);
+	}
+
+	// Phase dots (re-uses scenario-card-phases styling).
+	if (s.phases.length > 0) {
+		const dots = document.createElement("div");
+		dots.className = "scenario-card-phases";
+		for (const p of s.phases) {
+			const dot = document.createElement("span");
+			dot.className = `scenario-phase-dot phase-${_phaseStateClass(p.state)}`;
+			dot.title = `${_humanizePhaseId(p.id)} — ${p.state ?? "Not started"}`;
+			dots.append(dot);
+		}
+		body.append(dots);
+	}
+}
+
+// Each tile is a self-explanatory, clickable summary of one metric. Clicking
+// navigates to the tab that has the underlying detail. Order is curated:
+// tasks first (progress signal), then incidents (assessment depth), then deps.
+function renderOverviewMetrics(ov) {
+	const root = document.getElementById("overview-metric-tiles");
+	root.innerHTML = "";
+	const tiles = [];
+	if (ov.tasks) {
+		tiles.push({
+			value: `${ov.tasks.complete} / ${ov.tasks.total}`,
+			label: "Tasks complete",
+			help: ov.tasks.failed > 0
+				? `${ov.tasks.failed} failed`
+				: ov.tasks.inProgress > 0
+					? `${ov.tasks.inProgress} in progress`
+					: "Across all scenario phases",
+			sev: ov.tasks.failed > 0 ? "high" : "none",
+			panel: "tasks",
+		});
+	}
+	if (ov.assessment) {
+		tiles.push({
+			value: ov.assessment.projects,
+			label: ov.assessment.projects === 1 ? "Project assessed" : "Projects assessed",
+			help: "Discovered .csproj / .fsproj files",
+			sev: "none",
+			panel: "projects",
+		});
+		tiles.push({
+			value: ov.assessment.incidents,
+			label: ov.assessment.incidents === 1 ? "Assessment incident" : "Assessment incidents",
+			help: "Individual rule violations found across all projects",
+			sev: ov.assessment.incidents > 0 ? "medium" : "none",
+			panel: "assessment",
+		});
+		tiles.push({
+			value: ov.assessment.mandatory,
+			label: ov.assessment.mandatory === 1 ? "Mandatory rule" : "Mandatory rules",
+			help: "Issues you must fix before upgrade can complete",
+			sev: ov.assessment.mandatory > 0 ? "high" : "none",
+			panel: "assessment",
+		});
+	}
+	if (ov.dependencies) {
+		tiles.push({
+			value: ov.dependencies.packages,
+			label: ov.dependencies.packages === 1 ? "NuGet package" : "NuGet packages",
+			help: `Distinct packages across the solution${ov.dependencies.targetFramework ? " (target " + ov.dependencies.targetFramework + ")" : ""}`,
+			sev: "none",
+			panel: "dependencies",
+		});
+		tiles.push({
+			value: ov.dependencies.incompatible,
+			label: ov.dependencies.incompatible === 1 ? "Incompatible package" : "Incompatible packages",
+			help: "Packages flagged as not compatible with the target framework",
+			sev: ov.dependencies.incompatible > 0 ? "high" : "none",
+			panel: "dependencies",
+		});
+		if (ov.dependencies.drift > 0) {
+			tiles.push({
+				value: ov.dependencies.drift,
+				label: ov.dependencies.drift === 1 ? "Version drift instance" : "Version drift instances",
+				help: "Same package pinned at different versions in different projects",
+				sev: "medium",
+				panel: "dependencies",
+			});
+		}
+	}
+	if (tiles.length === 0) {
+		const p = document.createElement("p");
+		p.className = "empty";
+		p.textContent = "No artifacts available yet.";
+		root.append(p);
+		return;
+	}
+	for (const t of tiles) {
+		const tile = document.createElement("button");
+		tile.type = "button";
+		tile.className = `overview-tile sev-${t.sev}`;
+		tile.title = `${t.help} — click to open ${t.panel}`;
+		tile.addEventListener("click", () => setPanel(t.panel));
+
+		const top = document.createElement("div");
+		top.className = "overview-tile-top";
+		const v = document.createElement("div");
+		v.className = "overview-tile-value";
+		v.textContent = String(t.value);
+		const l = document.createElement("div");
+		l.className = "overview-tile-label";
+		l.textContent = t.label;
+		top.append(v, l);
+
+		const help = document.createElement("div");
+		help.className = "overview-tile-help";
+		help.textContent = t.help;
+
+		tile.append(top, help);
+		root.append(tile);
+	}
+}
+
+// ---- Projects graph helpers (mirrors lib/projects-graph.mjs) ----
+function _gNormalizePath(p) {
+	if (typeof p !== "string") return "";
+	return p.replace(/\\/g, "/").toLowerCase();
+}
+function _gDirname(p) {
+	const i = p.lastIndexOf("/");
+	return i < 0 ? "" : p.slice(0, i);
+}
+function _gBasename(p) {
+	const slash = p.lastIndexOf("/");
+	const base = slash < 0 ? p : p.slice(slash + 1);
+	return base.replace(/\.[a-z]+proj$/i, "");
+}
+function _gPickFramework(list) {
+	if (!Array.isArray(list) || list.length === 0) return null;
+	return typeof list[0] === "string" ? list[0] : null;
+}
+function _gClassifyStatus(frameworks, target) {
+	const list = Array.isArray(frameworks) ? frameworks.filter((f) => typeof f === "string") : [];
+	if (list.length === 0) return "no-target";
+	if (!target || typeof target !== "string") return "not-started";
+	const targetLc = target.toLowerCase();
+	const matches = list.some((f) => _gTfmsEquivalent(f.toLowerCase(), targetLc));
+	if (matches && list.length === 1) return "matched";
+	if (matches) return "in-progress";
+	return "not-started";
+}
+function _gTfmsEquivalent(a, b) {
+	if (a === b) return true;
+	const aDash = a.indexOf("-");
+	const bDash = b.indexOf("-");
+	if ((aDash >= 0) === (bDash >= 0)) return false;
+	const baseA = aDash < 0 ? a : a.slice(0, aDash);
+	const baseB = bDash < 0 ? b : b.slice(0, bDash);
+	return baseA === baseB;
+}
+function _gResolveReference(fromDir, ref) {
+	if (typeof ref !== "string" || !ref) return null;
+	const refNorm = ref.replace(/\\/g, "/").toLowerCase();
+	const baseParts = fromDir ? fromDir.split("/").filter(Boolean) : [];
+	const refParts = refNorm.split("/").filter(Boolean);
+	const out = [...baseParts];
+	for (const part of refParts) {
+		if (part === "." || part === "") continue;
+		if (part === "..") {
+			if (out.length === 0) return null;
+			out.pop();
+			continue;
+		}
+		out.push(part);
+	}
+	return out.join("/");
+}
+function _buildProjectsGraph(joinedProjects, rawProjects, targetFramework) {
+	const target = typeof targetFramework === "string" ? targetFramework : null;
+	const byPath = new Map();
+	const nodes = [];
+	const projs = Array.isArray(joinedProjects) ? joinedProjects : [];
+	for (const p of projs) {
+		if (!p) continue;
+		const id = _gNormalizePath(p.projectPath ?? p.path ?? p.name ?? "");
+		if (!id || byPath.has(id)) continue;
+		byPath.set(id, id);
+		nodes.push({
+			id,
+			label: p.name ?? _gBasename(id),
+			status: _gClassifyStatus(p.targetFrameworks ?? p.frameworks ?? [], target),
+			framework: _gPickFramework(p.targetFrameworks ?? p.frameworks ?? []),
+			incidents: typeof p.incidents === "number" ? p.incidents : 0,
+			kind: p.kind ?? p.projectKind ?? null,
+		});
+	}
+	const edges = [];
+	const seenEdges = new Set();
+	const rawList = Array.isArray(rawProjects) ? rawProjects : [];
+	for (const r of rawList) {
+		if (!r) continue;
+		const fromId = _gNormalizePath(r.projectPath ?? r.path ?? r.name ?? "");
+		if (!fromId || !byPath.has(fromId)) continue;
+		const refs = Array.isArray(r.projectReferences) ? r.projectReferences : [];
+		const fromDir = _gDirname(fromId);
+		for (const ref of refs) {
+			const resolved = _gResolveReference(fromDir, ref);
+			if (!resolved) continue;
+			if (resolved === fromId || !byPath.has(resolved)) continue;
+			const key = `${fromId}|${resolved}`;
+			if (seenEdges.has(key)) continue;
+			seenEdges.add(key);
+			edges.push({ source: fromId, target: resolved });
+		}
+	}
+	return { nodes, edges, target };
+}
+
+function _layoutGraph(model, options) {
+	const opts = options ?? {};
+	const W = Number.isFinite(opts.width) ? opts.width : 600;
+	const H = Number.isFinite(opts.height) ? opts.height : 400;
+	const iterations = Number.isFinite(opts.iterations) ? opts.iterations : 200;
+	const margin = Number.isFinite(opts.margin) ? opts.margin : 30;
+	const rawNodes = (model && Array.isArray(model.nodes)) ? model.nodes : [];
+	const edges = (model && Array.isArray(model.edges)) ? model.edges : [];
+	const nodes = rawNodes.filter((n) => n && typeof n.id === "string" && n.id);
+	const positions = new Map();
+	for (const n of nodes) {
+		let h = 0;
+		for (let i = 0; i < n.id.length; i++) h = ((h << 5) - h + n.id.charCodeAt(i)) | 0;
+		const hx = Math.abs(h) % 1000 / 1000;
+		const hy = Math.abs((h * 1103515245 + 12345) | 0) % 1000 / 1000;
+		positions.set(n.id, { x: 40 + hx * (W - 80), y: 40 + hy * (H - 80) });
+	}
+	if (positions.size === 0) return positions;
+	const cx = W / 2;
+	const cy = H / 2;
+	const idealEdge = Math.min(W, H) / Math.max(3, Math.sqrt(nodes.length));
+	const repulsion = idealEdge * idealEdge * 0.6;
+	const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+	for (let iter = 0; iter < iterations; iter++) {
+		const forces = new Map();
+		for (const n of nodes) forces.set(n.id, { fx: 0, fy: 0 });
+		for (let i = 0; i < nodes.length; i++) {
+			const a = positions.get(nodes[i].id);
+			for (let j = i + 1; j < nodes.length; j++) {
+				const b = positions.get(nodes[j].id);
+				const dx = a.x - b.x, dy = a.y - b.y;
+				const distSq = Math.max(1, dx * dx + dy * dy);
+				const force = repulsion / distSq;
+				const dist = Math.sqrt(distSq);
+				const fx = (dx / dist) * force, fy = (dy / dist) * force;
+				forces.get(nodes[i].id).fx += fx;
+				forces.get(nodes[i].id).fy += fy;
+				forces.get(nodes[j].id).fx -= fx;
+				forces.get(nodes[j].id).fy -= fy;
+			}
+		}
+		for (const e of edges) {
+			const a = positions.get(e.source);
+			const b = positions.get(e.target);
+			if (!a || !b) continue;
+			const dx = b.x - a.x, dy = b.y - a.y;
+			const dist = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
+			const force = (dist - idealEdge) * 0.05;
+			const fx = (dx / dist) * force, fy = (dy / dist) * force;
+			forces.get(e.source).fx += fx;
+			forces.get(e.source).fy += fy;
+			forces.get(e.target).fx -= fx;
+			forces.get(e.target).fy -= fy;
+		}
+		for (const n of nodes) {
+			const p = positions.get(n.id);
+			const f = forces.get(n.id);
+			f.fx += (cx - p.x) * 0.005;
+			f.fy += (cy - p.y) * 0.005;
+		}
+		const cooling = 1 - iter / iterations;
+		const maxStep = idealEdge * 0.2 * cooling;
+		for (const n of nodes) {
+			const p = positions.get(n.id);
+			const f = forces.get(n.id);
+			const sx = clamp(f.fx, -maxStep, maxStep);
+			const sy = clamp(f.fy, -maxStep, maxStep);
+			p.x = clamp(p.x + sx, margin, W - margin);
+			p.y = clamp(p.y + sy, margin, H - margin);
+		}
+	}
+	return positions;
+}
+
+const STATUS_COLORS = {
+	matched: "var(--text-color-success, #3fb950)",
+	"in-progress": "var(--text-color-accent, #58a6ff)",
+	"not-started": "var(--text-color-attention, #d29922)",
+	"no-target": "var(--text-color-muted, #8b949e)",
+};
+const STATUS_LABELS = {
+	matched: "On target",
+	"in-progress": "Multi-target (incl. target)",
+	"not-started": "Off target",
+	"no-target": "No framework declared",
+};
+
+// Cached args from the last renderProjectsGraph call, used to re-render when
+// the user clicks the Graph sub-tab (since we skip layout while it's hidden).
+let _lastGraphArgs = null;
+
+function renderProjectsGraph(state, joined, target) {
+	const host = document.getElementById("projects-graph-host");
+	const panel = document.getElementById("projects-graph-panel");
+	const legend = document.getElementById("projects-graph-legend");
+	const toolbar = document.getElementById("projects-graph-toolbar");
+	// Skip the expensive layout when the graph panel is hidden — the next
+	// switchToGraphTab call will trigger a re-render with the cached args.
+	if (panel.hidden) {
+		_lastGraphArgs = { state, joined, target };
+		return;
+	}
+	host.innerHTML = "";
+	legend.innerHTML = "";
+	toolbar.innerHTML = "";
+
+	const projects = Array.isArray(joined?.projects) ? joined.projects : [];
+	if (projects.length === 0) {
+		const p = document.createElement("p");
+		p.className = "empty";
+		p.textContent = "No projects to graph.";
+		host.append(p);
+		return;
+	}
+	const effectiveTarget = (typeof target === "string" && target)
+		? target
+		: (state.dependencies?.targetFramework ?? null);
+	const rawProjects = Array.isArray(state.projects) ? state.projects : [];
+	const model = _buildProjectsGraph(projects, rawProjects, effectiveTarget);
+
+	const W = 640;
+	const H = Math.max(320, Math.min(560, 80 + Math.sqrt(model.nodes.length) * 80));
+	const positions = _layoutGraph(model, { width: W, height: H });
+
+	const ns = "http://www.w3.org/2000/svg";
+	const svg = document.createElementNS(ns, "svg");
+	svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+	svg.setAttribute("width", "100%");
+	svg.setAttribute("class", "projects-graph-svg");
+	svg.setAttribute("role", "img");
+	svg.setAttribute("aria-label", `Project dependency graph with ${model.nodes.length} project${model.nodes.length === 1 ? "" : "s"} and ${model.edges.length} reference${model.edges.length === 1 ? "" : "s"}`);
+
+	// Edges first (under nodes).
+	for (const e of model.edges) {
+		const a = positions.get(e.source);
+		const b = positions.get(e.target);
+		if (!a || !b) continue;
+		const line = document.createElementNS(ns, "line");
+		line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+		line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+		line.setAttribute("class", "projects-graph-edge");
+		svg.append(line);
+	}
+	// Nodes.
+	const incidents = model.nodes.map((n) => n.incidents);
+	const maxIncidents = Math.max(1, ...incidents);
+	for (const n of model.nodes) {
+		const p = positions.get(n.id);
+		if (!p) continue;
+		const g = document.createElementNS(ns, "g");
+		g.setAttribute("class", `projects-graph-node node-status-${n.status}`);
+		g.setAttribute("transform", `translate(${p.x}, ${p.y})`);
+		const r = 10 + Math.sqrt(n.incidents / maxIncidents) * 10;
+		const circle = document.createElementNS(ns, "circle");
+		circle.setAttribute("r", r);
+		circle.style.fill = STATUS_COLORS[n.status] ?? STATUS_COLORS["no-target"];
+		const title = document.createElementNS(ns, "title");
+		title.textContent = `${n.label}\n${STATUS_LABELS[n.status]}${n.framework ? " · " + n.framework : ""}${n.incidents ? " · " + n.incidents + " incidents" : ""}`;
+		circle.append(title);
+		g.append(circle);
+		// Label below the circle.
+		const text = document.createElementNS(ns, "text");
+		text.setAttribute("y", r + 12);
+		text.setAttribute("text-anchor", "middle");
+		text.setAttribute("class", "projects-graph-label");
+		text.textContent = n.label;
+		g.append(text);
+		svg.append(g);
+	}
+	host.append(svg);
+
+	// Toolbar summary.
+	const summary = document.createElement("span");
+	summary.className = "projects-graph-status";
+	summary.textContent = `${model.nodes.length} project${model.nodes.length === 1 ? "" : "s"} · ${model.edges.length} reference${model.edges.length === 1 ? "" : "s"}${effectiveTarget ? " · target " + effectiveTarget : ""}`;
+	toolbar.append(summary);
+
+	// Legend.
+	for (const status of ["matched", "in-progress", "not-started", "no-target"]) {
+		const item = document.createElement("span");
+		item.className = "projects-graph-legend-item";
+		const swatch = document.createElement("span");
+		swatch.className = "projects-graph-legend-swatch";
+		swatch.style.background = STATUS_COLORS[status];
+		const label = document.createElement("span");
+		label.textContent = STATUS_LABELS[status];
+		item.append(swatch, label);
+		legend.append(item);
+	}
+}
+
+function renderProjects(state) {
+	const tilesEl = document.getElementById("projects-tiles");
+	const tableEl = document.getElementById("projects-table");
+	const tbodyEl = document.getElementById("projects-tbody");
+	const listEl = document.getElementById("projects-list");
+	const metaEl = document.getElementById("projects-meta");
+	const subtabs = document.getElementById("projects-subtabs");
+	const helpEl = document.getElementById("projects-help");
+
+	tilesEl.innerHTML = "";
+	tbodyEl.innerHTML = "";
+	listEl.innerHTML = "";
+
+	const diskProjects = Array.isArray(state.projects) ? state.projects : [];
+	const scenarios = Array.isArray(state.scenarios) ? state.scenarios : [];
+	const active = scenarios.find((s) => s.id === state.activeScenarioId) ?? null;
+	const target = _scenarioTargetFramework(active);
+	// The Projects table is assessment-derived (matches the .NET dashboard); the
+	// discovered .csproj list only supplies graph edges + disk-only signal.
+	const { summary, projects: joined } = _joinProjectsWithAssessment(
+		diskProjects,
+		state.assessment,
+		target,
+	);
+
+	if (joined.length === 0) {
+		tilesEl.hidden = true;
+		tableEl.hidden = true;
+		listEl.hidden = false;
+		subtabs.hidden = true;
+		if (helpEl) helpEl.hidden = true;
+		metaEl.textContent = "";
+		const li = document.createElement("li");
+		li.className = "empty";
+		li.textContent = state.assessment
+			? "No projects in the assessment."
+			: "No assessment yet — run an upgrade assessment to populate the Projects view.";
+		listEl.appendChild(li);
+		renderProjectsGraph(state, { projects: [] }, target);
+		return;
+	}
+
+	// Show sub-tabs whenever we have projects to display.
+	subtabs.hidden = false;
+	if (helpEl) helpEl.hidden = false;
+	setSubTab(subtabs, _getActiveSubTab(subtabs) ?? "table");
+
+	// Render the graph panel using the active scenario target — falling back
+	// to the dependencies-health target only if no scenario target is known.
+	renderProjectsGraph(state, { projects: joined }, target);
+
+	// Summary tiles. Hide tiles when there's no useful signal beyond count.
+	tilesEl.hidden = false;
+	tilesEl.className = "tiles projects-tiles";
+	const sevIncidents = summary.totalIncidents > 0 ? "medium" : "none";
+	const tileData = [
+		["Projects", summary.projectsCount, "none"],
+		["TFM Upgraded", target ? `${summary.tfmUpgraded} / ${summary.projectsCount}` : "—", "none"],
+		["Incidents", summary.totalIncidents, sevIncidents],
+	];
+	for (const [label, value, sev] of tileData) {
+		const tile = document.createElement("div");
+		tile.className = `tile sev-${sev}`;
+		const v = document.createElement("div");
+		v.className = "tile-value";
+		v.textContent = String(value);
+		const l = document.createElement("div");
+		l.className = "tile-label";
+		l.textContent = label;
+		tile.append(v, l);
+		tilesEl.append(tile);
+	}
+
+	metaEl.textContent = `${summary.projectsCount} project${summary.projectsCount === 1 ? "" : "s"}`;
+
+	// Table rows.
+	tableEl.hidden = false;
+	listEl.hidden = true;
+	for (const proj of joined) {
+		const tr = document.createElement("tr");
+		if (proj.incidents > 0) tr.classList.add("has-incidents");
+		if (proj.onTarget) tr.classList.add("on-target");
+
+		const nameTd = document.createElement("td");
+		const name = document.createElement("span");
+		name.className = "proj-name";
+		name.textContent = proj.name;
+		nameTd.append(name);
+		if (proj.startingProject) {
+			const tag = document.createElement("span");
+			tag.className = "tag";
+			tag.textContent = "entry";
+			tag.style.marginLeft = "6px";
+			nameTd.append(tag);
+		}
+		if (proj.isSdk) {
+			const tag = document.createElement("span");
+			tag.className = "tag";
+			tag.textContent = "SDK";
+			tag.style.marginLeft = "6px";
+			nameTd.append(tag);
+		}
+		const pathSpan = document.createElement("div");
+		pathSpan.className = "proj-path";
+		pathSpan.textContent = proj.projectPath;
+		nameTd.append(pathSpan);
+
+		const tfmTd = document.createElement("td");
+		const tfmSpan = document.createElement("span");
+		tfmSpan.className = "proj-tfm";
+		tfmSpan.textContent = proj.targetFrameworks.length ? proj.targetFrameworks.join(", ") : "(no TFM)";
+		if (proj.onTarget) tfmSpan.classList.add("tfm-on-target");
+		tfmTd.append(tfmSpan);
+
+		const kindTd = document.createElement("td");
+		kindTd.textContent = proj.assessmentKind ?? proj.kind ?? "";
+
+		const incTd = document.createElement("td");
+		incTd.className = "num";
+		if (proj.incidents > 0) incTd.classList.add("sev-medium");
+		if (proj.incidents > 0) {
+			const link = document.createElement("button");
+			link.type = "button";
+			link.className = "incidents-link";
+			link.textContent = String(proj.incidents);
+			link.title = `${proj.incidents} incident${proj.incidents === 1 ? "" : "s"} — click to open Assessment`;
+			link.addEventListener("click", () => setPanel("assessment"));
+			incTd.append(link);
+		} else {
+			incTd.textContent = "";
+		}
+
+		tr.append(nameTd, tfmTd, kindTd, incTd);
+		tbodyEl.append(tr);
+	}
+}
+
+let lastState = null;
+function render(state) {
+	lastState = state;
+	const activeNote = state.activeScenarioId ? ` · active scenario: ${state.activeScenarioId}` : "";
+	statusEl.textContent = `${state.repoRoot}${activeNote} · refreshed ${new Date(state.generatedAt).toLocaleTimeString()}`;
+
+	// Header progress strip (compact task completion, visible from any tab).
+	renderHeaderProgress(state);
+
+	// Overview (landing tab)
+	renderOverview(state);
+
+	// Activity
+	const activityMeta = document.getElementById("activity-meta");
+	const activityList = document.getElementById("activity-list");
+	if (state.activitySources && state.activitySources.length > 0) {
+		activityMeta.textContent = `Sources: ${state.activitySources.join(" + ")}`;
+	} else {
+		activityMeta.textContent = `No activity sources found (looked for .git/upgrade/activity.jsonl and <scenario>/changelog.jsonl)`;
+	}
+	activityList.innerHTML = "";
+	if (state.activity.length === 0) {
+		const li = document.createElement("li");
+		li.className = "empty";
+		li.textContent = "No activity recorded yet.";
+		activityList.appendChild(li);
+	} else {
+		for (const entry of state.activity) {
+			const li = document.createElement("li");
+			li.classList.add(`activity-${entry.kind}`);
+
+			const ts = document.createElement("span");
+			ts.className = "ts";
+			ts.textContent = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "";
+
+			const ev = document.createElement("span");
+			ev.className = "ev";
+			ev.textContent = entry.label;
+
+			const body = document.createElement("span");
+			body.className = "detail";
+			body.textContent = entry.detail ?? "";
+
+			li.append(ts, ev);
+			if (entry.taskId) {
+				const tag = document.createElement("span");
+				tag.className = "tag";
+				tag.textContent = entry.taskId;
+				li.append(tag);
+			}
+			if (entry.source) {
+				const src = document.createElement("span");
+				src.className = "tag";
+				src.style.opacity = "0.6";
+				src.textContent = entry.source;
+				li.append(src);
+			}
+			li.append(body);
+			activityList.appendChild(li);
+		}
+	}
+
+	// Options: render mode switcher based on whether a scenario is active and
+	// what mode (if any) the user previously picked for it.
+	renderOptions(state);
+
+	// Scenario
+	renderScenario(state);
+
+	// Projects
+	renderProjects(state);
+
+	// Assessment
+	renderAssessment(state.assessment);
+
+	// Dependencies
+	renderDependencies(state.dependencies);
+
+	// Tasks
+	renderTasks(state.tasks);
+
+	// Diagnostics — render into the (hidden) panel; overlay reads from it on demand.
+	renderDiagnostics(state.diagnostics);
+	// If the diagnostics overlay is currently open, refresh its content so the
+	// user sees live data instead of a stale snapshot from when it was opened.
+	if (isDiagnosticsOverlayOpen()) {
+		openDiagnosticsOverlay();
+	}
+}
+
+function renderDiagnostics(d) {
+	const root = document.getElementById("diagnostics-content");
+	root.innerHTML = "";
+	if (!d) {
+		root.className = "empty";
+		root.textContent = "No diagnostics available.";
+		return;
+	}
+	root.className = "";
+
+	const summary = document.createElement("dl");
+	summary.className = "kv";
+	const rows = [
+		["resolved repoRoot", d.resolvedRepoRoot],
+		["resolution source", d.resolutionSource],
+		["process.cwd()", d.processCwd],
+		[".git kind", d.gitKind ?? "(unknown)"],
+		["resolved gitdir", d.gitDir ?? "(none)"],
+		["MODERNIZE_DASHBOARD_REPO", d.envRepoOverride ?? "(unset)"],
+		["EXTENSION_PATH", d.extensionPath ?? "(unset)"],
+		["SESSION_ID", d.sessionId ?? "(unset)"],
+		["generated at", d.generatedAt],
+	];
+	for (const [k, v] of rows) {
+		const dt = document.createElement("dt");
+		dt.textContent = k;
+		const dd = document.createElement("dd");
+		dd.textContent = v;
+		summary.append(dt, dd);
+	}
+	root.append(summary);
+
+	const heading = document.createElement("h3");
+	heading.textContent = "Watched paths";
+	root.append(heading);
+
+	const table = document.createElement("table");
+	table.className = "assess-table";
+	table.innerHTML = `
+		<thead><tr>
+			<th>Label</th>
+			<th>Path</th>
+			<th>Status</th>
+			<th class="num">Size</th>
+		</tr></thead>`;
+	const tbody = document.createElement("tbody");
+	for (const entry of d.paths) {
+		const tr = document.createElement("tr");
+		const status = !entry.exists ? "missing" : entry.isFile ? "file" : "dir";
+		const statusClass = !entry.exists ? "bad" : "ok";
+		tr.innerHTML = `
+			<td>${escapeHtml(entry.label)}</td>
+			<td class="diag-path">${escapeHtml(entry.path)}</td>
+			<td><span class="badge compat-${statusClass}">${status}</span></td>
+			<td class="num">${entry.exists && entry.size != null ? entry.size : ""}</td>`;
+		tbody.append(tr);
+	}
+	table.append(tbody);
+	root.append(table);
+}
+
+// ---- Dependencies summary helpers (mirrors lib/deps-summary.mjs) ----
+const _DEP_BUCKETS = [
+	["packages", "Packages"],
+	["assemblies", "Assemblies"],
+	["projectReferences", "ProjectReferences"],
+	["frameworkReferences", "FrameworkReferences"],
+];
+function _categorizeCompatibility(value) {
+	if (value === "valid" || value === "Valid") return "valid";
+	if (value === "newVersionNeeded" || value === "NewVersionNeeded") return "partial";
+	if (value === "notSupported" || value === "NotSupported") return "incompatible";
+	return "unknown";
+}
+function _pick(obj, ...names) {
+	if (!obj || typeof obj !== "object") return undefined;
+	for (const n of names) {
+		if (Object.prototype.hasOwnProperty.call(obj, n)) return obj[n];
+	}
+	const lower = new Map();
+	for (const k of Object.keys(obj)) lower.set(k.toLowerCase(), k);
+	for (const n of names) {
+		const k = lower.get(n.toLowerCase());
+		if (k !== undefined) return obj[k];
+	}
+	return undefined;
+}
+function _getDependencies(proj) {
+	if (!proj || typeof proj !== "object") return null;
+	return _pick(proj, "dependencies", "Dependencies") ?? null;
+}
+function _getImports(proj) {
+	if (!proj || typeof proj !== "object") return null;
+	return _pick(proj, "imports", "Imports") ?? null;
+}
+function _computeCompatibilityBreakdown(projects) {
+	const breakdown = { valid: 0, partial: 0, incompatible: 0, unknown: 0 };
+	if (!Array.isArray(projects)) return breakdown;
+	for (const proj of projects) {
+		const deps = _getDependencies(proj);
+		if (!deps || typeof deps !== "object") continue;
+		for (const [k, K] of _DEP_BUCKETS) {
+			const arr = _pick(deps, k, K);
+			if (!Array.isArray(arr)) continue;
+			for (const entry of arr) {
+				if (!entry || typeof entry !== "object") continue;
+				const c = _pick(entry, "compatibility", "Compatibility", "targetCompatibility", "TargetCompatibility");
+				breakdown[_categorizeCompatibility(c)]++;
+			}
+		}
+	}
+	return breakdown;
+}
+function _computeDepsMetrics(projects) {
+	const m = { packages: 0, assemblies: 0, projectRefs: 0, frameworkRefs: 0, imports: 0 };
+	if (!Array.isArray(projects)) return m;
+	for (const proj of projects) {
+		if (!proj || typeof proj !== "object") continue;
+		const deps = _getDependencies(proj);
+		const imports = _getImports(proj);
+		const pkgsArr = _pick(deps, "packages", "Packages");
+		m.packages += Array.isArray(pkgsArr) ? pkgsArr.length : (proj.packageCount ?? 0);
+		const asmArr = _pick(deps, "assemblies", "Assemblies");
+		m.assemblies += Array.isArray(asmArr) ? asmArr.length : (proj.assemblyCount ?? 0);
+		const refArr = _pick(deps, "projectReferences", "ProjectReferences");
+		m.projectRefs += Array.isArray(refArr) ? refArr.length : (proj.projectRefCount ?? 0);
+		const fwArr = _pick(deps, "frameworkReferences", "FrameworkReferences");
+		m.frameworkRefs += Array.isArray(fwArr) ? fwArr.length : (proj.frameworkRefCount ?? 0);
+		m.imports += Array.isArray(imports) ? imports.length : (proj.importsCount ?? 0);
+	}
+	return m;
+}
+
+function renderDependencies(d) {
+	const root = document.getElementById("dependencies-content");
+	root.innerHTML = "";
+	if (!d) {
+		root.className = "empty";
+		root.textContent = "No dependencies-health.json found.";
+		return;
+	}
+	root.className = "";
+
+	// Target framework banner (top of the tab, prominent).
+	const banner = document.createElement("div");
+	banner.className = "framework-banner deps-banner";
+	const idLabel = document.createElement("div");
+	idLabel.className = "scenario-id-label";
+	idLabel.textContent = "Dependency analysis target";
+	const arrow = document.createElement("div");
+	arrow.className = "framework-arrow";
+	const targetPill = document.createElement("span");
+	targetPill.className = "framework-pill target";
+	targetPill.textContent = d.targetFramework ?? "(unspecified)";
+	arrow.append(targetPill);
+	banner.append(idLabel, arrow);
+	root.append(banner);
+
+	// Top-level scope: how many projects this analysis covers (different
+	// concept from the dependency-type counts below).
+	const scope = document.createElement("div");
+	scope.className = "deps-scope";
+	const scopeNum = document.createElement("span");
+	scopeNum.className = "deps-scope-num";
+	scopeNum.textContent = String(d.counts.projects);
+	const scopeLbl = document.createElement("span");
+	scopeLbl.className = "deps-scope-label";
+	scopeLbl.textContent = d.counts.projects === 1
+		? "project analyzed against this target"
+		: "projects analyzed against this target";
+	scope.append(scopeNum, scopeLbl);
+	root.append(scope);
+
+	// Dependency-type tile row — each tile is the *kind* of dependency, not
+	// the per-project totals. Tooltips explain each.
+	const metrics = _computeDepsMetrics(d.projects);
+	const driftSev = d.counts.versionDrift > 10 ? "high" : d.counts.versionDrift > 0 ? "medium" : "none";
+	const tiles = document.createElement("div");
+	tiles.className = "tiles deps-tiles";
+	const tileData = [
+		["NuGet packages", d.counts.distinctPackages, "none",
+			"Distinct NuGet packages referenced anywhere in the solution."],
+		["Version drift", d.counts.versionDrift, driftSev,
+			"Cases where the same NuGet package is pinned at different versions across projects. Pick one and standardize."],
+		["Assembly references", metrics.assemblies, "none",
+			"Direct assembly references (<Reference Include=...>) — typically GAC or loose DLLs."],
+		["Project references", metrics.projectRefs, "none",
+			"<ProjectReference> edges between projects in this solution."],
+		["Framework references", metrics.frameworkRefs, "none",
+			"<FrameworkReference> entries (Microsoft.AspNetCore.App, etc.) — only meaningful on SDK-style projects."],
+	];
+	if (metrics.imports > 0) {
+		tileData.push(["MSBuild imports", metrics.imports, "none",
+			"<Import Project=...> elements pulled in beyond the SDK defaults."]);
+	}
+	for (const [label, value, sev, help] of tileData) {
+		const tile = document.createElement("div");
+		tile.className = `tile sev-${sev} tile-with-help`;
+		tile.title = help;
+		const v = document.createElement("div");
+		v.className = "tile-value";
+		v.textContent = String(value);
+		const l = document.createElement("div");
+		l.className = "tile-label";
+		l.textContent = label;
+		const h = document.createElement("div");
+		h.className = "tile-help";
+		h.textContent = help;
+		tile.append(v, l, h);
+		tiles.append(tile);
+	}
+	root.append(tiles);
+
+	// Compatibility breakdown — stacked horizontal bar.
+	const breakdown = _computeCompatibilityBreakdown(d.projects);
+	const total = breakdown.valid + breakdown.partial + breakdown.incompatible + breakdown.unknown;
+	if (total > 0) {
+		const heading = document.createElement("h4");
+		heading.className = "deps-breakdown-heading";
+		heading.textContent = "Compatibility breakdown";
+		root.append(heading);
+
+		const stack = document.createElement("div");
+		stack.className = "compat-stack";
+		stack.setAttribute("role", "img");
+		stack.setAttribute("aria-label", `Valid ${breakdown.valid}, Partial ${breakdown.partial}, Incompatible ${breakdown.incompatible}, Unknown ${breakdown.unknown}`);
+		for (const [bucket, label] of [
+			["valid", "Valid"],
+			["partial", "Partial"],
+			["incompatible", "Incompatible"],
+			["unknown", "Unknown"],
+		]) {
+			const n = breakdown[bucket];
+			if (n === 0) continue;
+			const seg = document.createElement("div");
+			seg.className = `compat-seg compat-seg-${bucket}`;
+			seg.style.flex = String(n);
+			seg.title = `${label}: ${n}`;
+			seg.textContent = n > 0 && (n / total) > 0.08 ? String(n) : "";
+			stack.append(seg);
+		}
+		root.append(stack);
+
+		const legend = document.createElement("div");
+		legend.className = "compat-legend";
+		for (const [bucket, label] of [
+			["valid", "Valid"],
+			["partial", "Partial"],
+			["incompatible", "Incompatible"],
+			["unknown", "Unknown"],
+		]) {
+			const item = document.createElement("span");
+			item.className = "compat-legend-item";
+			const swatch = document.createElement("span");
+			swatch.className = `compat-swatch compat-seg-${bucket}`;
+			const text = document.createElement("span");
+			text.textContent = `${label}: ${breakdown[bucket]}`;
+			item.append(swatch, text);
+			legend.append(item);
+		}
+		root.append(legend);
+	}
+
+	const meta = document.createElement("div");
+	meta.className = "meta";
+	meta.textContent = d.path;
+	root.append(meta);
+
+	if (d.packages.length > 0) {
+		const h = document.createElement("h3");
+		h.textContent = "Packages";
+		root.append(h);
+		const table = document.createElement("table");
+		table.className = "assess-table";
+		table.innerHTML = `
+			<thead><tr>
+				<th>Package</th>
+				<th class="num">Projects</th>
+				<th class="num">Versions</th>
+				<th>Recommended</th>
+				<th>Compat</th>
+				<th></th>
+			</tr></thead>`;
+		const tbody = document.createElement("tbody");
+		for (const p of d.packages) {
+			const driftClass = p.distinctVersionCount > 1 ? "sev-medium" : "";
+			const compatLabel = p.isCompatible === true ? "OK" : p.isCompatible === false ? "Incompat" : "?";
+			const compatClass = p.isCompatible === true ? "ok" : p.isCompatible === false ? "bad" : "unk";
+			const tr = document.createElement("tr");
+			tr.innerHTML = `
+				<td>${escapeHtml(p.name)}</td>
+				<td class="num">${p.totalProjectCount}</td>
+				<td class="num ${driftClass}">${p.distinctVersionCount}</td>
+				<td>${escapeHtml(p.recommendedVersion ?? "")}</td>
+				<td><span class="badge compat-${compatClass}">${compatLabel}</span></td>
+				<td>${p.isCompatible === false ? `<button type="button" class="action-btn explain-btn" data-package="${escapeHtml(p.name)}">Explain</button>` : ""}</td>`;
+			tbody.append(tr);
+		}
+		table.append(tbody);
+		root.append(table);
+	}
+
+	if (d.projects.length > 0) {
+		const h = document.createElement("h3");
+		h.textContent = "Projects";
+		root.append(h);
+		const table = document.createElement("table");
+		table.className = "assess-table";
+		table.innerHTML = `
+			<thead><tr>
+				<th>Project</th>
+				<th>Current TFM</th>
+				<th>Target TFM</th>
+				<th class="num">Pkgs</th>
+				<th class="num">Asm</th>
+				<th class="num">Refs</th>
+				<th class="num">Incompat</th>
+			</tr></thead>`;
+		const tbody = document.createElement("tbody");
+		for (const p of d.projects) {
+			const incompatClass = p.incompatible > 0 ? "sev-high" : "";
+			const tr = document.createElement("tr");
+			tr.innerHTML = `
+				<td>${escapeHtml(p.name)}${p.isSdk ? " <span class=\"tag\">SDK</span>" : ""}</td>
+				<td>${escapeHtml((p.currentFrameworks ?? []).join(", "))}</td>
+				<td>${escapeHtml(p.targetFramework ?? "")}</td>
+				<td class="num">${p.packageCount}</td>
+				<td class="num">${p.assemblyCount}</td>
+				<td class="num">${p.projectRefCount}</td>
+				<td class="num ${incompatClass}">${p.incompatible}</td>`;
+			tbody.append(tr);
+		}
+		table.append(tbody);
+		root.append(table);
+	}
+}
+
+const TASK_STATE_META = {
+	Complete: { emoji: "✅", className: "complete" },
+	InProgress: { emoji: "🔄", className: "in-progress" },
+	NotStarted: { emoji: "🔲", className: "not-started" },
+	Skipped: { emoji: "⚠️", className: "skipped" },
+	Failed: { emoji: "❌", className: "failed" },
+};
+
+// Preserved across renders so an SSE update doesn't collapse what the user
+// just expanded.
+const expandedTaskIds = new Set();
+
+function renderTasks(t) {
+	const root = document.getElementById("tasks-content");
+	root.innerHTML = "";
+	if (!t || !t.tasks) {
+		root.className = "empty";
+		root.textContent = "No tasks.md found.";
+		return;
+	}
+	root.className = "";
+
+	const counts = {
+		Complete: 0,
+		InProgress: 0,
+		NotStarted: 0,
+		Skipped: 0,
+		Failed: 0,
+	};
+	for (const task of t.tasks) {
+		counts[task.state] = (counts[task.state] ?? 0) + 1;
+	}
+	const total = t.tasks.length;
+	const pct = total ? Math.round((counts.Complete / total) * 100) : 0;
+
+	const tiles = document.createElement("div");
+	tiles.className = "tiles";
+	for (const [label, value, sev] of [
+		["Total", total, "none"],
+		["Complete", counts.Complete, "none"],
+		["In Progress", counts.InProgress, "none"],
+		["Failed", counts.Failed, counts.Failed > 0 ? "high" : "none"],
+	]) {
+		const tile = document.createElement("div");
+		tile.className = `tile sev-${sev}`;
+		const v = document.createElement("div");
+		v.className = "tile-value";
+		v.textContent = String(value);
+		const l = document.createElement("div");
+		l.className = "tile-label";
+		l.textContent = label;
+		tile.append(v, l);
+		tiles.append(tile);
+	}
+	root.append(tiles);
+
+	const progress = document.createElement("div");
+	progress.className = "progress";
+	const trough = document.createElement("span");
+	trough.className = "bar-trough";
+	const fill = document.createElement("span");
+	fill.className = "bar-fill";
+	fill.style.width = `${pct}%`;
+	trough.append(fill);
+	const label = document.createElement("span");
+	label.className = "bar-value";
+	label.textContent = `${pct}% (${counts.Complete}/${total})`;
+	progress.append(trough, label);
+	root.append(progress);
+
+	const meta = document.createElement("div");
+	meta.className = "meta";
+	meta.textContent = `Scenario: ${t.scenarioId}`;
+	root.append(meta);
+
+	if (t.overview) {
+		const oh = document.createElement("h3");
+		oh.textContent = "Overview";
+		root.append(oh);
+		const pre = document.createElement("pre");
+		pre.className = "overview";
+		pre.textContent = t.overview;
+		root.append(pre);
+	}
+
+	const list = document.createElement("ol");
+	list.className = "tasks";
+	const byParent = new Map();
+	for (const task of t.tasks) {
+		const key = task.parentId ?? "__root__";
+		if (!byParent.has(key)) byParent.set(key, []);
+		byParent.get(key).push(task);
+	}
+	function appendChildren(parent, parentId) {
+		const children = byParent.get(parentId) ?? [];
+		for (const task of children) {
+			const meta = TASK_STATE_META[task.state] ?? { emoji: "?", className: "" };
+			const li = document.createElement("li");
+			li.classList.add("task", `task-${meta.className}`);
+			const hasDetails = !!task.progressDetails;
+
+			const header = document.createElement(hasDetails ? "button" : "div");
+			header.className = "task-header" + (hasDetails ? " task-header-clickable" : "");
+			if (hasDetails) {
+				header.type = "button";
+				header.setAttribute("aria-expanded", "false");
+			}
+
+			const chevron = document.createElement("span");
+			chevron.className = "task-chevron";
+			chevron.textContent = hasDetails ? "▸" : "";
+			const badge = document.createElement("span");
+			badge.className = `task-state ${meta.className}`;
+			badge.textContent = meta.emoji;
+			const id = document.createElement("span");
+			id.className = "task-id";
+			id.textContent = task.id;
+			const name = document.createElement("span");
+			name.className = "task-name";
+			name.textContent = task.displayName;
+			header.append(chevron, badge, id, name);
+			li.append(header);
+
+			if (hasDetails) {
+				const startExpanded = expandedTaskIds.has(task.id);
+				if (startExpanded) {
+					chevron.textContent = "▾";
+					header.setAttribute("aria-expanded", "true");
+				}
+				const details = document.createElement("div");
+				details.className = "task-details";
+				details.hidden = !startExpanded;
+				details.innerHTML = renderMarkdown(task.progressDetails);
+				li.append(details);
+				header.addEventListener("click", () => {
+					const expanded = !details.hidden;
+					details.hidden = expanded;
+					header.setAttribute("aria-expanded", String(!expanded));
+					chevron.textContent = expanded ? "▸" : "▾";
+					if (expanded) {
+						expandedTaskIds.delete(task.id);
+					} else {
+						expandedTaskIds.add(task.id);
+					}
+				});
+			}
+
+			const grandKids = byParent.get(task.id);
+			if (grandKids && grandKids.length) {
+				const sub = document.createElement("ol");
+				sub.className = "tasks tasks-sub";
+				li.append(sub);
+				appendChildren(sub, task.id);
+			}
+			parent.append(li);
+		}
+	}
+	appendChildren(list, "__root__");
+	root.append(list);
+}
+
+// ---- Assessment helpers (mirrors lib/assessment.mjs) ----
+function _aggregateFeatures(projects) {
+	if (!Array.isArray(projects)) return [];
+	const map = new Map();
+	for (const proj of projects) {
+		if (!proj || typeof proj !== "object") continue;
+		const projFeatures = Array.isArray(proj.features) ? proj.features : [];
+		const projPath = typeof proj.path === "string" ? proj.path : "";
+		const projName = proj.properties?.appName ?? proj.properties?.AppName ?? projPath;
+		for (const f of projFeatures) {
+			if (!f || typeof f !== "object" || typeof f.featureId !== "string") continue;
+			const incidents = Array.isArray(f.incidents) ? f.incidents.length : 0;
+			const entry = map.get(f.featureId) ?? {
+				featureId: f.featureId,
+				totalIncidents: 0,
+				projects: [],
+			};
+			entry.totalIncidents += incidents;
+			entry.projects.push({ projectPath: projPath, projectName: projName, incidentCount: incidents });
+			map.set(f.featureId, entry);
+		}
+	}
+	return [...map.values()].sort((a, b) => b.totalIncidents - a.totalIncidents);
+}
+
+function _topCategories(categoryDict, limit = 5) {
+	const entries = Object.entries(categoryDict ?? {});
+	entries.sort(([, a], [, b]) => b - a);
+	return entries.slice(0, limit);
+}
+
+function renderAssessment(a) {
+	const summaryEl = document.getElementById("assessment-summary");
+	const subtabsEl = document.getElementById("assessment-subtabs");
+	const summaryMdEl = document.getElementById("assessment-summary-md");
+	const issuesEl = document.getElementById("assessment-issues");
+	const featuresEl = document.getElementById("assessment-features");
+	const contentEl = document.getElementById("assessment-content");
+	const shareBtn = document.getElementById("assessment-share-btn");
+	const glossaryBtn = document.getElementById("assessment-glossary-btn");
+
+	summaryEl.innerHTML = "";
+	const prevSearchInput = issuesEl.querySelector(".issues-search");
+	const issuesSearchHadFocus = prevSearchInput && document.activeElement === prevSearchInput;
+	const issuesSearchCaret = issuesSearchHadFocus
+		? { start: prevSearchInput.selectionStart, end: prevSearchInput.selectionEnd }
+		: null;
+	issuesEl.innerHTML = "";
+	featuresEl.innerHTML = "";
+	summaryMdEl.innerHTML = "";
+
+	if (!a) {
+		if (shareBtn) shareBtn.hidden = true;
+		if (glossaryBtn) glossaryBtn.hidden = true;
+		subtabsEl.hidden = true;
+		summaryMdEl.hidden = true;
+		issuesEl.hidden = true;
+		featuresEl.hidden = true;
+		contentEl.hidden = false;
+		contentEl.className = "empty";
+		contentEl.textContent = "No assessment.json found.";
+		return;
+	}
+	if (shareBtn) shareBtn.hidden = false;
+	if (glossaryBtn) glossaryBtn.hidden = false;
+	subtabsEl.hidden = false;
+	contentEl.hidden = true;
+
+	// Render the Summary (markdown) sub-tab. When no assessment.md exists,
+	// fall back to a friendly message — the user can still drop into Issues/Features.
+	if (a.markdown && typeof a.markdown.content === "string") {
+		summaryMdEl.innerHTML = renderMarkdown(a.markdown.content);
+	} else {
+		summaryMdEl.innerHTML = "<p class=\"empty\">No assessment.md found alongside assessment.json. Switch to <em>Issues</em> for the structured breakdown.</p>";
+	}
+
+	// Decide which sub-tab to show. Honor a previously-chosen sub-tab (so SSE
+	// re-renders don't yank the user around), except: when there's no md, an
+	// initial "summary" selection (which the markup defaults to) is a poor
+	// landing — drop to Issues instead. The initial-load detection is "the
+	// user hasn't picked anything yet", which we encode via a one-shot flag.
+	const stored = _getActiveSubTab(subtabsEl);
+	const hasMd = a.markdown && typeof a.markdown.content === "string";
+	let defaultSub;
+	if (hasMd) {
+		defaultSub = stored ?? "summary";
+	} else if (stored && stored !== "summary") {
+		defaultSub = stored;
+	} else {
+		defaultSub = "issues";
+	}
+	setSubTab(subtabsEl, defaultSub);
+
+	// Two-column summary header: tiles + top categories on the left, By severity
+	// + By category bars on the right. Side-by-side keeps the header compact so
+	// the sub-tab content is visible without scrolling.
+	const grid = document.createElement("div");
+	grid.className = "assessment-summary-grid";
+
+	const left = document.createElement("div");
+	left.className = "assessment-summary-left";
+
+	const counts = a.counts;
+	const tiles = document.createElement("div");
+	tiles.className = "tiles";
+	for (const [label, value, sev] of [
+		["Projects", counts.projects, "none"],
+		["Issues", counts.issues, counts.issues > 0 ? "medium" : "none"],
+		["Incidents", counts.incidents, counts.incidents > 0 ? "medium" : "none"],
+		["Mandatory", counts.mandatory, counts.mandatory > 0 ? "high" : "none"],
+		["Effort", counts.effort, "none"],
+	]) {
+		const tile = document.createElement("div");
+		tile.className = `tile sev-${sev}`;
+		const v = document.createElement("div");
+		v.className = "tile-value";
+		v.textContent = String(value);
+		const l = document.createElement("div");
+		l.className = "tile-label";
+		l.textContent = label;
+		tile.append(v, l);
+		tiles.append(tile);
+	}
+	left.append(tiles);
+
+	const topCats = _topCategories(a.category);
+	if (topCats.length > 0) {
+		const catHeading = document.createElement("h4");
+		catHeading.className = "section-subhead";
+		catHeading.textContent = "Top categories";
+		left.append(catHeading);
+		const catTiles = document.createElement("div");
+		catTiles.className = "tiles categories-tiles";
+		for (const [name, count] of topCats) {
+			const tile = document.createElement("div");
+			tile.className = "tile sev-none";
+			const v = document.createElement("div");
+			v.className = "tile-value";
+			v.textContent = String(count);
+			const l = document.createElement("div");
+			l.className = "tile-label";
+			l.textContent = name;
+			tile.append(v, l);
+			catTiles.append(tile);
+		}
+		left.append(catTiles);
+	}
+
+	const right = document.createElement("div");
+	right.className = "assessment-summary-right";
+	right.append(renderBars("By severity", a.severity, severityClass));
+	right.append(renderBars("By category", a.category, () => "bar-cat"));
+
+	grid.append(left, right);
+	summaryEl.append(grid);
+
+	// Issues sub-tab body — incident grouping (mirrors dashboard AssessmentExplorerPanel).
+	const incidents = _flattenIncidents(a.projects, a.rules ?? {});
+	if (incidents.length === 0) {
+		// Fall back to per-project summary if the assessment didn't include
+		// ruleInstances at all.
+		if (a.projects.length > 0) {
+			const heading = document.createElement("h3");
+			heading.textContent = "Projects";
+			issuesEl.append(heading);
+			const table = document.createElement("table");
+			table.className = "assess-table";
+			table.innerHTML = `
+				<thead><tr>
+					<th>Project</th><th>Framework</th><th>Kind</th>
+					<th class="num">Issues</th><th class="num">Story pts</th>
+				</tr></thead>`;
+			const tbody = document.createElement("tbody");
+			for (const p of a.projects) {
+				const tr = document.createElement("tr");
+				tr.innerHTML = `
+					<td>${escapeHtml(p.appName ?? p.path ?? "")}${p.startingProject ? " <span class=\"tag\">entry</span>" : ""}</td>
+					<td>${escapeHtml(p.frameworks.join(", "))}</td>
+					<td>${escapeHtml(p.projectKind ?? "")}</td>
+					<td class="num">${p.issues}</td>
+					<td class="num">${p.storyPoints}</td>`;
+				tbody.append(tr);
+			}
+			table.append(tbody);
+			issuesEl.append(table);
+		} else {
+			const p = document.createElement("p");
+			p.className = "empty";
+			p.textContent = "No per-project issue data.";
+			issuesEl.append(p);
+		}
+	} else {
+		renderIssuesExplorer(issuesEl, incidents, {
+			searchHadFocus: issuesSearchHadFocus,
+			searchCaret: issuesSearchCaret,
+		});
+	}
+
+	// Features sub-tab body.
+	const features = Array.isArray(a.features) ? a.features : [];
+	if (features.length === 0) {
+		const p = document.createElement("p");
+		p.className = "empty";
+		p.textContent = "No features detected in this assessment.";
+		featuresEl.append(p);
+	} else {
+		const heading = document.createElement("h3");
+		heading.textContent = `Features (${features.length})`;
+		featuresEl.append(heading);
+		const list = document.createElement("ul");
+		list.className = "features-list";
+		for (const f of features) {
+			const li = document.createElement("li");
+			li.className = "feature-item";
+
+			const head = document.createElement("div");
+			head.className = "feature-head";
+			const id = document.createElement("span");
+			id.className = "feature-id";
+			id.textContent = f.featureId;
+			const count = document.createElement("span");
+			count.className = "feature-count";
+			count.textContent = `${f.totalIncidents} incident${f.totalIncidents === 1 ? "" : "s"}`;
+			head.append(id, count);
+			li.append(head);
+
+			if (f.projects.length > 0) {
+				const projects = document.createElement("ul");
+				projects.className = "feature-projects";
+				for (const fp of f.projects) {
+					const proj = document.createElement("li");
+					proj.innerHTML = `<span class="proj-name">${escapeHtml(fp.projectName)}</span> <span class="bar-value">${fp.incidentCount}</span>`;
+					projects.append(proj);
+				}
+				li.append(projects);
+			}
+			list.append(li);
+		}
+		featuresEl.append(list);
+	}
+}
+
+// ---- Issues explorer helpers (mirrors lib/issues-grouping.mjs) ----
+const _SEVERITY_ORDER = ["Mandatory", "Optional", "Potential", "Information"];
+
+function _severityRank(s) {
+	const i = _SEVERITY_ORDER.indexOf(s);
+	return i < 0 ? _SEVERITY_ORDER.length : i;
+}
+
+function _deriveCategory(rule, ruleId) {
+	if (rule && typeof rule.category === "string" && rule.category) return rule.category;
+	if (typeof ruleId === "string" && ruleId.includes(".")) {
+		return ruleId.slice(0, ruleId.indexOf("."));
+	}
+	return "Uncategorized";
+}
+
+function _projectName(p) {
+	if (typeof p !== "string" || !p) return "(unknown project)";
+	const normalized = p.replace(/\\/g, "/");
+	const base = normalized.split("/").pop() ?? normalized;
+	return base.replace(/\.[a-z]+proj$/i, "");
+}
+
+function _flattenIncidents(projects, rules) {
+	const out = [];
+	if (!Array.isArray(projects)) return out;
+	const ruleMap = rules && typeof rules === "object" ? rules : {};
+	for (const p of projects) {
+		if (!p || typeof p !== "object") continue;
+		const instances = Array.isArray(p.ruleInstances) ? p.ruleInstances : [];
+		const projPath = p.path ?? null;
+		const projDisplay = p.appName ?? _projectName(projPath);
+		for (const ri of instances) {
+			if (!ri || typeof ri !== "object") continue;
+			const ruleId = typeof ri.ruleId === "string" ? ri.ruleId : "(unknown)";
+			const rule = ruleMap[ruleId] ?? null;
+			const severity = (rule && typeof rule.severity === "string") ? rule.severity : "Information";
+			out.push({
+				incidentId: typeof ri.incidentId === "string" ? ri.incidentId : null,
+				ruleId,
+				ruleLabel: (rule && typeof rule.label === "string") ? rule.label : ruleId,
+				ruleDescription: (rule && typeof rule.description === "string") ? rule.description : null,
+				severity,
+				category: _deriveCategory(rule, ruleId),
+				mandatory: severity === "Mandatory",
+				isFeature: !!(rule && rule.isFeature),
+				project: projDisplay,
+				projectPath: ri.projectPath ?? projPath,
+				location: ri.location && typeof ri.location === "object" ? ri.location : null,
+				description: typeof ri.description === "string" ? ri.description : null,
+				state: typeof ri.state === "string" ? ri.state : null,
+			});
+		}
+	}
+	return out;
+}
+
+function _lc(s) { return typeof s === "string" ? s.toLowerCase() : ""; }
+
+function _incidentMatchesSearch(incident, query) {
+	const q = typeof query === "string" ? query.toLowerCase() : "";
+	if (!q) return true;
+	if (_lc(incident.ruleId).includes(q)) return true;
+	if (_lc(incident.ruleLabel).includes(q)) return true;
+	if (_lc(incident.project).includes(q)) return true;
+	if (_lc(incident.projectPath).includes(q)) return true;
+	if (_lc(incident.description).includes(q)) return true;
+	const loc = incident.location ?? {};
+	if (_lc(loc.path).includes(q)) return true;
+	if (_lc(loc.label).includes(q)) return true;
+	if (_lc(loc.snippet).includes(q)) return true;
+	if (_lc(incident.severity).includes(q)) return true;
+	if (_lc(incident.category).includes(q)) return true;
+	return false;
+}
+
+function _groupIncidents(incidents, groupBy, search) {
+	if (!Array.isArray(incidents)) return [];
+	const filtered = incidents.filter((i) => i && _incidentMatchesSearch(i, search ?? ""));
+	const buckets = new Map();
+	const groupKey = (i) => {
+		switch (groupBy) {
+			case "category": return i.category ?? "Uncategorized";
+			case "severity": return i.severity ?? "Information";
+			case "project": return i.project ?? "(unknown project)";
+			case "rule":
+			default: return i.ruleId;
+		}
+	};
+	const groupLabel = (i, key) => {
+		if (groupBy === "rule") return i.ruleLabel ? `${key} — ${i.ruleLabel}` : key;
+		return String(key);
+	};
+	for (const inc of filtered) {
+		const key = groupKey(inc);
+		let g = buckets.get(key);
+		if (!g) {
+			g = { key, label: groupLabel(inc, key), severity: null, count: 0, incidents: [] };
+			buckets.set(key, g);
+		}
+		g.incidents.push(inc);
+		g.count++;
+		if (g.severity === null || _severityRank(inc.severity) < _severityRank(g.severity)) {
+			g.severity = inc.severity;
+		}
+	}
+	const groups = [...buckets.values()];
+	if (groupBy === "severity") {
+		groups.sort((a, b) => _severityRank(a.key) - _severityRank(b.key));
+	} else {
+		groups.sort((a, b) => (b.count - a.count) || a.label.localeCompare(b.label));
+	}
+	return groups;
+}
+
+// Module-scoped UI state for the Issues explorer. Lives across re-renders so
+// the user's group-by, search query, and expansion set are preserved when SSE
+// pushes a new state. `pendingTimer` is a debounce id we cancel on re-render
+// to avoid orphan callbacks writing to torn-down DOM.
+const _issuesExplorerState = {
+	groupBy: "rule",
+	search: "",
+	expanded: new Set(),
+	pendingTimer: null,
+};
+
+function renderIssuesExplorer(root, incidents, focusOpts) {
+	// Cancel any in-flight debounce from a previous renderIssuesExplorer call.
+	if (_issuesExplorerState.pendingTimer !== null) {
+		clearTimeout(_issuesExplorerState.pendingTimer);
+		_issuesExplorerState.pendingTimer = null;
+	}
+	const hadFocus = !!(focusOpts && focusOpts.searchHadFocus);
+	const prevCaret = hadFocus ? (focusOpts.searchCaret ?? null) : null;
+
+	root.innerHTML = "";
+	const toolbar = document.createElement("div");
+	toolbar.className = "issues-toolbar";
+
+	const searchLabel = document.createElement("label");
+	searchLabel.className = "issues-search-label";
+	searchLabel.textContent = "Search ";
+	const search = document.createElement("input");
+	search.type = "search";
+	search.className = "issues-search";
+	search.placeholder = "rule, project, file, snippet…";
+	search.value = _issuesExplorerState.search;
+	searchLabel.append(search);
+
+	const groupLabel = document.createElement("label");
+	groupLabel.className = "issues-group-label";
+	groupLabel.textContent = "Group by ";
+	const groupSel = document.createElement("select");
+	groupSel.className = "issues-group-select";
+	for (const [val, txt] of [["rule", "Rule"], ["category", "Category"], ["severity", "Severity"], ["project", "Project"]]) {
+		const opt = document.createElement("option");
+		opt.value = val; opt.textContent = txt;
+		if (val === _issuesExplorerState.groupBy) opt.selected = true;
+		groupSel.append(opt);
+	}
+	groupLabel.append(groupSel);
+
+	const status = document.createElement("span");
+	status.className = "issues-status";
+
+	toolbar.append(searchLabel, groupLabel, status);
+	root.append(toolbar);
+
+	const groupsRoot = document.createElement("div");
+	groupsRoot.className = "issues-groups";
+	root.append(groupsRoot);
+
+	const renderGroups = () => {
+		const groups = _groupIncidents(incidents, _issuesExplorerState.groupBy, _issuesExplorerState.search);
+		const total = groups.reduce((n, g) => n + g.count, 0);
+		status.textContent = `${total} of ${incidents.length} incident${incidents.length === 1 ? "" : "s"}`;
+		groupsRoot.innerHTML = "";
+		if (groups.length === 0) {
+			const p = document.createElement("p");
+			p.className = "empty";
+			p.textContent = "No incidents match the current search.";
+			groupsRoot.append(p);
+			return;
+		}
+		for (const g of groups) {
+			const details = document.createElement("details");
+			details.className = "issues-group";
+			if (_issuesExplorerState.expanded.has(g.key)) details.open = true;
+			details.addEventListener("toggle", () => {
+				if (details.open) _issuesExplorerState.expanded.add(g.key);
+				else _issuesExplorerState.expanded.delete(g.key);
+			});
+			const summary = document.createElement("summary");
+			summary.className = "issues-group-head";
+			const sevBadge = document.createElement("span");
+			sevBadge.className = `sev-badge sev-${(g.severity ?? "Information").toLowerCase()}`;
+			sevBadge.textContent = g.severity ?? "Info";
+			const label = document.createElement("span");
+			label.className = "issues-group-label-txt";
+			label.textContent = g.label;
+			const count = document.createElement("span");
+			count.className = "issues-group-count";
+			count.textContent = `${g.count}`;
+			summary.append(sevBadge, label, count);
+			details.append(summary);
+
+			const list = document.createElement("ul");
+			list.className = "issues-incident-list";
+			for (const inc of g.incidents) {
+				const li = document.createElement("li");
+				li.className = "issues-incident";
+				const head = document.createElement("div");
+				head.className = "issues-incident-head";
+				const proj = document.createElement("span");
+				proj.className = "issues-incident-project";
+				proj.textContent = inc.project;
+				const sev = document.createElement("span");
+				sev.className = `sev-badge sev-${(inc.severity ?? "Information").toLowerCase()}`;
+				sev.textContent = inc.severity ?? "Info";
+				const ruleId = document.createElement("span");
+				ruleId.className = "issues-incident-rule";
+				ruleId.textContent = inc.ruleLabel;
+				head.append(sev, ruleId, proj);
+				li.append(head);
+
+				if (inc.location && inc.location.path) {
+					const loc = document.createElement("div");
+					loc.className = "issues-incident-loc";
+					const where = inc.location.line
+						? `${inc.location.path}:${inc.location.line}`
+						: inc.location.path;
+					loc.textContent = where;
+					li.append(loc);
+				}
+				if (inc.location && inc.location.snippet) {
+					const snip = document.createElement("code");
+					snip.className = "issues-incident-snippet";
+					snip.textContent = inc.location.snippet;
+					li.append(snip);
+				}
+				if (inc.description || inc.ruleDescription) {
+					const desc = document.createElement("div");
+					desc.className = "issues-incident-desc";
+					desc.textContent = inc.description ?? inc.ruleDescription;
+					li.append(desc);
+				}
+				list.append(li);
+			}
+			details.append(list);
+			groupsRoot.append(details);
+		}
+	};
+
+	search.addEventListener("input", () => {
+		// Persist immediately so a re-render mid-typing doesn't lose the value
+		// or apply a "ghost" filter the user can no longer see in the box.
+		_issuesExplorerState.search = search.value;
+		if (_issuesExplorerState.pendingTimer !== null) {
+			clearTimeout(_issuesExplorerState.pendingTimer);
+		}
+		_issuesExplorerState.pendingTimer = setTimeout(() => {
+			_issuesExplorerState.pendingTimer = null;
+			renderGroups();
+		}, 120);
+	});
+	groupSel.addEventListener("change", () => {
+		_issuesExplorerState.groupBy = groupSel.value;
+		_issuesExplorerState.expanded.clear();
+		renderGroups();
+	});
+
+	renderGroups();
+	// Restore focus + caret if the user had been typing.
+	if (hadFocus) {
+		search.focus();
+		if (prevCaret) {
+			try { search.setSelectionRange(prevCaret.start, prevCaret.end); } catch { /* type=search may not allow */ }
+		}
+	}
+}
+
+function renderBars(title, dict, classFor) {
+	const wrap = document.createElement("div");
+	wrap.className = "bars";
+	const h = document.createElement("h4");
+	h.textContent = title;
+	wrap.append(h);
+	const entries = Object.entries(dict ?? {});
+	if (entries.length === 0) {
+		const p = document.createElement("p");
+		p.className = "empty";
+		p.textContent = "No data.";
+		wrap.append(p);
+		return wrap;
+	}
+	const max = Math.max(...entries.map(([, v]) => v), 1);
+	for (const [name, value] of entries) {
+		const row = document.createElement("div");
+		row.className = "bar-row";
+		const lbl = document.createElement("span");
+		lbl.className = "bar-label";
+		lbl.textContent = name;
+		const trough = document.createElement("span");
+		trough.className = "bar-trough";
+		const fill = document.createElement("span");
+		fill.className = `bar-fill ${classFor(name)}`;
+		fill.style.width = `${Math.max(2, (value / max) * 100)}%`;
+		trough.append(fill);
+		const val = document.createElement("span");
+		val.className = "bar-value";
+		val.textContent = String(value);
+		row.append(lbl, trough, val);
+		wrap.append(row);
+	}
+	return wrap;
+}
+
+function severityClass(name) {
+	switch (name) {
+		case "Mandatory":
+			return "bar-high";
+		case "Optional":
+			return "bar-medium";
+		case "Potential":
+			return "bar-low";
+		default:
+			return "bar-info";
+	}
+}
+
+function escapeHtml(s) {
+	return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+// Tiny markdown → HTML converter for progress-details.md. Handles the subset
+// the agent actually emits: ATX headings, fenced code blocks, ordered &
+// unordered lists, paragraphs, inline `code`, **bold**, *italic*, and links.
+// Not a full CommonMark implementation — just enough to read nicely.
+function renderMarkdown(src) {
+	if (!src) return "";
+	const lines = src.replace(/\r\n/g, "\n").split("\n");
+	const out = [];
+	let i = 0;
+
+	function renderInline(text) {
+		let s = escapeHtml(text);
+		// Code spans first so other markers don't apply inside them.
+		s = s.replace(/`([^`]+?)`/g, (_, c) => `<code>${c}</code>`);
+		// Bold (**) before italics so ** isn't eaten by * rule.
+		s = s.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
+		s = s.replace(/\b_([^_]+?)_\b/g, "<em>$1</em>");
+		s = s.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, "$1<em>$2</em>");
+		// Links [text](url).
+		s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => {
+			// In-page anchor (table-of-contents) link. Keep it same-document and
+			// let the delegated click handler scroll to the heading. Using
+			// target="_blank" here would try to open a bare fragment in a new
+			// browsing context — a no-op inside the canvas webview, which is why
+			// TOC links appeared dead.
+			if (u.startsWith("#")) {
+				return `<a href="${u}" class="md-anchor">${t}</a>`;
+			}
+			const safe = /^(https?:|mailto:)/i.test(u) ? u : "#";
+			return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${t}</a>`;
+		});
+		return s;
+	}
+
+	// GitHub-compatible heading slugger (mirrors the anchors the agent writes
+	// into the assessment.md table of contents): lowercase, drop everything
+	// that isn't a letter, number, space, hyphen, or underscore (this strips
+	// punctuation, emoji, and other symbols just like github-slugger), turn
+	// spaces into hyphens, and de-duplicate repeats with a numeric suffix
+	// (foo, foo-1, foo-2, ...). De-dup tracks the final emitted slug — not just
+	// the base — so a literal collision (Foo, "Foo 1", Foo) still resolves to
+	// foo, foo-1, foo-2 instead of emitting foo-1 twice.
+	const usedSlugs = new Map();
+	function slugify(rawText) {
+		let base = _stripInlineMarkdown(rawText)
+			.trim()
+			.toLowerCase()
+			.replace(/[^\p{L}\p{N}\s\-_]/gu, "")
+			.replace(/\s/g, "-");
+		if (!base) base = "section";
+		let slug = base;
+		while (usedSlugs.has(slug)) {
+			const next = (usedSlugs.get(base) || 0) + 1;
+			usedSlugs.set(base, next);
+			slug = `${base}-${next}`;
+		}
+		usedSlugs.set(slug, 0);
+		return slug;
+	}
+
+	while (i < lines.length) {
+		const line = lines[i];
+
+		// Fenced code block.
+		const fence = /^```(\w*)\s*$/.exec(line);
+		if (fence) {
+			const lang = fence[1] || "";
+			i++;
+			const buf = [];
+			while (i < lines.length && !/^```\s*$/.test(lines[i])) {
+				buf.push(lines[i]);
+				i++;
+			}
+			if (i < lines.length) i++; // consume closing fence
+			out.push(`<pre class="md-code${lang ? ` lang-${lang}` : ""}"><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
+			continue;
+		}
+
+		// GFM-style pipe table. Header row, optional alignment row, then body.
+		// Look ahead: current line has at least one pipe, next line is the
+		// alignment row (only |, :, -, spaces). Cells are split on unescaped |.
+		if (line.includes("|") && i + 1 < lines.length && /^\s*\|?[\s|:-]+\|[\s|:-]+\|?\s*$/.test(lines[i + 1])) {
+			const headerCells = parseTableRow(line);
+			const align = parseAlignRow(lines[i + 1]);
+			const rows = [];
+			i += 2;
+			while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+				rows.push(parseTableRow(lines[i]));
+				i++;
+			}
+			const head = headerCells.map((c, k) => `<th${alignAttr(align[k])}>${renderInline(c)}</th>`).join("");
+			const body = rows
+				.map((r) => "<tr>" + r.map((c, k) => `<td${alignAttr(align[k])}>${renderInline(c)}</td>`).join("") + "</tr>")
+				.join("");
+			out.push(`<table class="md-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`);
+			continue;
+		}
+
+		// ATX heading (#, ##, ###). Trailing decorative #'s ("## Foo ##") are
+		// stripped so the slug matches GitHub (foo, not foo-).
+		const heading = /^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/.exec(line);
+		if (heading) {
+			const lvl = Math.min(heading[1].length + 2, 6); // h1 -> h3 to avoid huge text in the panel
+			const id = slugify(heading[2]);
+			out.push(`<h${lvl} class="md-h" id="${id}">${renderInline(heading[2])}</h${lvl}>`);
+			i++;
+			continue;
+		}
+
+		// Unordered list (indentation-aware: nests sub-lists by leading whitespace).
+		if (/^\s*[-*]\s+/.test(line)) {
+			const block = [];
+			while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+				block.push(lines[i]);
+				i++;
+			}
+			out.push(buildNestedList(block, "ul", "md-ul"));
+			continue;
+		}
+
+		// Ordered list (indentation-aware).
+		if (/^\s*\d+\.\s+/.test(line)) {
+			const block = [];
+			while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+				block.push(lines[i]);
+				i++;
+			}
+			out.push(buildNestedList(block, "ol", "md-ol"));
+			continue;
+		}
+
+		// Blank line — paragraph break.
+		if (line.trim() === "") {
+			i++;
+			continue;
+		}
+
+		// Paragraph (consume contiguous non-blank lines).
+		const buf = [line];
+		i++;
+		while (i < lines.length && lines[i].trim() !== "" && !/^(#{1,6}\s|```|\s*[-*]\s|\s*\d+\.\s|\|)/.test(lines[i])) {
+			buf.push(lines[i]);
+			i++;
+		}
+		out.push(`<p>${renderInline(buf.join(" "))}</p>`);
+	}
+
+	// Split a "| col | col | col |" row into trimmed cells. Pipes inside
+	// backtick code spans and pipes escaped with `\|` are treated as content.
+	function parseTableRow(row) {
+		let s = row.trim();
+		if (s.startsWith("|")) s = s.slice(1);
+		if (s.endsWith("|")) s = s.slice(0, -1);
+		const cells = [];
+		let buf = "";
+		let inCode = false;
+		for (let k = 0; k < s.length; k++) {
+			const ch = s[k];
+			if (ch === "\\" && k + 1 < s.length && s[k + 1] === "|") {
+				buf += "|"; // unescaped pipe
+				k++;
+				continue;
+			}
+			if (ch === "`") {
+				inCode = !inCode;
+				buf += ch;
+				continue;
+			}
+			if (ch === "|" && !inCode) {
+				cells.push(buf.trim());
+				buf = "";
+				continue;
+			}
+			buf += ch;
+		}
+		cells.push(buf.trim());
+		return cells;
+	}
+
+	// Parse the GFM alignment row (`|:--|--:|:-:|---|`) into per-column align values.
+	function parseAlignRow(row) {
+		const cells = parseTableRow(row);
+		return cells.map((c) => {
+			const left = c.startsWith(":");
+			const right = c.endsWith(":");
+			if (left && right) return "center";
+			if (right) return "right";
+			if (left) return "left";
+			return null;
+		});
+	}
+
+	function alignAttr(a) {
+		return a ? ` style="text-align:${a}"` : "";
+	}
+
+	// Build a nested <ul>/<ol> from a contiguous block of list lines. Lines are
+	// grouped by indentation: each level deeper (relative to the parent) becomes
+	// a nested <ul> attached to the most recent <li>. Mirrors how GFM/CommonMark
+	// treats indentation as the nesting cue.
+	function buildNestedList(block, tag, cls) {
+		const marker = tag === "ol" ? /^(\s*)\d+\.\s+/ : /^(\s*)[-*]\s+/;
+		const items = block.map((ln) => {
+			const m = marker.exec(ln);
+			const indent = m ? m[1].replace(/\t/g, "  ").length : 0;
+			const text = ln.replace(marker, "");
+			return { indent, text };
+		});
+		// Normalize indents: snap the smallest indent to 0 and scale by minimum
+		// indent step so layouts with 2- or 4-space indents both behave.
+		const indents = [...new Set(items.map((it) => it.indent))].sort((a, b) => a - b);
+		const baseline = indents[0] ?? 0;
+		const step = indents.length > 1 ? Math.max(1, indents[1] - baseline) : 1;
+		const levels = items.map((it) => Math.max(0, Math.round((it.indent - baseline) / step)));
+
+		function render(start, depth) {
+			const parts = [];
+			let i2 = start;
+			while (i2 < items.length && levels[i2] >= depth) {
+				if (levels[i2] > depth) {
+					// Skip — handled by the recursive call below.
+					i2++;
+					continue;
+				}
+				let li = `<li>${renderInline(items[i2].text)}`;
+				const childStart = i2 + 1;
+				if (childStart < items.length && levels[childStart] > depth) {
+					const { html, end } = render(childStart, depth + 1);
+					li += html;
+					i2 = end;
+				} else {
+					i2++;
+				}
+				li += "</li>";
+				parts.push(li);
+			}
+			return { html: `<${tag} class="${cls}">${parts.join("")}</${tag}>`, end: i2 };
+		}
+		return render(0, 0).html;
+	}
+
+	return out.join("\n");
+}
+
+// In-page table-of-contents navigation. Rendered markdown emits same-document
+// anchor links (<a class="md-anchor" href="#slug">) alongside matching heading
+// ids. The canvas runs inside a sandboxed webview, so we intercept the click and
+// scroll the target heading into view ourselves. The lookup is scoped to the
+// markdown block the link lives in, so duplicate ids across panels (e.g. an
+// assessment summary and a scenario description) don't cross-jump.
+document.addEventListener("click", (e) => {
+	const link = e.target?.closest?.("a.md-anchor");
+	if (!link) return;
+	const href = link.getAttribute("href") || "";
+	if (!href.startsWith("#") || href.length < 2) return;
+	// This is one of our in-page TOC anchors; never let the webview try to
+	// navigate to the bare fragment (which would only litter the back-stack).
+	e.preventDefault();
+	let id;
+	try {
+		id = decodeURIComponent(href.slice(1));
+	} catch {
+		id = href.slice(1);
+	}
+	const scope = link.closest(".md, .md-body, .scenario-instructions, .task-details") ?? document;
+	let target = null;
+	for (const el of scope.querySelectorAll("[id]")) {
+		if (el.id === id) {
+			target = el;
+			break;
+		}
+	}
+	// Fall back to a document-wide lookup only when the hit is itself inside a
+	// markdown block, so a section titled e.g. "Status" can't jump to unrelated
+	// dashboard chrome that happens to own id="status".
+	if (!target && scope !== document) {
+		const candidate = document.getElementById(id);
+		if (candidate?.closest(".md, .md-body, .scenario-instructions, .task-details")) {
+			target = candidate;
+		}
+	}
+	if (target) {
+		target.scrollIntoView({ behavior: "smooth", block: "start" });
+	}
+});
+
+// Subscribe to SSE for live updates pushed by the extension.
+const sse = new EventSource(`./events?instanceId=${encodeURIComponent(instanceId)}`);
+sse.onmessage = (event) => {
+	// A successful message means the stream is healthy — clear any prior
+	// "disconnected" toast so a transient reconnect doesn't leave a sticky
+	// warning in the footer.
+	if (statusEl.textContent && statusEl.textContent.startsWith("disconnected")) {
+		statusEl.textContent = "";
+	}
+	try {
+		render(JSON.parse(event.data));
+	} catch (err) {
+		statusEl.textContent = `parse error: ${err.message}`;
+	}
+};
+sse.addEventListener("panel", (event) => {
+	try {
+		const { panel } = JSON.parse(event.data);
+		if (panel) setPanel(panel);
+	} catch {
+		// ignore
+	}
+});
+sse.onopen = () => {
+	if (statusEl.textContent && statusEl.textContent.startsWith("disconnected")) {
+		statusEl.textContent = "";
+	}
+};
+sse.onerror = () => {
+	// EventSource auto-reconnects with backoff; surface the state but the
+	// next successful message/open will clear it.
+	if (sse.readyState === EventSource.CLOSED || sse.readyState === EventSource.CONNECTING) {
+		statusEl.textContent = "disconnected — retrying";
+	}
+};
+
+</script>
+</body>
+</html>

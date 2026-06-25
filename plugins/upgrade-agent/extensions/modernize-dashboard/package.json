@@ -1,0 +1,8 @@
+{
+  "description": "Canvas extension that mirrors the .NET upgrade dashboard inside the GitHub App side panel. Also ships a standalone CLI entry (\u0060modernize-dashboard\u0060) that launches the same UI as a local web app for use outside the canvas.",
+  "version": "0.1.0",
+  "name": "modernize-dashboard",
+  "type": "module",
+  "main": "extension.mjs",
+  "private": true
+}
