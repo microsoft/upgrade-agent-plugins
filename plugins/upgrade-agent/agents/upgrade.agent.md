@@ -15,6 +15,10 @@ mcp-servers:
     tools: ['*']
     deferTools: 'never'
     env:
+      # NOTE: the local inner-loop installer (tools/install-local.ps1) builds
+      # its own env block by hand and does NOT read this file. If you add,
+      # remove, or change a host-level env var here, mirror it in that script's
+      # orchestrator MCP `Env` block so local dev matches the shipped plugin.
       APPMOD_CALLER_TYPE: copilot-cli
       # Disable MCP Apps (SEP-1865) UI for the plugin-hosted server. The GitHub
       # Copilot App mounts MCP App UIs only on tool completion, which deadlocks
