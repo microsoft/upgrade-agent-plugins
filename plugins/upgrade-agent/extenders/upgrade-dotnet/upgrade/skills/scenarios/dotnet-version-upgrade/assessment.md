@@ -7,7 +7,7 @@ This file contains **2 required steps** and **edge case handling**. You MUST rea
 | Step | Section | What It Covers |
 |------|---------|----------------|
 | 1 | Analyze Projects | Run analysis, handle security vulnerabilities |
-| 2 | Present Assessment | Open assessment.md, show summary to user |
+| 2 | Present Assessment | Open assessment.md, show summary to user, estimate token budget |
 | - | Handling Edge Cases | No projects, already latest, unsupported types |
 | - | Checklist | Final verification before planning |
 
@@ -109,6 +109,20 @@ These will be addressed as part of the upgrade.
 {end if}
 </response_template>
 
+### 2.3 Estimate Token Budget
+
+Immediately after presenting the assessment summary — and **before** the mode-specific footer below — give the user a pre-execution token budget so they can decide whether to proceed, narrow scope, or switch models before any work starts.
+
+Call the estimation tool for the two reference models (Claude Opus and GPT) so the user can compare:
+
+```
+predict_token_usage(model_ids: ["claude-opus-4.6", "gpt-5.4"])
+```
+
+Then present the result by following the **token-usage-prediction** system skill (per-model low–high input/output bands, never summed, plus its mandatory ~30× variance caveat). Do **not** write the estimate into `assessment.md` — present it in chat only, appended under the assessment summary.
+
+**If the tool returns no estimate** (empty `tokensByModel`, e.g. a `message` saying no assessment data was found): skip the estimate silently. Just note the assessment is ready and continue — do not invent numbers or block on it.
+
 #### Guided Mode — block and wait
 
 Append the following footer after the summary, then **wait for user approval**:
@@ -176,3 +190,4 @@ What would you like to do?
 - [ ] assessment.md created
 - [ ] Security vulnerabilities documented (if any) — included in upgrade by default
 - [ ] Assessment summary presented to user
+- [ ] Token budget estimated (`predict_token_usage`) and presented in chat — or skipped if no estimate was returned

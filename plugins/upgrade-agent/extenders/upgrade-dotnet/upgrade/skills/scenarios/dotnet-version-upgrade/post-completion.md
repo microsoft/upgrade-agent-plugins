@@ -42,6 +42,25 @@ If the version is already current, skip Aspire entirely.
 
 ---
 
+## Candidate 3: Adopt Modern WinForms Features (emoji: 🎨)
+
+**Signal-based check:** If signals include `HasWinForms` AND target TFM is >= net9.0, WinForms projects can use modern features.
+**Fallback check (no signals):** Look for `<UseWindowsForms>true</UseWindowsForms>` in upgraded project files AND verify target framework is net9.0 or higher.
+
+**If WinForms detected AND upgraded to .NET 9+:**
+- **Title:** Adopt modern WinForms features (dark mode, async APIs, MVVM)
+- **Description:** Your WinForms projects are now on .NET 9+, which unlocks dark mode support, modern async APIs with cancellation token support, and improved data binding for MVVM patterns. These features can enhance your desktop applications with better user experience and code quality.
+- **CTA:** Would you like me to modernize your WinForms UI code with these features?
+
+**If WinForms detected AND upgraded to .NET 8:**
+- **Title:** Adopt MVVM pattern for better testability
+- **Description:** Your WinForms projects are now on .NET 8+, which includes improved data binding support. You can adopt the MVVM pattern to separate business logic from UI, making your application more testable and maintainable.
+- **CTA:** Would you like me to refactor your WinForms code to use MVVM?
+
+If WinForms is not detected or TFM is below .NET 8, skip this suggestion.
+
+---
+
 ## What NOT to suggest
 
-Do not suggest other signals from `assessment.md` (Newtonsoft.Json, WCF, ADO.NET, OWIN, etc.) — these should have been addressed during the upgrade tasks. Only suggest Aspire and EF6 as described above.
+Do not suggest other signals from `assessment.md` (Newtonsoft.Json, WCF, ADO.NET, OWIN, etc.) — these should have been addressed during the upgrade tasks. Only suggest Aspire, EF6, and WinForms as described above.

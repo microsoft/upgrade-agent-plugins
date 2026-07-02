@@ -122,9 +122,28 @@ mode, call `extensions_reload` (or restart the agent) to pick it up.
 
 ## Limitations vs. the Blazor dashboard
 
-This POC is intentionally shallow. It does **not** load upgrade plugin DLLs
-or launch the ServiceHost process. It reads the same on-disk artifacts and
-renders a flat HTML view. Within those bounds it mirrors:
+This POC is intentionally shallow. It reads the same on-disk artifacts and
+renders a flat HTML view, with a lightweight ServiceHost process spawned to
+produce `activity.jsonl`. The ServiceHost binary is discovered automatically
+from the NuGet global packages cache
+(`~/.nuget/packages/microsoft.githubcopilot.upgrade.mcp/*/tools/*/any/Dashboard/`).
+
+### Testing with a locally-built ServiceHost
+
+If you need to test a local build of ServiceHost instead of the one from the
+installed plugin, set the `DASHBOARD_SERVICE_HOST_DIR` environment variable to
+point to your build output:
+
+```powershell
+# Point to your local Debug build
+$env:DASHBOARD_SERVICE_HOST_DIR = "C:\path\to\repo\bin\Debug\Upgrade.Dashboard.ServiceHost\net10.0"
+
+# Remember to clear it when done to avoid stale overrides
+Remove-Item Env:\DASHBOARD_SERVICE_HOST_DIR
+```
+
+When set, this env var takes priority over the NuGet cache. **Clear it when
+you're done testing** to avoid accidentally running a stale local build.
 
 - the dashboard's changelog event types (`task_started`, `task_completed`,
   `task_failed`, `file_modified`, `commit_created`, `build_completed`,

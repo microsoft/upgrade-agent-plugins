@@ -107,6 +107,39 @@ upgrade-agent/
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   └── migrating-to-microsoft-data-sqlclient/
 │       │       │   │       └── SKILL.md
+│       │       │   ├── desktop/
+│       │       │   │   └── winforms/
+│       │       │   │       ├── building-winforms-applications/
+│       │       │   │       │   ├── references/
+│       │       │   │       │   │   ├── enhancements/
+│       │       │   │       │   │   │   ├── async-apis.md
+│       │       │   │       │   │   │   └── dark-mode.md
+│       │       │   │       │   │   └── detailed-guide.md
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── creating-winforms-custom-controls/
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── managing-winforms-async-apis/
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── managing-winforms-data-binding/
+│       │       │   │       │   ├── references/
+│       │       │   │       │   │   └── detailed-guide.md
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── managing-winforms-designer-code/
+│       │       │   │       │   ├── references/
+│       │       │   │       │   │   └── detailed-guide.md
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── managing-winforms-high-dpi-layout/
+│       │       │   │       │   ├── references/
+│       │       │   │       │   │   └── detailed-guide.md
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       ├── managing-winforms-mvvm/
+│       │       │   │       │   ├── references/
+│       │       │   │       │   │   └── detailed-guide.md
+│       │       │   │       │   └── SKILL.md
+│       │       │   │       └── managing-winforms-rendering/
+│       │       │   │           ├── references/
+│       │       │   │           │   └── detailed-guide.md
+│       │       │   │           └── SKILL.md
 │       │       │   ├── libraries/
 │       │       │   │   ├── integrating-autofac-with-dotnet/
 │       │       │   │   │   └── SKILL.md
@@ -313,7 +346,12 @@ upgrade-agent/
 │       │           │   ├── references/
 │       │           │   │   └── vssdk-project-format.md
 │       │           │   └── SKILL.md
-│       │           └── webforms-to-blazor-upgrade/
+│       │           ├── webforms-to-blazor-upgrade/
+│       │           │   └── SKILL.md
+│       │           └── winforms-feature-adoption/
+│       │               ├── execution.md
+│       │               ├── feature-selection.md
+│       │               ├── planning.md
 │       │               └── SKILL.md
 │       └── upgrade-extension.json
 ├── extensions/
@@ -356,6 +394,8 @@ upgrade-agent/
 │           ├── task-execution/
 │           │   └── SKILL.md
 │           ├── tasks-consistency/
+│           │   └── SKILL.md
+│           ├── token-usage-prediction/
 │           │   └── SKILL.md
 │           └── user-interaction/
 │               └── SKILL.md
