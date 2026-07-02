@@ -5,6 +5,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Code Upgrade</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" integrity="sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
 <style>
 :root {
 	/* === Structural tokens (never themed by the host) ===
@@ -511,9 +513,16 @@ main {
 	white-space: pre-wrap;
 	word-break: break-word;
 	display: grid;
-	grid-template-columns: max-content max-content max-content 1fr;
+	grid-template-columns: max-content max-content max-content 1fr max-content;
 	gap: 4px 10px;
 	align-items: baseline;
+}
+
+.activity li .log-counts {
+	display: flex;
+	gap: 6px;
+	font-size: 12px;
+	white-space: nowrap;
 }
 
 .activity li.activity-task-failed .ev {
@@ -563,6 +572,338 @@ main {
 
 .activity li .detail {
 	color: var(--fg);
+}
+
+.activity li.activity-file {
+	cursor: pointer;
+}
+
+.activity li.activity-file:hover {
+	background: var(--bg-subtle);
+}
+
+.activity li.diff-viewer {
+	display: block;
+	padding: 0;
+	border-bottom: 1px solid var(--border);
+}
+
+.activity-view-tabs {
+	display: flex;
+	gap: 2px;
+	margin-bottom: 12px;
+	border-bottom: 1px solid var(--border);
+	padding-bottom: 0;
+}
+
+.activity-view-tab {
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	padding: 6px 12px;
+	color: var(--fg-muted);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.activity-view-tab:hover {
+	color: var(--fg);
+}
+
+.activity-view-tab.active {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
+.activity-group {
+	margin-bottom: 12px;
+	background: var(--bg-subtle);
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	overflow: hidden;
+}
+
+.activity-group-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 14px 16px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 14px;
+	color: var(--fg);
+}
+
+.activity-group-header:hover {
+	background: rgba(255,255,255,0.03);
+}
+
+.activity-group-header .file-path {
+	color: var(--fg-muted);
+}
+
+.activity-group-header .file-name {
+	font-weight: 700;
+	color: var(--fg);
+}
+
+.activity-group-header .count {
+	background: var(--accent);
+	color: #000;
+	border-radius: 4px;
+	padding: 1px 7px;
+	font-size: 12px;
+	font-weight: 600;
+	margin-left: auto;
+	white-space: nowrap;
+}
+
+.activity-group-header .chevron {
+	transition: transform 0.15s;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.activity-group.collapsed .chevron {
+	transform: rotate(-90deg);
+}
+
+.activity-group.collapsed .file-history,
+.activity-group.collapsed .commit-files {
+	display: none;
+}
+
+.file-history {
+	padding: 4px 16px 12px 16px;
+}
+
+.file-history-entry {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0;
+	font-size: 13px;
+	border-left: 2px solid var(--accent);
+	padding-left: 12px;
+	margin-left: 8px;
+}
+
+.file-history-entry .fh-time {
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	color: var(--fg-muted);
+	font-size: 12px;
+	min-width: 64px;
+}
+
+.file-history-entry .fh-action {
+	font-weight: 700;
+	color: var(--fg);
+	min-width: 70px;
+}
+
+.file-history-entry .fh-adds,
+.commit-file-entry .fh-adds,
+.activity li .fh-adds {
+	color: #3fb950;
+	font-weight: 600;
+}
+
+.file-history-entry .fh-dels,
+.commit-file-entry .fh-dels,
+.activity li .fh-dels {
+	color: #f85149;
+	font-weight: 600;
+}
+
+.file-history-entry {
+	cursor: pointer;
+}
+.file-history-entry:hover {
+	background: var(--bg-subtle);
+	border-radius: var(--radius-small);
+}
+
+.diff-viewer {
+	margin: 4px 0 8px 22px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-compact);
+	overflow: hidden;
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	font-size: 12px;
+	line-height: 1.45;
+}
+.diff-viewer table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+.diff-viewer td, .diff-viewer th {
+	padding: 0;
+	vertical-align: top;
+	border: none;
+}
+.diff-scroll {
+	max-height: 400px;
+	overflow-y: auto;
+	overflow-x: auto;
+}
+
+/* Line number gutters */
+.diff-ln {
+	width: 40px;
+	min-width: 40px;
+	padding: 0 8px 0 4px;
+	text-align: right;
+	color: rgba(139, 148, 158, 0.5);
+	font-size: 11px;
+	user-select: none;
+	vertical-align: top;
+	white-space: nowrap;
+	background: rgba(0, 0, 0, 0.15);
+	border-right: 1px solid var(--border);
+}
+.diff-ln-new {
+	border-right: 1px solid var(--border);
+}
+
+/* Code content cell */
+.diff-code {
+	padding: 0 12px;
+	white-space: pre;
+	overflow: visible;
+}
+.diff-code-prefix {
+	display: inline-block;
+	width: 12px;
+	user-select: none;
+	color: rgba(139, 148, 158, 0.6);
+}
+
+/* Row type colors — background tint only; text colors come from highlight.js */
+.diff-row-add { background: rgba(63, 185, 80, 0.10); }
+.diff-row-add .diff-ln { background: rgba(63, 185, 80, 0.12); }
+.diff-row-add .diff-code-prefix { color: #3fb950; }
+
+.diff-row-del { background: rgba(248, 81, 73, 0.10); }
+.diff-row-del .diff-ln { background: rgba(248, 81, 73, 0.12); }
+.diff-row-del .diff-code-prefix { color: #f85149; }
+
+.diff-row-hunk { background: rgba(56, 139, 253, 0.08); }
+.diff-row-hunk .diff-code { color: #58a6ff; font-style: italic; }
+.diff-row-hunk .diff-ln { background: rgba(56, 139, 253, 0.10); }
+
+.diff-row-ctx { background: transparent; }
+.diff-row-ctx .diff-code { color: var(--fg-muted); }
+
+/* Collapsed unchanged lines */
+.diff-fold {
+	background: rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	user-select: none;
+}
+.diff-fold td {
+	padding: 3px 12px;
+	text-align: center;
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-style: italic;
+	border-top: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+}
+.diff-fold:hover td {
+	background: rgba(255, 255, 255, 0.04);
+}
+.diff-fold-hidden { display: none; }
+
+.diff-empty {
+	padding: 12px;
+	color: var(--fg-muted);
+	font-style: italic;
+}
+.diff-loading {
+	padding: 12px;
+	color: var(--fg-muted);
+}
+
+/* Override highlight.js background to be transparent inside diff rows */
+.diff-code code.hljs {
+	background: transparent;
+	padding: 0;
+	display: inline;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.commit-header {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 14px 16px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 13px;
+}
+
+.commit-header:hover {
+	background: rgba(255,255,255,0.03);
+}
+
+.commit-header .commit-hash {
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	color: var(--accent);
+	font-weight: 600;
+	font-size: 13px;
+	min-width: 62px;
+}
+
+.commit-header .commit-time {
+	color: var(--fg-muted);
+	font-size: 12px;
+	min-width: 130px;
+}
+
+.commit-header .commit-msg {
+	color: var(--fg);
+	font-weight: 400;
+}
+
+.commit-files {
+	padding: 0 16px 12px 16px;
+}
+
+.commit-file-entry {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 0 5px 12px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.commit-file-entry:hover {
+	background: var(--bg-subtle);
+}
+
+.commit-file-entry .cf-icon {
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.commit-file-entry .cf-path {
+	color: var(--fg-muted);
+}
+
+.commit-file-entry .cf-name {
+	color: var(--fg);
+	font-weight: 700;
+}
+
+.commit-file-entry .cf-counts {
+	margin-left: auto;
+	display: flex;
+	gap: 6px;
+	font-size: 12px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 }
 
 .projects {
@@ -2392,8 +2733,7 @@ li.task-skipped .task-name {
 <button class="tab" data-panel="dependencies" role="tab">Dependencies</button>
 <button class="tab" data-panel="assessment" role="tab">Assessment</button>
 <button class="tab" data-panel="options" role="tab">Options</button>
-<!-- Activity tab disabled for now -->
-<!-- <button class="tab" data-panel="activity" role="tab">Activity</button> -->
+<button class="tab" data-panel="activity" role="tab">Activity</button>
 <span class="spacer"></span>
 </nav>
 <main>
@@ -2413,7 +2753,14 @@ li.task-skipped .task-name {
 <section class="panel" id="panel-activity" data-panel="activity" hidden>
 <h2>Activity</h2>
 <div class="meta" id="activity-meta"></div>
-<ol class="activity" id="activity-list"></ol>
+<div class="activity-view-tabs">
+	<button class="activity-view-tab active" data-view="log">Log</button>
+	<button class="activity-view-tab" data-view="commits">Commits</button>
+	<button class="activity-view-tab" data-view="by-file">By File</button>
+</div>
+<div id="activity-view-log"><ol class="activity" id="activity-list"></ol></div>
+<div id="activity-view-commits" hidden></div>
+<div id="activity-view-by-file" hidden></div>
 </section>
 <section class="panel" id="panel-tasks" data-panel="tasks" hidden>
 <h2>Tasks</h2>
@@ -3688,6 +4035,721 @@ document.addEventListener("keydown", (e) => {
 	}
 });
 
+// ── Activity rendering with grouping views ──
+
+let activeActivityView = "log";
+
+function renderActivity(state) {
+	const activityMeta = document.getElementById("activity-meta");
+	if (state.activitySources && state.activitySources.length > 0) {
+		activityMeta.textContent = `Sources: ${state.activitySources.join(" + ")}`;
+	} else {
+		activityMeta.textContent = `No activity sources found (looked for .git/upgrade/activity.jsonl and <scenario>/changelog.jsonl)`;
+	}
+
+	renderActivityLog(Array.isArray(state.activity) ? state.activity : []);
+	renderActivityCommits(Array.isArray(state.activity) ? state.activity : []);
+	renderActivityByFile(Array.isArray(state.activity) ? state.activity : []);
+}
+
+function createActivityItem(entry, options = {}) {
+	const li = document.createElement("li");
+	li.classList.add(`activity-${entry.kind}`);
+
+	const ts = document.createElement("span");
+	ts.className = "ts";
+	ts.textContent = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "";
+
+	const ev = document.createElement("span");
+	ev.className = "ev";
+	ev.textContent = entry.label;
+
+	const body = document.createElement("span");
+	body.className = "detail";
+
+	// For file entries, separate the path from +/- counts so counts can be colored
+	if (entry.kind === "file" && entry.filePath) {
+		body.textContent = entry.filePath;
+		li.append(ts, ev);
+		if (entry.taskId) {
+			const tag = document.createElement("span");
+			tag.className = "tag";
+			tag.textContent = entry.taskId;
+			li.append(tag);
+		}
+		if (entry.source) {
+			const src = document.createElement("span");
+			src.className = "tag";
+			src.style.opacity = "0.6";
+			src.textContent = entry.source;
+			li.append(src);
+		}
+		li.append(body);
+		if (entry.linesAdded != null || entry.linesRemoved != null) {
+			const counts = document.createElement("span");
+			counts.className = "log-counts";
+			if (entry.linesAdded != null) {
+				const adds = document.createElement("span");
+				adds.className = "fh-adds";
+				adds.textContent = `+${entry.linesAdded}`;
+				counts.appendChild(adds);
+			}
+			if (entry.linesRemoved != null) {
+				const dels = document.createElement("span");
+				dels.className = "fh-dels";
+				dels.textContent = `-${entry.linesRemoved}`;
+				counts.appendChild(dels);
+			}
+			li.append(counts);
+		}
+	} else {
+		body.textContent = entry.detail ?? "";
+		li.append(ts, ev);
+		if (entry.taskId) {
+			const tag = document.createElement("span");
+			tag.className = "tag";
+			tag.textContent = entry.taskId;
+			li.append(tag);
+		}
+		if (entry.source) {
+			const src = document.createElement("span");
+			src.className = "tag";
+			src.style.opacity = "0.6";
+			src.textContent = entry.source;
+			li.append(src);
+		}
+		li.append(body);
+	}
+
+	// Make file entries clickable to show inline diff
+	if (entry.kind === "file" && entry.filePath) {
+		li.style.cursor = "pointer";
+		li.setAttribute("tabindex", "0");
+		li.setAttribute("role", "button");
+		li.addEventListener("click", (e) => {
+			e.stopPropagation();
+			toggleInlineDiff(li, entry.filePath, entry.timestamp, entry.patchFile);
+		});
+		li.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				toggleInlineDiff(li, entry.filePath, entry.timestamp, entry.patchFile);
+			}
+		});
+	}
+
+	return li;
+}
+
+function renderActivityLog(activity) {
+	const list = document.getElementById("activity-list");
+	list.innerHTML = "";
+	// Deduplicate rapid-fire FSW events before rendering
+	const deduped = deduplicateFileEntries(activity.filter(e => e.kind === "file" && e.filePath));
+	const nonFile = activity.filter(e => !(e.kind === "file" && e.filePath));
+	const merged = [...nonFile, ...deduped].sort((a, b) => {
+		const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+		const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+		return tb - ta;
+	});
+	if (merged.length === 0) {
+		const li = document.createElement("li");
+		li.className = "empty";
+		li.textContent = "No activity recorded yet.";
+		list.appendChild(li);
+	} else {
+		for (const entry of merged) {
+			list.appendChild(createActivityItem(entry, {}));
+		}
+	}
+}
+
+function renderActivityCommits(activity) {
+	const container = document.getElementById("activity-view-commits");
+	container.innerHTML = "";
+
+	const commits = activity.filter(e => e.kind === "commit");
+	if (commits.length === 0) {
+		container.textContent = "No commits recorded yet.";
+		return;
+	}
+
+	for (const entry of commits) {
+		const card = document.createElement("div");
+		card.className = "activity-group collapsed";
+
+		const header = document.createElement("div");
+		header.className = "commit-header";
+
+		const chevron = document.createElement("span");
+		chevron.className = "chevron";
+		chevron.textContent = "▼";
+
+		const hash = document.createElement("span");
+		hash.className = "commit-hash";
+		hash.textContent = entry.commitHash ? entry.commitHash.slice(0, 7) : "?";
+
+		const time = document.createElement("span");
+		time.className = "commit-time";
+		if (entry.timestamp) {
+			const d = new Date(entry.timestamp);
+			time.textContent = d.toLocaleDateString([], { month: "numeric", day: "numeric", year: "numeric" }) +
+				" " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+		}
+
+		const msg = document.createElement("span");
+		msg.className = "commit-msg";
+		msg.textContent = entry.commitMessage || "";
+
+		header.append(chevron, hash, time, msg);
+
+		let filesLoaded = false;
+		const fileList = document.createElement("div");
+		fileList.className = "commit-files";
+
+		header.addEventListener("click", async () => {
+			card.classList.toggle("collapsed");
+			if (!filesLoaded && !card.classList.contains("collapsed") && entry.commitHash) {
+				filesLoaded = true;
+				fileList.innerHTML = '<div class="commit-file-entry" style="color:var(--fg-muted);font-style:italic">Loading files…</div>';
+				try {
+					const resp = await fetch(`/api/commit-files?instanceId=${encodeURIComponent(instanceId)}&commit=${encodeURIComponent(entry.commitHash)}`);
+					if (!resp.ok) throw new Error("Failed to load files");
+					const files = await resp.json();
+					fileList.innerHTML = "";
+					if (files.length === 0) {
+						fileList.innerHTML = '<div class="commit-file-entry" style="color:var(--fg-muted);font-style:italic">No file changes</div>';
+					} else {
+						for (const file of files) {
+							fileList.appendChild(createCommitFileRow(file, entry.commitHash));
+						}
+					}
+				} catch {
+					fileList.innerHTML = '<div class="commit-file-entry" style="color:var(--fg-muted);font-style:italic">Failed to load file details</div>';
+				}
+			}
+		});
+
+		card.append(header, fileList);
+		container.appendChild(card);
+	}
+}
+
+function createCommitFileRow(file, commitHash) {
+	const row = document.createElement("div");
+	row.className = "commit-file-entry";
+	row.style.cursor = "pointer";
+
+	const icon = document.createElement("span");
+	icon.className = "cf-icon";
+	icon.textContent = "📄";
+
+	const lastSlash = Math.max(file.filePath.lastIndexOf("/"), file.filePath.lastIndexOf("\\"));
+	const dir = lastSlash >= 0 ? file.filePath.slice(0, lastSlash + 1) : "";
+	const fileName = lastSlash >= 0 ? file.filePath.slice(lastSlash + 1) : file.filePath;
+
+	const nameSpan = document.createElement("span");
+	if (dir) {
+		const dirSpan = document.createElement("span");
+		dirSpan.className = "cf-path";
+		dirSpan.textContent = dir;
+		nameSpan.appendChild(dirSpan);
+	}
+	const fileSpan = document.createElement("span");
+	fileSpan.className = "cf-name";
+	fileSpan.textContent = fileName;
+	nameSpan.appendChild(fileSpan);
+
+	const counts = document.createElement("span");
+	counts.className = "cf-counts";
+	if (file.linesAdded > 0) {
+		const adds = document.createElement("span");
+		adds.className = "fh-adds";
+		adds.textContent = `+${file.linesAdded}`;
+		counts.appendChild(adds);
+	}
+	if (file.linesRemoved > 0) {
+		const dels = document.createElement("span");
+		dels.className = "fh-dels";
+		dels.textContent = `-${file.linesRemoved}`;
+		counts.appendChild(dels);
+	}
+
+	row.append(icon, nameSpan, counts);
+
+	row.addEventListener("click", (e) => {
+		e.stopPropagation();
+		toggleCommitFileDiff(row, file.filePath, commitHash);
+	});
+
+	return row;
+}
+
+async function toggleCommitFileDiff(row, filePath, commitHash) {
+	const existing = row.nextElementSibling;
+	if (existing && existing.classList.contains("diff-viewer")) {
+		existing.remove();
+		return;
+	}
+
+	const viewer = document.createElement("div");
+	viewer.className = "diff-viewer";
+	viewer.innerHTML = '<div class="diff-loading">Loading diff…</div>';
+	row.after(viewer);
+
+	try {
+		const resp = await fetch(`/api/commit-diff?instanceId=${encodeURIComponent(instanceId)}&commit=${encodeURIComponent(commitHash)}&file=${encodeURIComponent(filePath)}`);
+		if (!resp.ok) {
+			viewer.innerHTML = '<div class="diff-empty">No diff available.</div>';
+			return;
+		}
+		const diffText = await resp.text();
+		if (!diffText.trim()) {
+			viewer.innerHTML = '<div class="diff-empty">No changes detected.</div>';
+			return;
+		}
+		viewer.innerHTML = "";
+		viewer.appendChild(renderDiffContent(diffText, filePath));
+	} catch (err) {
+		viewer.innerHTML = `<div class="diff-empty">Error: ${escapeHtml(err.message)}</div>`;
+	}
+}
+
+function renderActivityByFile(activity) {
+	const container = document.getElementById("activity-view-by-file");
+	container.innerHTML = "";
+
+	// Only include file-related entries
+	const fileEntries = deduplicateFileEntries(activity.filter(e => e.kind === "file" && e.filePath));
+	if (fileEntries.length === 0) {
+		container.textContent = "No file activity recorded yet.";
+		return;
+	}
+
+	// Group by file path
+	const groups = new Map();
+	for (const entry of fileEntries) {
+		const key = entry.filePath;
+		if (!groups.has(key)) groups.set(key, []);
+		groups.get(key).push(entry);
+	}
+
+	// Sort groups by count descending
+	const sorted = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+	for (const [filePath, entries] of sorted) {
+		container.appendChild(createFileCard(filePath, entries));
+	}
+}
+
+// Collapse rapid-fire FSW events for the same file+event within 3 seconds.
+function deduplicateFileEntries(entries) {
+	if (entries.length <= 1) return entries;
+
+	const sorted = [...entries].sort((a, b) => {
+		const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+		const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+		return ta - tb;
+	});
+
+	const result = [sorted[0]];
+	for (let i = 1; i < sorted.length; i++) {
+		const prev = result[result.length - 1];
+		const curr = sorted[i];
+
+		if (curr.filePath === prev.filePath && curr.event === prev.event) {
+			const prevMs = prev.timestamp ? Date.parse(prev.timestamp) : 0;
+			const currMs = curr.timestamp ? Date.parse(curr.timestamp) : 0;
+			if (Math.abs(currMs - prevMs) < 3000) {
+				// Keep the one with higher line counts (more info)
+				const prevTotal = (prev.linesAdded ?? 0) + (prev.linesRemoved ?? 0);
+				const currTotal = (curr.linesAdded ?? 0) + (curr.linesRemoved ?? 0);
+				if (currTotal > prevTotal) {
+					result[result.length - 1] = curr;
+				}
+				continue;
+			}
+		}
+		result.push(curr);
+	}
+	return result;
+}
+
+function createFileCard(filePath, entries) {
+	const group = document.createElement("div");
+	group.className = "activity-group collapsed";
+
+	// Split path into directory + filename
+	const lastSlash = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"));
+	const dir = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : "";
+	const fileName = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+
+	const header = document.createElement("div");
+	header.className = "activity-group-header";
+
+	const chevron = document.createElement("span");
+	chevron.className = "chevron";
+	chevron.textContent = "▼";
+
+	const nameSpan = document.createElement("span");
+	if (dir) {
+		const dirSpan = document.createElement("span");
+		dirSpan.className = "file-path";
+		dirSpan.textContent = dir;
+		nameSpan.appendChild(dirSpan);
+	}
+	const fileSpan = document.createElement("span");
+	fileSpan.className = "file-name";
+	fileSpan.textContent = fileName;
+	nameSpan.appendChild(fileSpan);
+
+	const count = document.createElement("span");
+	count.className = "count";
+	count.textContent = `${entries.length} change${entries.length === 1 ? "" : "s"}`;
+
+	header.append(chevron, nameSpan, count);
+	header.addEventListener("click", () => group.classList.toggle("collapsed"));
+
+	// Build file change history
+	const history = document.createElement("div");
+	history.className = "file-history";
+
+	// Sort entries reverse-chronologically (most recent first)
+	const sorted = [...entries].sort((a, b) => {
+		const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+		const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+		return tb - ta;
+	});
+
+	for (let i = 0; i < sorted.length; i++) {
+		const entry = sorted[i];
+		const row = document.createElement("div");
+		row.className = "file-history-entry";
+
+		const time = document.createElement("span");
+		time.className = "fh-time";
+		if (entry.timestamp) {
+			const d = new Date(entry.timestamp);
+			time.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+		}
+
+		const action = document.createElement("span");
+		action.className = "fh-action";
+		action.textContent = entry.label;
+
+		row.append(time, action);
+
+		if (entry.linesAdded != null && entry.linesAdded > 0) {
+			const adds = document.createElement("span");
+			adds.className = "fh-adds";
+			adds.textContent = `+${entry.linesAdded}`;
+			row.appendChild(adds);
+		}
+		if (entry.linesRemoved != null && entry.linesRemoved > 0) {
+			const dels = document.createElement("span");
+			dels.className = "fh-dels";
+			dels.textContent = `-${entry.linesRemoved}`;
+			row.appendChild(dels);
+		}
+
+		// Click to toggle inline diff for this specific entry's timestamp
+		row.setAttribute("tabindex", "0");
+		row.setAttribute("role", "button");
+		row.addEventListener("click", (e) => {
+			e.stopPropagation();
+			toggleInlineDiff(row, filePath, entry.timestamp, entry.patchFile);
+		});
+		row.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				toggleInlineDiff(row, filePath, entry.timestamp, entry.patchFile);
+			}
+		});
+
+		history.appendChild(row);
+	}
+
+	group.append(header, history);
+	return group;
+}
+
+async function toggleInlineDiff(row, filePath, timestamp, patchFile) {
+	const existing = row.nextElementSibling;
+	if (existing && existing.classList.contains("diff-viewer")) {
+		existing.remove();
+		return;
+	}
+
+	// Wrap in <li> when inside a <ul> (Log tab) so the DOM stays valid
+	const isInList = row.tagName === "LI";
+	const viewer = document.createElement(isInList ? "li" : "div");
+	viewer.className = "diff-viewer";
+	viewer.innerHTML = '<div class="diff-loading">Loading diff…</div>';
+	row.after(viewer);
+
+	try {
+		let diffText = null;
+		// Load diff from persisted patch file (written by ServiceHost)
+		if (patchFile) {
+			const patchResp = await fetch(`/api/patch-file?instanceId=${encodeURIComponent(instanceId)}&file=${encodeURIComponent(patchFile)}`);
+			if (patchResp.ok) {
+				diffText = await patchResp.text();
+			}
+		}
+		// Fallback: use git diff HEAD for the file (covers first modification with no patch)
+		if (!diffText || !diffText.trim()) {
+			const gitResp = await fetch(`/api/diff?instanceId=${encodeURIComponent(instanceId)}&file=${encodeURIComponent(filePath)}`);
+			if (gitResp.ok) {
+				diffText = await gitResp.text();
+			}
+		}
+		if (!diffText || !diffText.trim()) {
+			viewer.innerHTML = '<div class="diff-empty">No diff available for this entry.</div>';
+			return;
+		}
+		viewer.innerHTML = "";
+		viewer.appendChild(renderDiffContent(diffText, filePath));
+	} catch (err) {
+		viewer.innerHTML = `<div class="diff-empty">Error: ${escapeHtml(err.message)}</div>`;
+	}
+}
+
+function renderDiffContent(diffText, filePath) {
+	const lang = detectLang(filePath);
+	const container = document.createElement("div");
+	container.className = "diff-scroll";
+	const table = document.createElement("table");
+
+	const rawLines = diffText.split("\n");
+
+	// Parse hunks from the unified diff
+	const hunks = [];
+	let currentHunk = null;
+	for (const line of rawLines) {
+		if (line.startsWith("diff --git") || line.startsWith("diff --no-index") ||
+			line.startsWith("index ") ||
+			line.startsWith("--- ") || line.startsWith("+++ ")) {
+			continue;
+		}
+		if (line.startsWith("@@")) {
+			const m = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)/);
+			currentHunk = {
+				oldStart: m ? parseInt(m[1], 10) : 1,
+				newStart: m ? parseInt(m[2], 10) : 1,
+				context: m ? m[3].trim() : "",
+				lines: [],
+			};
+			hunks.push(currentHunk);
+			continue;
+		}
+		if (currentHunk) {
+			currentHunk.lines.push(line);
+		}
+	}
+
+	// Highlight all code lines as one block so multi-line comments/strings
+	// are tracked correctly, then split back into per-line HTML.
+	const allCodeLines = [];
+	for (const hunk of hunks) {
+		for (const line of hunk.lines) {
+			if (line.startsWith("+") || line.startsWith("-")) {
+				allCodeLines.push(line.slice(1));
+			} else {
+				allCodeLines.push(line.startsWith(" ") ? line.slice(1) : line);
+			}
+		}
+	}
+	const highlightedLines = highlightBlock(allCodeLines, lang);
+
+	const FOLD_THRESHOLD = 4;
+	let globalLineIdx = 0;
+
+	for (let hi = 0; hi < hunks.length; hi++) {
+		const hunk = hunks[hi];
+		let oldLine = hunk.oldStart;
+		let newLine = hunk.newStart;
+
+		const hunkRow = document.createElement("tr");
+		hunkRow.className = "diff-row-hunk";
+		hunkRow.innerHTML =
+			'<td class="diff-ln"></td><td class="diff-ln diff-ln-new"></td>' +
+			`<td class="diff-code"><span class="diff-code-prefix"> </span>@@ -${hunk.oldStart} +${hunk.newStart} @@ ${escapeHtml(hunk.context)}</td>`;
+		table.appendChild(hunkRow);
+
+		const rows = [];
+		for (const line of hunk.lines) {
+			const html = highlightedLines[globalLineIdx++] ?? escapeHtml(line);
+			if (line.startsWith("+")) {
+				rows.push({ type: "add", old: null, new: newLine++, html });
+			} else if (line.startsWith("-")) {
+				rows.push({ type: "del", old: oldLine++, new: null, html });
+			} else {
+				rows.push({ type: "ctx", old: oldLine++, new: newLine++, html });
+			}
+		}
+
+		let i = 0;
+		while (i < rows.length) {
+			const ctxStart = i;
+			while (i < rows.length && rows[i].type === "ctx") i++;
+			const ctxEnd = i;
+			const ctxLen = ctxEnd - ctxStart;
+
+			if (ctxLen > FOLD_THRESHOLD) {
+				const showBefore = hi === 0 && ctxStart === 0 ? 0 : 2;
+				const showAfter = i >= rows.length ? 0 : 2;
+				const foldStart = ctxStart + showBefore;
+				const foldEnd = ctxEnd - showAfter;
+
+				for (let j = ctxStart; j < foldStart; j++) appendDiffRow(table, rows[j]);
+
+				if (foldEnd > foldStart) {
+					const foldCount = foldEnd - foldStart;
+					const foldRowEls = [];
+					for (let j = foldStart; j < foldEnd; j++) {
+						const el = appendDiffRow(table, rows[j]);
+						el.classList.add("diff-fold-hidden");
+						foldRowEls.push(el);
+					}
+					const foldToggle = document.createElement("tr");
+					foldToggle.className = "diff-fold";
+					foldToggle.innerHTML = `<td colspan="3">⊞ ${foldCount} unchanged line${foldCount === 1 ? "" : "s"}</td>`;
+					foldToggle.addEventListener("click", () => {
+						for (const el of foldRowEls) el.classList.remove("diff-fold-hidden");
+						foldToggle.remove();
+					});
+					table.insertBefore(foldToggle, foldRowEls[0]);
+				}
+
+				for (let j = foldEnd; j < ctxEnd; j++) appendDiffRow(table, rows[j]);
+			} else {
+				for (let j = ctxStart; j < ctxEnd; j++) appendDiffRow(table, rows[j]);
+			}
+
+			while (i < rows.length && rows[i].type !== "ctx") {
+				appendDiffRow(table, rows[i]);
+				i++;
+			}
+		}
+	}
+
+	container.appendChild(table);
+	return container;
+}
+
+function detectLang(filePath) {
+	if (!filePath) return null;
+	const ext = filePath.split(".").pop().toLowerCase();
+	const map = {
+		cs: "csharp", csx: "csharp",
+		js: "javascript", mjs: "javascript", cjs: "javascript", jsx: "javascript",
+		ts: "typescript", tsx: "typescript",
+		json: "json", jsonl: "json",
+		xml: "xml", csproj: "xml", props: "xml", targets: "xml",
+		html: "xml", htm: "xml", svg: "xml",
+		css: "css", scss: "scss",
+		py: "python",
+		rs: "rust",
+		md: "markdown", yml: "yaml", yaml: "yaml",
+		sh: "bash", bash: "bash", ps1: "powershell", cmd: "dos",
+		razor: "cshtml-razor",
+	};
+	return map[ext] ?? null;
+}
+
+// Highlight all lines as one block so multi-line constructs (comments,
+// strings, template literals) are tracked across line boundaries, then
+// split the result back into per-line HTML fragments.
+function highlightBlock(lines, lang) {
+	if (!lang || typeof hljs === "undefined" || lines.length === 0) {
+		return lines.map(l => escapeHtml(l));
+	}
+	try {
+		const block = lines.join("\n");
+		const result = hljs.highlight(block, { language: lang, ignoreIllegals: true });
+		return splitHighlightedHtml(result.value);
+	} catch {
+		return lines.map(l => escapeHtml(l));
+	}
+}
+
+// Split highlight.js output (which contains \n inside/between spans) back
+// into an array of per-line HTML, correctly handling spans that wrap across
+// newlines by reopening them on the next line.
+function splitHighlightedHtml(html) {
+	const result = [];
+	let current = "";
+	let openSpans = []; // stack of span opening tags
+
+	let i = 0;
+	while (i < html.length) {
+		if (html[i] === "\n") {
+			result.push(current + openSpans.map(() => "</span>").join(""));
+			current = openSpans.join("");
+			i++;
+		} else if (html[i] === "<") {
+			const closeMatch = html.slice(i).match(/^<\/span>/);
+			if (closeMatch) {
+				current += closeMatch[0];
+				openSpans.pop();
+				i += closeMatch[0].length;
+			} else {
+				const openMatch = html.slice(i).match(/^<span[^>]*>/);
+				if (openMatch) {
+					current += openMatch[0];
+					openSpans.push(openMatch[0]);
+					i += openMatch[0].length;
+				} else {
+					current += html[i];
+					i++;
+				}
+			}
+		} else {
+			current += html[i];
+			i++;
+		}
+	}
+	result.push(current);
+	return result;
+}
+
+function appendDiffRow(table, r) {
+	const tr = document.createElement("tr");
+	tr.className = r.type === "add" ? "diff-row-add" : r.type === "del" ? "diff-row-del" : "diff-row-ctx";
+
+	const oldTd = document.createElement("td");
+	oldTd.className = "diff-ln";
+	oldTd.textContent = r.old ?? "";
+
+	const newTd = document.createElement("td");
+	newTd.className = "diff-ln diff-ln-new";
+	newTd.textContent = r.new ?? "";
+
+	const codeTd = document.createElement("td");
+	codeTd.className = "diff-code";
+	const prefix = document.createElement("span");
+	prefix.className = "diff-code-prefix";
+	prefix.textContent = r.type === "add" ? "+" : r.type === "del" ? "-" : " ";
+	codeTd.appendChild(prefix);
+	codeTd.insertAdjacentHTML("beforeend", r.html);
+
+	tr.append(oldTd, newTd, codeTd);
+	table.appendChild(tr);
+	return tr;
+}
+
+// Wire up sub-tab switching
+document.querySelectorAll(".activity-view-tab").forEach(btn => {
+	btn.addEventListener("click", () => {
+		const view = btn.dataset.view;
+		activeActivityView = view;
+		document.querySelectorAll(".activity-view-tab").forEach(b => b.classList.remove("active"));
+		btn.classList.add("active");
+		document.getElementById("activity-view-log").hidden = (view !== "log");
+		document.getElementById("activity-view-commits").hidden = (view !== "commits");
+		document.getElementById("activity-view-by-file").hidden = (view !== "by-file");
+	});
+});
+
 function renderOverview(state) {
 	const ov = _buildOverview(state, 8);
 	renderOverviewScenario(ov.scenario);
@@ -4295,54 +5357,7 @@ function render(state) {
 	renderOverview(state);
 
 	// Activity
-	const activityMeta = document.getElementById("activity-meta");
-	const activityList = document.getElementById("activity-list");
-	if (state.activitySources && state.activitySources.length > 0) {
-		activityMeta.textContent = `Sources: ${state.activitySources.join(" + ")}`;
-	} else {
-		activityMeta.textContent = `No activity sources found (looked for .git/upgrade/activity.jsonl and <scenario>/changelog.jsonl)`;
-	}
-	activityList.innerHTML = "";
-	if (state.activity.length === 0) {
-		const li = document.createElement("li");
-		li.className = "empty";
-		li.textContent = "No activity recorded yet.";
-		activityList.appendChild(li);
-	} else {
-		for (const entry of state.activity) {
-			const li = document.createElement("li");
-			li.classList.add(`activity-${entry.kind}`);
-
-			const ts = document.createElement("span");
-			ts.className = "ts";
-			ts.textContent = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "";
-
-			const ev = document.createElement("span");
-			ev.className = "ev";
-			ev.textContent = entry.label;
-
-			const body = document.createElement("span");
-			body.className = "detail";
-			body.textContent = entry.detail ?? "";
-
-			li.append(ts, ev);
-			if (entry.taskId) {
-				const tag = document.createElement("span");
-				tag.className = "tag";
-				tag.textContent = entry.taskId;
-				li.append(tag);
-			}
-			if (entry.source) {
-				const src = document.createElement("span");
-				src.className = "tag";
-				src.style.opacity = "0.6";
-				src.textContent = entry.source;
-				li.append(src);
-			}
-			li.append(body);
-			activityList.appendChild(li);
-		}
-	}
+	renderActivity(state);
 
 	// Options: render mode switcher based on whether a scenario is active and
 	// what mode (if any) the user previously picked for it.

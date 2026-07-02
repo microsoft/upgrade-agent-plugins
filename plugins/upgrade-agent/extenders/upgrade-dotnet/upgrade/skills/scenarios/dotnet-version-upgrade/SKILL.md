@@ -13,6 +13,7 @@ metadata:
       - aspire-integration
       - aspire-version-upgrade
       - migrating-ef6-code-first-to-ef-core
+      - winforms-feature-adoption
     suggest-actions:
       - generate-report
 ---

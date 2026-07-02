@@ -27,7 +27,7 @@ export function formatActivityEntry(raw) {
 	const eventName = fields.event ?? fields.type ?? "unknown";
 	const meta = ACTIVITY_EVENT_LABELS[eventName] ?? { label: eventName, kind: "other" };
 	const detail = buildActivityDetail(eventName, fields);
-	return {
+	const entry = {
 		timestamp: ts,
 		event: eventName,
 		label: meta.label,
@@ -35,6 +35,21 @@ export function formatActivityEntry(raw) {
 		taskId: fields.taskId ?? fields.task_id ?? null,
 		detail,
 	};
+
+	// Preserve structured fields for grouped views
+	if (meta.kind === "file") {
+		entry.filePath = fields.path ?? fields.filePath ?? null;
+		entry.linesAdded = fields.linesAdded ?? fields.lines_added ?? null;
+		entry.linesRemoved = fields.linesRemoved ?? fields.lines_removed ?? null;
+		entry.patchFile = fields.patchFile ?? fields.patch_file ?? null;
+	}
+	if (meta.kind === "commit") {
+		entry.commitHash = fields.commitHash ?? fields.hash ?? null;
+		entry.commitMessage = fields.commitMessage ?? fields.message ?? null;
+		entry.commitFiles = fields.files ?? null;
+	}
+
+	return entry;
 }
 
 export function buildActivityDetail(eventName, e) {

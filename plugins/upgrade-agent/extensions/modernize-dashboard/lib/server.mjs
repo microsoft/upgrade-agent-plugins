@@ -1,14 +1,83 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 
-// Loopback HTTP/SSE server. Serves the iframe HTML, exposes /api/state and
-// /events for the canvas UI, and dispatches POST /action to caller-provided
-// handlers. Used by both the canvas extension (extension.mjs) and the
-// standalone CLI (bin/cli.mjs).
+// Loopback HTTP/SSE server. Serves the iframe HTML, exposes /api/state,
+// /api/diff, and /events for the canvas UI, and dispatches POST /action to
+// caller-provided handlers. Used by both the canvas extension (extension.mjs)
+// and the standalone CLI (bin/cli.mjs).
 
 import http from "node:http";
+import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 
 import { hashState } from "./state-hash.mjs";
+import { activityLogDir } from "./repo.mjs";
+
+// Validate a git commit hash (short or full SHA hex only).
+const COMMIT_HASH_RE = /^[a-f0-9]{4,40}$/i;
+function isValidCommitHash(value) {
+	return COMMIT_HASH_RE.test(value);
+}
+
+/**
+ * Get the list of files changed in a commit with their status and line counts.
+ * Returns an array of { filePath, status, linesAdded, linesRemoved }.
+ */
+function getCommitFiles(repoRoot, commitHash) {
+	return new Promise((resolve, reject) => {
+		if (!isValidCommitHash(commitHash)) {
+			reject(new Error("invalid commit hash"));
+			return;
+		}
+		execFile("git", ["diff-tree", "--root", "--no-commit-id", "-r", "--numstat", "--diff-filter=ACDMRT", commitHash],
+			{ cwd: repoRoot, maxBuffer: 2 * 1024 * 1024 },
+			(err, stdout) => {
+				if (err) { reject(err); return; }
+				const files = [];
+				for (const line of stdout.trim().split("\n")) {
+					if (!line.trim()) continue;
+					const [added, removed, ...pathParts] = line.split("\t");
+					// For renames/copies, numstat emits "old\tnew" — use the new path
+					const filePath = pathParts.length > 1 ? pathParts[pathParts.length - 1] : pathParts[0];
+					files.push({
+						filePath,
+						linesAdded: added === "-" ? 0 : parseInt(added, 10),
+						linesRemoved: removed === "-" ? 0 : parseInt(removed, 10),
+					});
+				}
+				resolve(files);
+			});
+	});
+}
+
+/**
+ * Get the diff for a specific file in a specific commit.
+ */
+function getCommitFileDiff(repoRoot, commitHash, filePath) {
+	const gitPath = filePath.replace(/\\/g, "/");
+	return new Promise((resolve, reject) => {
+		if (!isValidCommitHash(commitHash)) {
+			reject(new Error("invalid commit hash"));
+			return;
+		}
+		execFile("git", ["diff", `${commitHash}~1`, commitHash, "--", gitPath],
+			{ cwd: repoRoot, maxBuffer: 2 * 1024 * 1024 },
+			(err, stdout) => {
+				if (err) {
+					// Could be first commit — try diff against empty tree
+					execFile("git", ["diff-tree", "--root", "-p", commitHash, "--", gitPath],
+						{ cwd: repoRoot, maxBuffer: 2 * 1024 * 1024 },
+						(err2, stdout2) => {
+							if (err2) { reject(err2); return; }
+							resolve(stdout2 || "");
+						});
+					return;
+				}
+				resolve(stdout || "");
+			});
+	});
+}
+
 
 // Create and start a dashboard server on `port` (0 = random). Returns a
 // handle with { server, port, url, broadcastAll, close }.
@@ -153,6 +222,131 @@ export function createDashboardServer(options) {
 			return;
 		}
 
+		if (req.method === "GET" && url.pathname === "/api/diff") {
+			const meta = getInstanceMeta(instanceId);
+			const resolution = meta.resolution ?? (await getResolution(instanceId));
+			if (!resolution) {
+				res.writeHead(503);
+				res.end("repo not resolved");
+				return;
+			}
+			meta.resolution = resolution;
+			const filePath = url.searchParams.get("file");
+			if (!filePath) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "file query parameter is required" }));
+				return;
+			}
+			try {
+				const diff = await getGitDiff(resolution.path, filePath);
+				res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+				res.end(diff);
+			} catch (err) {
+				res.writeHead(500, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: err.message }));
+			}
+			return;
+		}
+
+		if (req.method === "GET" && url.pathname === "/api/patch-file") {
+			const meta = getInstanceMeta(instanceId);
+			const resolution = meta.resolution ?? (await getResolution(instanceId));
+			if (!resolution) {
+				res.writeHead(503);
+				res.end("repo not resolved");
+				return;
+			}
+			meta.resolution = resolution;
+			const patchRef = url.searchParams.get("file");
+			if (!patchRef) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "file query parameter is required" }));
+				return;
+			}
+			// Resolve relative to the activity log directory (e.g. .git/upgrade/)
+			const journalDir = activityLogDir(resolution.path);
+			const abs = path.resolve(journalDir, patchRef);
+			// Prevent path traversal outside the journal directory
+			const rel = path.relative(journalDir, abs);
+			if (rel.startsWith("..") || path.isAbsolute(rel)) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "invalid patch file path" }));
+				return;
+			}
+			try {
+				const content = await fs.readFile(abs, "utf8");
+				res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+				res.end(content);
+			} catch {
+				res.writeHead(404, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "patch file not found" }));
+			}
+			return;
+		}
+
+		if (req.method === "GET" && url.pathname === "/api/commit-files") {
+			const meta = getInstanceMeta(instanceId);
+			const resolution = meta.resolution ?? (await getResolution(instanceId));
+			if (!resolution) {
+				res.writeHead(503);
+				res.end("repo not resolved");
+				return;
+			}
+			meta.resolution = resolution;
+			const commitHash = url.searchParams.get("commit");
+			if (!commitHash) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "commit query parameter is required" }));
+				return;
+			}
+			if (!isValidCommitHash(commitHash)) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "invalid commit hash" }));
+				return;
+			}
+			try {
+				const files = await getCommitFiles(resolution.path, commitHash);
+				res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+				res.end(JSON.stringify(files));
+			} catch (err) {
+				res.writeHead(500, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: err.message }));
+			}
+			return;
+		}
+
+		if (req.method === "GET" && url.pathname === "/api/commit-diff") {
+			const meta = getInstanceMeta(instanceId);
+			const resolution = meta.resolution ?? (await getResolution(instanceId));
+			if (!resolution) {
+				res.writeHead(503);
+				res.end("repo not resolved");
+				return;
+			}
+			meta.resolution = resolution;
+			const commitHash = url.searchParams.get("commit");
+			const filePath = url.searchParams.get("file");
+			if (!commitHash || !filePath) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "commit and file query parameters are required" }));
+				return;
+			}
+			if (!isValidCommitHash(commitHash)) {
+				res.writeHead(400, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: "invalid commit hash" }));
+				return;
+			}
+			try {
+				const diff = await getCommitFileDiff(resolution.path, commitHash, filePath);
+				res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+				res.end(diff);
+			} catch (err) {
+				res.writeHead(500, { "content-type": "application/json" });
+				res.end(JSON.stringify({ error: err.message }));
+			}
+			return;
+		}
+
 		if (req.method === "GET" && url.pathname === "/events") {
 			res.writeHead(200, {
 				"content-type": "text/event-stream",
@@ -285,4 +479,28 @@ export function createDashboardServer(options) {
 			await new Promise((resolve) => server.close(() => resolve()));
 		},
 	};
+}
+
+/**
+ * Run `git diff` for a single file and return the unified diff text.
+ * Tries HEAD diff first (staged + unstaged), falls back to unstaged-only.
+ */
+function getGitDiff(repoRoot, filePath) {
+	return new Promise((resolve, reject) => {
+		// Show combined staged+unstaged diff against HEAD
+		execFile("git", ["diff", "HEAD", "--", filePath], { cwd: repoRoot, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+			if (err) {
+				// If HEAD doesn't exist yet (initial commit), try unstaged diff
+				execFile("git", ["diff", "--", filePath], { cwd: repoRoot, maxBuffer: 1024 * 1024 }, (err2, stdout2) => {
+					if (err2) {
+						reject(new Error(stderr || err2.message));
+					} else {
+						resolve(stdout2);
+					}
+				});
+			} else {
+				resolve(stdout);
+			}
+		});
+	});
 }

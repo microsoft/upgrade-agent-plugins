@@ -211,6 +211,7 @@ Skills encode tested workflows. Your general-purpose instincts are the fallback 
 
 - `get_instructions(kind='skill', query='scenario-discovery')` — When user wants to explore modernization opportunities (scans solution, presents results)
 - `get_instructions(kind='skill', query='scenario-initialization')` — Before initializing any new scenario
+- `get_instructions(kind='skill', query='token-usage-prediction')` — ⛔ **MANDATORY** immediately after `assessment.md` is written (before planning). Calls `predict_token_usage` and presents the budget to the user.
 - `get_instructions(kind='skill', query='task-execution')` — Before working on tasks (assess, break down, execute, complete)
 - `get_instructions(kind='skill', query='plan-generation')` — Before creating plans
 - `get_instructions(kind='skill', query='state-management')` — For workflow state operations
