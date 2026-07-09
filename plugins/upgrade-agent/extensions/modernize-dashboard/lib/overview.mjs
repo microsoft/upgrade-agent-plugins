@@ -4,7 +4,7 @@
 // Overview tab that mixes data from scenario, tasks, assessment, deps, and
 // activity into a single at-a-glance view.
 
-import { scenarioTargetFramework, scenarioPhases, phaseStateClass } from "./scenario.mjs";
+import { scenarioTargetFramework, scenarioPhases, phaseStateClass, humanizePhaseId } from "./scenario.mjs";
 import { countPhases } from "./scenario-picker.mjs";
 
 // Build a flat overview model from the full canvas state. Returns:
@@ -34,7 +34,15 @@ function pickActiveScenarioOverview(state) {
 	const list = Array.isArray(state.scenarios) ? state.scenarios : [];
 	const active = list.find((s) => s && s.id === state.activeScenarioId) ?? null;
 	if (!active) return null;
-	const phases = scenarioPhases(active);
+	// Prefer the authoritative task list (tasks.md) over the scenario's taskStates
+	// map. taskStates is populated lazily by workflow tools, so tasks that have not
+	// started yet are absent and the total under-counts. tasks.md lists every task
+	// (including NotStarted ones), so building the progress from it keeps the
+	// Scenario progress bar consistent with the header + At-a-glance counts.
+	const taskList = Array.isArray(state.tasks?.tasks) ? state.tasks.tasks : null;
+	const phases = taskList && taskList.length > 0
+		? phasesFromTasks(taskList)
+		: scenarioPhases(active);
 	const counts = countPhases(phases);
 	const target = scenarioTargetFramework(active);
 	return {
@@ -46,6 +54,21 @@ function pickActiveScenarioOverview(state) {
 		description: typeof active.description === "string" ? active.description : null,
 		allOnTarget: allProjectsOnTarget(state.projects, target),
 	};
+}
+
+// Map the parsed tasks.md task records into the { id, state, label } phase shape
+// used by the scenario progress bar and phase dots.
+function phasesFromTasks(tasks) {
+	return tasks.map((t) => {
+		const id = typeof t?.id === "string" ? t.id : "";
+		return {
+			id,
+			state: typeof t?.state === "string" ? t.state : "NotStarted",
+			label: (typeof t?.displayName === "string" && t.displayName)
+				? t.displayName
+				: humanizePhaseId(id),
+		};
+	});
 }
 
 // True when every project's framework list includes the target (platform-suffix

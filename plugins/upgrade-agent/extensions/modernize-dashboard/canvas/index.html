@@ -3400,6 +3400,19 @@ function _scenarioPhases(sc) {
 		label: _humanizePhaseId(id),
 	}));
 }
+function _phasesFromTasks(tasks) {
+	if (!Array.isArray(tasks)) return [];
+	return tasks.map((t) => {
+		const id = typeof t?.id === "string" ? t.id : "";
+		return {
+			id,
+			state: typeof t?.state === "string" ? t.state : "NotStarted",
+			label: (typeof t?.displayName === "string" && t.displayName)
+				? t.displayName
+				: _humanizePhaseId(id),
+		};
+	});
+}
 function _humanizePhaseId(id) {
 	if (typeof id !== "string") return "";
 	const stripped = id.replace(/^\d+(?:\.\d+)*-?/, "");
@@ -3440,6 +3453,7 @@ window.__modernizeDashboard = {
 	_detectSourceFramework,
 	_scenarioTargetFramework,
 	_scenarioPhases,
+	_phasesFromTasks,
 	_humanizePhaseId,
 	_phaseStateClass,
 	_phaseStateGlyph,
@@ -3856,7 +3870,13 @@ function _buildOverview(state, activityLimit) {
 	const active = list.find((sc) => sc && sc.id === s.activeScenarioId) ?? null;
 	let scenario = null;
 	if (active) {
-		const phases = _scenarioPhases(active);
+		// Prefer the authoritative tasks.md list (includes NotStarted tasks) over
+		// the lazily-populated taskStates map so the Scenario progress bar matches
+		// the header + At-a-glance task counts.
+		const taskList = Array.isArray(s.tasks?.tasks) ? s.tasks.tasks : null;
+		const phases = taskList && taskList.length > 0
+			? _phasesFromTasks(taskList)
+			: _scenarioPhases(active);
 		const counts = _countPhases(phases);
 		const target = _scenarioTargetFramework(active);
 		scenario = {

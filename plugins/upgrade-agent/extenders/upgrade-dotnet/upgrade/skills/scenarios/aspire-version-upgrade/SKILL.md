@@ -274,7 +274,7 @@ Or if Aspire MCP tools are available, use them for live resource inspection.
 | TFM upgrade fails (incompatible dependencies) | Identify blocking packages, suggest alternatives or multi-targeting |
 | Build failures after transforms | Cross-reference with breaking-changes.md; fix manually or warn |
 | Aspire CLI not installed | Prompt: `dotnet tool install -g aspire.cli` |
-| Container runtime not available | Warn; suggest Docker Desktop / Podman |
+| Container runtime not available | Warn; suggest a free OCI-compatible runtime first — Podman (Windows/macOS/Linux) or Docker Engine (Linux). Docker Desktop also works and is a valid choice if the user already has it or is appropriately licensed — note it requires a paid subscription for commercial use in larger organizations, so don't present it as the default. |
 | AppHost doesn't start after upgrade | Run `aspire doctor --format Json --non-interactive --nologo` to diagnose environment issues (SDK, container runtime). Check `aspire logs <resource>` for failing services. Review `aspire describe` output for resource status. Fix and retry. |
 | User has custom hosting extensions | Warn about `AllocatedEndpoint` constructor changes, `NetworkIdentifier` (13.0+) |
 
