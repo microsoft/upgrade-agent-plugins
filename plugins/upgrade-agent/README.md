@@ -336,6 +336,13 @@ upgrade-agent/
 │       │           │   └── SKILL.md
 │       │           ├── newtonsoft-json-migration/
 │       │           │   └── SKILL.md
+│       │           ├── nuget-package-upgrade/
+│       │           │   ├── upgrade-options/
+│       │           │   │   └── version-reconciliation.md
+│       │           │   ├── assessment.md
+│       │           │   ├── execution.md
+│       │           │   ├── planning.md
+│       │           │   └── SKILL.md
 │       │           ├── sdk-style-conversion/
 │       │           │   └── SKILL.md
 │       │           ├── semantic-kernel-to-agents-framework/

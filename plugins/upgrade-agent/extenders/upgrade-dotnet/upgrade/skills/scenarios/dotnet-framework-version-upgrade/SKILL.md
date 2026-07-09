@@ -42,41 +42,12 @@ Upgrade .NET Framework projects from their current framework version (e.g., net4
 
 ## Workflow Stages
 
-```
-┌──────────────────────────────────────────────────────┐
-│ 0. PRE-INITIALIZATION                                │
-│    Target = net481 (fixed — no options tool call)    │
-│    Platform = Windows                                │
-│    Confirm which projects to upgrade                 │
-│    → Uses: scenario-initialization system skill      │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────┐
-│ 1. ASSESSMENT                                        │
-│    → Tool: generate_dotnet_upgrade_assessment()      │
-│    → Focus: NuGet compatibility, minor API changes   │
-│    → Creates: assessment.md                          │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────┐
-│ 2. PLANNING                                          │
-│    → Strategy: All-at-Once (≤10 projects)            │
-│                Bottom-Up by dep order (10+ projects)  │
-│    → Tasks: TFM bump + NuGet retarget/update         │
-│    → Creates: plan.md, scenario-instructions.md      │
-└──────────────────────────────┬───────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────┐
-│ 3. EXECUTION                                         │
-│    → Edit TargetFrameworkVersion / TargetFramework(s) │
-│    → Retarget packages.config metadata               │
-│    → Build: msbuild (legacy) / dotnet build          │
-│    → Creates: tasks/*/task.md, execution-log.md      │
-└──────────────────────────────────────────────────────┘
-```
+Run these stages in order:
+
+0. **Pre-Initialization** — Target = `net481` (fixed — no options tool call), platform = Windows. Confirm which projects to upgrade. Uses the `scenario-initialization` system skill.
+1. **Assessment** — Tool: `generate_dotnet_upgrade_assessment`. Focus on NuGet compatibility and minor API changes. Creates `assessment.md`.
+2. **Planning** — Strategy: All-at-Once (≤10 projects) or Bottom-Up by dependency order (10+ projects). Tasks cover the TFM bump plus NuGet retarget/update. Creates `plan.md` and `scenario-instructions.md`.
+3. **Execution** — Edit `TargetFrameworkVersion` / `TargetFramework(s)`, retarget `packages.config` metadata, build with msbuild (legacy) or `dotnet build`. Creates `tasks/*/task.md` and `execution-log.md`.
 
 ## Pre-Initialization
 

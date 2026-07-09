@@ -134,6 +134,22 @@ Use plain descriptors when characterizing scope, never numeric scores:
 | "large solution with heavy inter-project refs" | "estimated effort: 8/10" |
 | "straightforward — no breaking changes expected" | "risk score: low (2/5)" |
 
+### Task ID Format
+
+Task IDs **must** follow the canonical format `NN-slug` — a **two-digit, zero-padded** sequence
+number, a hyphen, then a lowercase kebab-case slug (letters, digits, hyphens). Sub-tasks use a
+dotted sequence: `NN.NN-slug`.
+
+| Valid | Invalid | Why invalid |
+|-------|---------|-------------|
+| `01-upgrade-htmlsanitizer` | `T-01` | No letter prefix — sequence must be digits |
+| `02-core-contracts` | `1-core` | Sequence must be two digits (`01`, not `1`) |
+| `02.01-data-access` | `02_data_access` | Use hyphens, not underscores |
+| `03-web-apps` | `Task3` | Must be `NN-slug` |
+
+The state tools (`start_task` / `complete_task`) parse this format. IDs that don't match (e.g.
+`T-01`) are silently ignored and task tracking breaks — always emit `NN-slug` ids.
+
 ### Task Naming
 
 Task IDs must describe **what is being done**, not the strategy slot or structural position. A user reading just the task list should understand the work without knowing the strategy.

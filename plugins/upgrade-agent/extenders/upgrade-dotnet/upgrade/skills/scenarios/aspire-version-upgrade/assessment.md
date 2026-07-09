@@ -249,12 +249,14 @@ aspire --version
 ### 6.2 Container Runtime
 
 ```bash
-docker --version
-# or
 podman --version
+# or
+docker --version
 ```
 
 Warn if not available — Aspire works but infrastructure resources won't start.
+
+If no runtime is found, suggest a free OCI-compatible runtime first — Podman (Windows/macOS/Linux) or Docker Engine (Linux). Docker Desktop is also a valid choice if the user already has it or is appropriately licensed; note it requires a paid subscription for commercial use in larger organizations, so don't present it as the default.
 
 ### 6.3 Aspire Agent/MCP/Skills
 

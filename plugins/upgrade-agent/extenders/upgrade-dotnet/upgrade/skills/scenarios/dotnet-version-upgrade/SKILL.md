@@ -41,36 +41,12 @@ Upgrade .NET projects from their current target framework to a newer version of 
 
 ## Workflow Stages
 
-```
-┌──────────────────────────────────────────────────┐
-│ 0. PRE-INITIALIZATION                            │
-│    Gather target framework defaults              │
-│    → Uses: scenario-initialization system skill  │
-│    → Tool: get_dotnet_upgrade_options            │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 1. ASSESSMENT                                    │
-│    Analyze solution, identify risks              │
-│    → Creates: assessment.md                      │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 2. PLANNING                                      │
-│    Create upgrade plan based on assessment       │
-│    → Creates: plan.md, scenario-instructions.md  │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 3. EXECUTION                                     │
-│    Execute tasks, validate changes               │
-│    → Creates: tasks/*/task.md                    │
-│    → Uses: system task-execution skill           │
-└──────────────────────────────────────────────────┘
-```
+Run these stages in order:
+
+0. **Pre-Initialization** — Gather target framework defaults. Uses the `scenario-initialization` system skill. Tool: `get_dotnet_upgrade_options`.
+1. **Assessment** — Analyze the solution and identify risks. Creates `assessment.md`.
+2. **Planning** — Create the upgrade plan based on the assessment. Creates `plan.md` and `scenario-instructions.md`.
+3. **Execution** — Execute tasks and validate changes. Creates `tasks/*/task.md`. Uses the system task-execution skill.
 
 ## Pre-Initialization
 

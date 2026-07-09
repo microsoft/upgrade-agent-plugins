@@ -24,33 +24,12 @@ Convert Visual Studio extension projects from legacy (old-style) format to moder
 
 ## Workflow Stages
 
-```
-┌──────────────────────────────────────────────────┐
-│ 1. ASSESSMENT                                    │
-│    Analyze VSIX project structure and risks      │
-│    → Creates: assessment.md                      │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 2. PLANNING                                      │
-│    Create conversion plan with VSSDK specifics   │
-│    → Creates: plan.md                            │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 3. EXECUTION                                     │
-│    Convert project + apply VSSDK overlay         │
-│    → Modifies: project file, solution file       │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 4. VALIDATION                                    │
-│    Build, verify VSIX output, deploy markers     │
-└──────────────────────────────────────────────────┘
-```
+Run these stages in order:
+
+1. **Assessment** — Analyze the VSIX project structure and risks. Creates `assessment.md`.
+2. **Planning** — Create the conversion plan with VSSDK specifics. Creates `plan.md`.
+3. **Execution** — Convert the project and apply the VSSDK overlay. Modifies the project file and solution file.
+4. **Validation** — Build, verify the VSIX output, and check deploy markers.
 
 ## 1. Assessment
 
