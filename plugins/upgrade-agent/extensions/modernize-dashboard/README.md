@@ -123,27 +123,19 @@ mode, call `extensions_reload` (or restart the agent) to pick it up.
 ## Limitations vs. the Blazor dashboard
 
 This POC is intentionally shallow. It reads the same on-disk artifacts and
-renders a flat HTML view, with a lightweight ServiceHost process spawned to
-produce `activity.jsonl`. The ServiceHost binary is discovered automatically
-from the NuGet global packages cache
-(`~/.nuget/packages/microsoft.githubcopilot.upgrade.mcp/*/tools/*/any/Dashboard/`).
+renders a flat HTML view. The MCP server's `ServiceHostLifecycleService` spawns
+the ServiceHost process to produce `activity.jsonl` — the canvas extension
+only reads the file.
 
-### Testing with a locally-built ServiceHost
+### ServiceHost lifecycle
 
-If you need to test a local build of ServiceHost instead of the one from the
-installed plugin, set the `DASHBOARD_SERVICE_HOST_DIR` environment variable to
-point to your build output:
+The MCP server (`ServiceHostLifecycleService`) is responsible for spawning and
+managing the ServiceHost process. The canvas extension no longer manages the
+ServiceHost — it only reads the `activity.jsonl` file produced by it.
 
-```powershell
-# Point to your local Debug build
-$env:DASHBOARD_SERVICE_HOST_DIR = "C:\path\to\repo\bin\Debug\Upgrade.Dashboard.ServiceHost\net10.0"
-
-# Remember to clear it when done to avoid stale overrides
-Remove-Item Env:\DASHBOARD_SERVICE_HOST_DIR
-```
-
-When set, this env var takes priority over the NuGet cache. **Clear it when
-you're done testing** to avoid accidentally running a stale local build.
+For local development, the `CopyServiceHostForLocalDev` MSBuild target in the
+MCP `.csproj` copies ServiceHost build output into `$(TargetDir)Dashboard/`
+after build, so `dotnet build` is sufficient (no `dotnet publish` required).
 
 - the dashboard's changelog event types (`task_started`, `task_completed`,
   `task_failed`, `file_modified`, `commit_created`, `build_completed`,

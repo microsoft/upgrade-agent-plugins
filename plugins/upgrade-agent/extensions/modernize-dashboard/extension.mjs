@@ -14,7 +14,6 @@ import { CanvasError, createCanvas, joinSession } from "@github/copilot-sdk/exte
 
 import { snapshot, resolveRepoRootFromDisk, readScenarios, getActiveScenario } from "./lib/snapshot.mjs";
 import { createDashboardServer } from "./lib/server.mjs";
-import { startProviderHost, stopProviderHost } from "./lib/providers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INDEX_HTML_PATH = path.join(__dirname, "canvas", "index.html");
@@ -80,13 +79,6 @@ function requireSession() {
 		);
 	}
 }
-
-// ---- Provider host lifecycle (per instance) ---------------------------------
-
-// repoPath → { handle, refCount }  — one ServiceHost per repo, shared across instances
-const providerHosts = new Map();
-// instanceId → repoPath  — tracks which repo each canvas instance is associated with
-const instanceRepoMap = new Map();
 
 // ---- Action handler registry -----------------------------------------------
 
@@ -298,60 +290,13 @@ const canvas = createCanvas({
 		const initialPanel = VALID_PANELS.has(input?.panel) ? input.panel : "overview";
 		const url = `${baseUrl}/?instanceId=${encodeURIComponent(instanceId)}&panel=${encodeURIComponent(initialPanel)}`;
 
-		// Start the ServiceHost process to produce activity.jsonl while the canvas is open.
-		// Only one ServiceHost per repo — additional instances share it via refCount.
-		if (resolution?.path) {
-			const repoKey = resolution.path;
-
-			// If this instanceId is already tracked (re-open of the same panel),
-			// skip refCount increment — onClose only fires once per panel.
-			const alreadyTracked = instanceRepoMap.has(instanceId);
-			instanceRepoMap.set(instanceId, repoKey);
-
-			const existing = providerHosts.get(repoKey);
-			if (existing) {
-				if (!alreadyTracked) {
-					existing.refCount++;
-				}
-			} else {
-				// Reserve the slot before any async work to prevent concurrent
-				// canvas opens from spawning duplicate ServiceHost processes.
-				const placeholder = { handle: null, refCount: 1 };
-				providerHosts.set(repoKey, placeholder);
-				try {
-					const scenarios = await readScenarios(resolution.path);
-					const active = getActiveScenario(scenarios);
-					const handle = startProviderHost(resolution.path, {
-						scenarioPath: active?.scenarioPath ?? undefined,
-					});
-					if (handle) {
-						placeholder.handle = handle;
-					} else {
-						providerHosts.delete(repoKey);
-					}
-				} catch (err) {
-					providerHosts.delete(repoKey);
-					console.error(`[providers] Failed to start provider host: ${err?.message ?? err}`);
-				}
-			}
-		}
+		// ServiceHost is managed by the MCP server (ServiceHostLifecycleService)
+		// and runs for the entire MCP server lifetime. The canvas extension is
+		// purely UI — it reads activity.jsonl but does not manage the process.
 
 		return { url, title: "Code Upgrade", status: "open" };
 	},
 	onClose({ instanceId }) {
-		// Decrement refCount; stop ServiceHost only when last instance for this repo closes
-		const repoKey = instanceRepoMap.get(instanceId);
-		if (repoKey) {
-			instanceRepoMap.delete(instanceId);
-			const entry = providerHosts.get(repoKey);
-			if (entry) {
-				entry.refCount--;
-				if (entry.refCount <= 0) {
-					stopProviderHost(entry.handle);
-					providerHosts.delete(repoKey);
-				}
-			}
-		}
 		dashboardServer.closeInstance(instanceId);
 	},
 });

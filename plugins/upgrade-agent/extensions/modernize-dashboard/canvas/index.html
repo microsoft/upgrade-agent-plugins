@@ -4562,6 +4562,8 @@ function renderDiffContent(diffText, filePath) {
 			continue;
 		}
 		if (currentHunk) {
+			// Skip "\ No newline at end of file" — not a real diff line
+			if (line.startsWith("\\")) continue;
 			currentHunk.lines.push(line);
 		}
 	}

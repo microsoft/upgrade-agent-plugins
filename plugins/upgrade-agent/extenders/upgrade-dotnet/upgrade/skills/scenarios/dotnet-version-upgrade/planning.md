@@ -33,6 +33,7 @@ Create an upgrade plan: confirm options (including strategy), then generate orde
 | Package management | `PackageReference` vs `packages.config` | SDK-style conversion scope, CPM eligibility |
 | Package risks | Security vulns, deprecated packages | Task priority |
 | Complexity indicators | LOC, project complexity ratings | Strategy selection |
+| Test Coverage recommendations | Global recommendation count and recommended project paths | Test Coverage applicability and generation scope |
 
 Also extract: dependency graph (leaf → root ordering), project-to-project references.
 
@@ -57,8 +58,9 @@ the class silently and act on it.
 
 | Class | Criteria | Behavior |
 |-------|----------|----------|
-| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Skip all options EXCEPT Upgrade Strategy. Evaluate strategy, write it to `upgrade-options.md` (strategy-only file), confirm with user, then write compact block to `scenario-instructions.md`. Proceed to Step 2. |
+| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Evaluate Upgrade Strategy and, when the assessment recommends Test Coverage, the Test Coverage option. Skip every other option. Write and confirm `upgrade-options.md`, then write the compact block to `scenario-instructions.md`. Proceed to Step 2. |
 | **Complex** | Any .NET Framework project, incompatible packages, or other signals from the trigger index have surfaced | Proceed with Step 1.5 evaluation below |
+
 
 ---
 
@@ -161,8 +163,8 @@ entire upgrade approach and must be explicitly confirmed by the user.
 1. Build the options JSON from your evaluation above (do **not** read any file — construct it in memory).
 2. Call `show_upgrade_options(optionsJson=<json>, scenarioFolder=<path>)`. The tool renders an interactive dropdown form in chat and blocks until the user confirms or cancels.
 3. Wait for the result and handle:
-   - **`confirmed=true`, `changed` is non-empty**: update `upgrade-options.md` to reflect the confirmed selections (move the `**value** (selected)` marker to the confirmed row for each changed option), then write the compact `## Upgrade Options` block to `scenario-instructions.md`. Proceed to Step 2.
-   - **`confirmed=true`, `changed` is empty**: write the compact `## Upgrade Options` block to `scenario-instructions.md`. Proceed to Step 2.
+   - **`confirmed=true`, `changed` is non-empty**: update `upgrade-options.md` to reflect the confirmed selections (move the `**value** (selected)` marker to the confirmed row for each changed option), then write the compact `## Upgrade Options` block to `scenario-instructions.md`. Continue to Finalize.
+   - **`confirmed=true`, `changed` is empty**: write the compact `## Upgrade Options` block to `scenario-instructions.md`. Continue to Finalize.
    - **`confirmed=false`**: stop immediately. Ask the user how they would like to continue.
    - **`error` returned**: fix the JSON schema error described in the response and call `show_upgrade_options` again immediately. Do not proceed until the form has been shown.
    - **`refreshed=true` returned** (user clicked Refresh): re-read `upgrade-options.md`, rebuild the `optionsJson` from the file contents, then call `show_upgrade_options(optionsJson=<updated json>, stateId=<same stateId>)` immediately. The existing UI frame refreshes in place — do not create a new pending session.
@@ -193,7 +195,8 @@ table, save the file, wait for final confirmation before proceeding.
 1. Read all `**{value}** (selected)` markers from the option tables
 2. Write the compact `## Upgrade Options` block to `scenario-instructions.md`
    using the format defined in [`upgrade-options/upgrade-options-index.md`](upgrade-options/upgrade-options-index.md)
-3. Proceed to Step 2 — do not summarize or recap
+
+After either confirmation flow, proceed to Step 2 without a summary or recap.
 
 ---
 
@@ -211,6 +214,16 @@ Two categories of signals determine strategy:
 Read the confirmed strategy from `scenario-instructions.md` (written by Step 1.5 Finalize).
 The strategy was selected and confirmed as part of upgrade options — no separate
 selection step is needed.
+
+### Apply Test Coverage Option
+
+Read the confirmed Test Coverage value from `scenario-instructions.md`:
+
+- **Skip** or not present: add no test-baseline work.
+- **Generate**: follow the `## Generate flow` in
+  [`upgrade-options/test-coverage.md`](upgrade-options/test-coverage.md) before generating the plan.
+  The flow may satisfy the plugin prerequisite, change the selection to **Skip**, or stop the current
+  run.
 
 ### Strategy Modifiers
 

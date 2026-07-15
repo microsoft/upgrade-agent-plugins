@@ -28,14 +28,18 @@ and recognized values. Only load the files whose trigger condition is met.
 | Assembly Binding Redirects | Modernization | [binding-redirects.md](binding-redirects.md) |
 | Nullable Reference Types | Modernization | [nullable-reference-types.md](nullable-reference-types.md) |
 | Entity Framework | Modernization | [entity-framework.md](entity-framework.md) |
+| Test Coverage | Reliability | [test-coverage.md](test-coverage.md) |
 
 ---
 
 ## Trigger Index
 
-Only load option files whose trigger condition is met.
-**Upgrade Strategy is always loaded** — it is not subject to the Simple skip.
-All other options: **skip the entire index** if the upgrade is classified as Simple (see planning.md).
+Load options as follows:
+
+- **Upgrade Strategy**: always load.
+- **Test Coverage**: load whenever the assessment recommends Test Coverage, including for a Simple
+  upgrade.
+- **All other options**: load only for a Complex upgrade when their trigger condition is met (see planning.md).
 
 Triggers describe **what** makes an option relevant. The “Likely source” column
 hints at where evidence may come from — but any source is valid (assessment data,
@@ -46,8 +50,7 @@ surfaced.
 | Trigger | Condition | Likely source | Option file |
 |---------|-----------|---------------|-------------|
 | Always | Every upgrade needs a strategy | — | [strategy.md](strategy.md) |
-| Trigger | Condition | Likely source | Option file |
-|---------|-----------|---------------|-------------|
+| Test Coverage recommended | Assessment recommends Test Coverage for at least one project | Assessment | [test-coverage.md](test-coverage.md) |
 | .NET Framework project | Any project targets .NET Framework | Assessment, project files | [project-approach.md](project-approach.md) |
 | Multiple projects without CPM | ≥ 2 projects and no centralized package management | Assessment, repo structure | [package-management.md](package-management.md) |
 | Incompatible packages | Packages with no compatible version for the target TFM | Assessment | [unsupported-packages.md](unsupported-packages.md) |
@@ -177,6 +180,17 @@ Assessment: {one line summary}
 |-------|-------------|
 | **{value}** (selected) | {description} |
 | {alternative} | {description} |
+
+## Reliability
+[omit this section entirely if the Test Coverage option is not applicable]
+
+### Test Coverage
+{rationale}
+
+| Value | Description |
+|-------|-------------|
+| **{value}** (selected) | {description} |
+| {alternative} | {description} |
 ```
 
 ---
@@ -213,6 +227,10 @@ and write this compact block to `scenario-instructions.md`:
 - Assembly Binding Redirects: {selected value}
 - Nullable Reference Types: {selected value}
 - Entity Framework: {selected value}
+
+### Reliability
+[only if applicable]
+- Test Coverage: {selected value}
 ```
 
 Rules for writing this block:
@@ -237,7 +255,7 @@ A matching skill must contain an `## Upgrade Option` section:
 ## Upgrade Option
 
 **Option Name**: {unique name}
-**Category**: {Project Structure | Compatibility | Modernization}
+**Category**: {Project Structure | Compatibility | Modernization | Reliability}
 
 **Applicable when**:
 - {assessment signal condition}
