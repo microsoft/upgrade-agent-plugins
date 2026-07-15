@@ -3,7 +3,7 @@
 Scenario-specific execution guidance for .NET version upgrade tasks.
 Supplements the system `task-execution` skill — does not replace it.
 
-> **This file covers 6 sections.**
+> **This file covers 7 sections.**
 >
 > | # | Section | Key Content |
 > |---|---------|-------------|
@@ -13,6 +13,7 @@ Supplements the system `task-execution` skill — does not replace it.
 > | 3 | Decomposition Rules | Stub discovery, stub resolution, package replacement research |
 > | 4 | Multi-Targeting Mechanics | MSBuild conditions for package references and API calls |
 > | 5 | Tasks Breakdown Hints | Per-flavor decomposition hints for complex tasks |
+> | 6 | Test Baseline Tasks | (Optional) Driving pre/post-upgrade test safety-net via dotnet-test |
 
 ---
 
@@ -339,3 +340,26 @@ so subtasks can be scoped accurately.
 
 Custom skills can contribute additional hints using the protocol defined
 in the task-execution system skill (see `provides: task-breakdown-hints`).
+
+---
+
+## Section 6: Test Baseline Tasks
+
+**Gate:** only when `scenario-instructions.md` contains `## Test Baseline` with `Status: enabled`.
+Otherwise this section does not apply.
+
+The planning stage injects two safety-net tasks:
+
+- **`generate-test-baseline`** (before upgrade changes): load `generating-upgrade-test-baseline` and
+  follow it. The external generator owns test creation and pre-upgrade build/test validation.
+- **`validate-test-baseline`** (after all upgrade tasks): read the test projects from
+  `scenario-instructions.md`, then:
+  1. Run all recorded baseline test projects on the upgraded code.
+  2. If all pass, complete the task.
+  3. For failures, distinguish an unintended upgrade regression from an intended behavior change:
+     - Regression: fix production code, then re-run the tests.
+     - Intended change: update the affected test and record the rationale in `progress-details.md`.
+     - Ambiguous: ask the user.
+  4. If failures remain unresolved, follow the normal task-execution failure and escalation handling.
+
+Do not rewrite behavior-locking tests merely to make the suite pass.

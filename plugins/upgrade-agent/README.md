@@ -196,6 +196,11 @@ upgrade-agent/
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   └── migrating-webapi-odata/
 │       │       │   │       └── SKILL.md
+│       │       │   ├── testing/
+│       │       │   │   ├── generating-upgrade-test-baseline/
+│       │       │   │   │   └── SKILL.md
+│       │       │   │   └── managing-dotnet-test-installation/
+│       │       │   │       └── SKILL.md
 │       │       │   └── web/
 │       │       │       ├── aspnet/
 │       │       │       │   └── migrating-global-asax/
@@ -324,6 +329,7 @@ upgrade-agent/
 │       │           │   │   ├── project-approach.md
 │       │           │   │   ├── strategy.md
 │       │           │   │   ├── system-web-adapters.md
+│       │           │   │   ├── test-coverage.md
 │       │           │   │   ├── unsupported-api-handling.md
 │       │           │   │   ├── unsupported-packages.md
 │       │           │   │   ├── upgrade-options-index.md

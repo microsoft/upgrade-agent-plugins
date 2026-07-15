@@ -14,7 +14,7 @@ import { hashState } from "./state-hash.mjs";
 import { activityLogDir } from "./repo.mjs";
 
 // Validate a git commit hash (short or full SHA hex only).
-const COMMIT_HASH_RE = /^[a-f0-9]{4,40}$/i;
+const COMMIT_HASH_RE = /^[a-f0-9]{4,64}$/i;
 function isValidCommitHash(value) {
 	return COMMIT_HASH_RE.test(value);
 }
