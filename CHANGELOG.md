@@ -4,6 +4,12 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.222] - 2026-07-16
+
+### Changed
+
+- **Skills**: Shortened the bundled .NET migration skill file paths to fit the plugin's 150-character path limit, and reorganized the task-execution system skill into reference files to satisfy skill-linting limits. Skill guidance and behavior are unchanged.
+
 ## Baseline 1.1.202 - 2026-07-15
 
 This is the initial published baseline. It enumerates the skills and scenarios

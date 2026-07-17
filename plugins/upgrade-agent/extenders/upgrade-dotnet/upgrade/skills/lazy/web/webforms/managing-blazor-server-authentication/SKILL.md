@@ -74,9 +74,9 @@ builder.Services.AddCascadingAuthenticationState();
 
 **Required pattern:** Use standard HTML `<form method="post">` elements that submit to **minimal API endpoints** via full HTTP POST requests. The endpoint performs the auth operation over a real HTTP connection and redirects back to a Blazor page.
 
-**For complete explanation of why this is necessary, troubleshooting common issues, and alternative approaches**, read **[references/cookie-auth-pattern.md](references/cookie-auth-pattern.md)**.
+**For complete explanation of why this is necessary, troubleshooting common issues, and alternative approaches**, read **[ref/cookie-auth-pattern.md](ref/cookie-auth-pattern.md)**.
 
-**For ready-to-use endpoint code (login, register, logout, password reset, external providers)**, read **[references/endpoint-templates.md](references/endpoint-templates.md)**.
+**For ready-to-use endpoint code (login, register, logout, password reset, external providers)**, read **[ref/endpoint-templates.md](ref/endpoint-templates.md)**.
 
 **Quick example:**
 
@@ -409,8 +409,8 @@ Quick reference for OWIN Identity patterns already handled by the `migrating-asp
 
 For detailed implementation patterns and code examples:
 
-- **[references/cookie-auth-pattern.md](references/cookie-auth-pattern.md)** — Complete explanation of why HttpContext NULL errors in WebSocket circuits, the form → minimal API pattern, DisableAntiforgery requirement, troubleshooting, and alternative approaches
-- **[references/endpoint-templates.md](references/endpoint-templates.md)** — Ready-to-use minimal API endpoint code for login, register, logout, password reset, external providers (Google/Microsoft), and testing examples
+- **[ref/cookie-auth-pattern.md](ref/cookie-auth-pattern.md)** — Complete explanation of why HttpContext NULL errors in WebSocket circuits, the form → minimal API pattern, DisableAntiforgery requirement, troubleshooting, and alternative approaches
+- **[ref/endpoint-templates.md](ref/endpoint-templates.md)** — Ready-to-use minimal API endpoint code for login, register, logout, password reset, external providers (Google/Microsoft), and testing examples
 
 ---
 
@@ -424,7 +424,7 @@ Blazor Server has no `HttpContext.Current`. Use dependency injection:
 ```
 
 ### Cookie Auth Requires HTTP Endpoints
-Blazor Server login/logout MUST use HTTP endpoints (not component-based), because cookies are set on HTTP responses — see [references/cookie-auth-pattern.md](references/cookie-auth-pattern.md).
+Blazor Server login/logout MUST use HTTP endpoints (not component-based), because cookies are set on HTTP responses — see [ref/cookie-auth-pattern.md](ref/cookie-auth-pattern.md).
 
 ### SignalR Circuit vs HTTP Request
 Authentication state is captured when the circuit starts. If the user's session expires mid-circuit, they remain "authenticated" until the page refreshes. Use `RevalidatingServerAuthenticationStateProvider` for periodic revalidation.

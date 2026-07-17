@@ -92,7 +92,7 @@ Before running the script, determine these values:
 
 ### 2.2 Run the Script
 
-The script copies template files from `templates/mvc/` or `templates/webapi/`, applies
+The script copies template files from `tmpl/mvc/` or `tmpl/webapi/`, applies
 variable substitutions (`$TargetFramework$`, `$ProjectName$`, `$OldAppUrl$`, etc.),
 adds the project to the solution, links the old project via `_MigrateToProjectGuid`,
 and verifies the build.
@@ -112,7 +112,7 @@ and verifies the build.
 ### 2.3 If Script Fails or Is Unavailable
 
 If the script cannot be executed (e.g., PowerShell not available, permissions issue),
-do the steps manually. The template files in `templates/mvc/` and `templates/webapi/`
+do the steps manually. The template files in `tmpl/mvc/` and `tmpl/webapi/`
 contain the exact file contents — copy them to the new project folder and replace
 the `$placeholder$` variables:
 
@@ -138,7 +138,7 @@ Then manually:
 ### Template Files Reference
 
 ```
-templates/
+tmpl/
   mvc/                         ← For MVC projects
     ProjectName.csproj         ← SDK-style web project with YARP + SystemWebAdapters packages
     Program.cs                 ← AddControllersWithViews + YARP forwarder + UseStaticFiles

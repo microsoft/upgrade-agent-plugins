@@ -19,8 +19,8 @@ metadata:
 
 Migrate .NET projects from `Microsoft.SemanticKernel.Agents` to `Microsoft.Agents.AI` (Agent Framework). The migration involves updating NuGet packages, namespaces, agent creation patterns, tool registration, thread management, and invocation methods.
 
-**API mappings and code examples**: Read `references/api-mappings.md` for detailed type/method/pattern transformations.
-**Provider-specific patterns**: Read `references/provider-patterns.md` for per-provider migration (OpenAI, Azure OpenAI, Assistants, Azure AI Foundry, A2A, Responses).
+**API mappings and code examples**: Read `ref/api-mappings.md` for detailed type/method/pattern transformations.
+**Provider-specific patterns**: Read `ref/provider-patterns.md` for per-provider migration (OpenAI, Azure OpenAI, Assistants, Azure AI Foundry, A2A, Responses).
 
 ## Workflow
 
@@ -44,7 +44,7 @@ For each project with **explicit** package dependencies (skip transitive-only co
    - `Microsoft.SemanticKernel.Agents.OpenAI`
    - `Microsoft.SemanticKernel.Agents.AzureAI`
    - `Microsoft.SemanticKernel` (only if used solely for agents)
-3. Add Agent Framework packages based on provider (see `references/provider-patterns.md` for the mapping):
+3. Add Agent Framework packages based on provider (see `ref/provider-patterns.md` for the mapping):
    - `Microsoft.Agents.AI.Abstractions` (always required)
    - Provider-specific package (e.g., `Microsoft.Agents.AI.OpenAI`)
 4. Never guess package versions - use available tools to determine the latest stable version
@@ -65,11 +65,11 @@ If projects specify versions directly in `PackageReference` elements, make all c
 
 Find all code files in affected projects (including transitive dependents) that reference SK agent APIs. Use search tools and pass each project's root folder.
 
-Apply transformations from `references/api-mappings.md`:
+Apply transformations from `ref/api-mappings.md`:
 
 1. Search for `Microsoft.SemanticKernel.Agents` in using statements, types, and API calls (skip comments and string literals)
 2. Replace agent types, method calls, configuration patterns, and namespaces
-3. Handle provider-specific patterns per `references/provider-patterns.md`
+3. Handle provider-specific patterns per `ref/provider-patterns.md`
 
 **Using statement rules:**
 - Replace SK agent using statements with AF equivalents

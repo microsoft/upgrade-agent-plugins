@@ -215,7 +215,7 @@ Pay special attention to:
 
 ### Step 5: Apply nullable attributes for advanced scenarios
 
-When a simple `?` annotation cannot express the null contract, apply attributes from `System.Diagnostics.CodeAnalysis` — see [references/nullable-attributes.md](references/nullable-attributes.md) for the full attribute table (`[NotNullWhen]`, `[MaybeNullWhen]`, `[MemberNotNull]`, `[AllowNull]`, `[DisallowNull]`, `[DoesNotReturn]`, etc.) with usage guidance for each.
+When a simple `?` annotation cannot express the null contract, apply attributes from `System.Diagnostics.CodeAnalysis` — see [ref/nullable-attributes.md](ref/nullable-attributes.md) for the full attribute table (`[NotNullWhen]`, `[MaybeNullWhen]`, `[MemberNotNull]`, `[AllowNull]`, `[DisallowNull]`, `[DoesNotReturn]`, etc.) with usage guidance for each.
 
 > **Build checkpoint:** After applying nullable attributes, build to verify the attributes resolved the targeted warnings and did not introduce new ones.
 
@@ -260,7 +260,7 @@ Nullable migration changes require broader review than a typical diff:
 
 ## Breaking Changes from NRT Annotations (Libraries)
 
-For libraries, see [references/breaking-changes.md](references/breaking-changes.md) — NRT annotations are part of the public API contract and incorrect annotations are source-breaking changes for consumers.
+For libraries, see [ref/breaking-changes.md](ref/breaking-changes.md) — NRT annotations are part of the public API contract and incorrect annotations are source-breaking changes for consumers.
 
 ## Common Pitfalls
 
@@ -281,11 +281,11 @@ For libraries, see [references/breaking-changes.md](references/breaking-changes.
 
 ## Entity Framework Core Considerations
 
-If the project uses EF Core, see [references/ef-core.md](references/ef-core.md) — enabling NRTs can change database schema inference and migration output.
+If the project uses EF Core, see [ref/ef-core.md](ref/ef-core.md) — enabling NRTs can change database schema inference and migration output.
 
 ## ASP.NET Core Considerations
 
-If the project uses ASP.NET Core, see [references/aspnet-core.md](references/aspnet-core.md) — enabling NRTs can change MVC model validation and JSON serialization behavior.
+If the project uses ASP.NET Core, see [ref/aspnet-core.md](ref/aspnet-core.md) — enabling NRTs can change MVC model validation and JSON serialization behavior.
 
 ## More Info
 

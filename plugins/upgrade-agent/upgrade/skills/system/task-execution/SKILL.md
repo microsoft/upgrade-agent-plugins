@@ -20,20 +20,19 @@ Every task must meet ALL of these before calling `complete_task`:
 5. **progress-details.md written** — write `tasks/{taskId}/progress-details.md` documenting what changed. This is mandatory for every task, not optional.
 6. **Only `start_task` / `break_down_task` create task folders** — never create task.md files directly (you can edit them after additional research was done, but the initial creation must be via the tool to ensure state consistency).
 
-> **This skill covers 9 sections.** Read all before starting work.
+> **This skill covers 8 numbered sections (plus §6.5, a sub-section between §6 and §7).** Read all before starting work.
 >
 > | # | Section | Key Content |
 > |---|---------|-------------|
-> | 1 | Assess Decomposition Need | Scope inventory, decomposition triggers, breakdown hint protocol |
-> | 2 | Break Down | Subtask ID convention, design principles, strategies, `break_down_task` usage, replanning, discovery pattern |
+> | 1 | Assess Decomposition Need | Scope inventory, decomposition triggers, breakdown hint protocol (hint-file format & custom-skill hints → `references/decomposition.md`) |
+> | 2 | Break Down | Subtask ID convention, atomicity, core strategies, `break_down_task` usage (replanning & discovery → `references/decomposition.md`) |
 > | 3 | Execute | `start_task`, skills evaluation, research, decomposition assessment, order of operations |
 > | 4 | Validate | "Done when" criteria verification, build/test requirements, failure handling |
 > | 5 | Complete | `complete_task` params, progress-details.md, **all-tasks-complete → post-completion transition** |
-> | 6 | Commit | Git commit strategy — when/how to commit after task completion and maintenance |
-> | 6.5 | Branch Sync & Plan Reconciliation | After commit, sync the working branch with its source; if commits were merged in, reconcile the plan |
+> | 6 | Commit | Git commit strategy — when/how to commit after task completion (application detail → `references/committing-and-syncing.md`) |
+> | 6.5 | Branch Sync & Plan Reconciliation | After commit, sync the working branch with its source; if commits were merged in, reconcile the plan (mechanics → `references/committing-and-syncing.md`) |
 > | 7 | Workflow Files | File audience/purpose reference table |
-> | 8 | Lazy Task Creation | JIT folder creation, task.md as living document |
-> | 9 | Error Recovery + Communication | Build errors, test failures, blocked tasks, reporting |
+> | 8 | Error Recovery + Communication | Build errors, test failures, blocked tasks, reporting (steps → `references/execution-details.md`) |
 
 ---
 
@@ -49,23 +48,10 @@ inventory into `tasks/{taskId}/task.md` under `## Scope Inventory`:
 1. **Projects affected** — list every project this task will modify
 2. **Distinct concerns** — group the changes by technical domain
    (e.g., "package updates", "API migration", "config migration", "DI changes")
-3. **Change signals** — for each project, query assessment data to get the
-   actual issues and features for that project (package issue count, API
-   issue count, key technologies detected). The task description has a
-   summary but not the full per-project details — use assessment query
-   tools if available to get the complete picture (or read assessment file if it is small).
-4. **Skill matches** — which loaded skills have Breakdown Hints or Strategies
-   that apply to this task's scope?
+3. **Change signals** — query assessment data per project (package/API issue counts, key technologies detected); the task description summarizes but omits full per-project detail.
+4. **Skill matches** — which loaded skills have Breakdown Hints or Strategies for this scope?
 
-For obviously simple tasks (single project, one concern, <10 changes), a
-mental inventory is sufficient — don't write it out. For any task touching
-multiple projects or multiple concerns, write it out.
-
-**Chat behavior**: The scope inventory and decomposition assessment are internal
-reasoning — do not show the detailed analysis to the user. If the task needs
-breakdown, briefly state that you're breaking it down and why (one sentence).
-If the task is atomic, say nothing about decomposition — just proceed with
-execution.
+For obviously simple tasks (single project, one concern, <10 changes) a mental inventory is fine; write it out for any task spanning multiple projects or concerns. Keep the scope inventory and decomposition assessment internal — don't show the analysis to the user.
 
 ### Atomicity Criteria
 
@@ -122,44 +108,7 @@ At breakdown assessment time:
 
 Custom skill hints with the same `hint: {id}` override scenario hints.
 
-#### breakdown-context.md Format
-
-This file is created lazily on first task execution and persists across tasks:
-
-```markdown
-## Detected Hints
-
-### hint: {id}
-- **Status**: active | resolved
-- **Priority**: MUST | SHOULD
-- **Evidence**: {what was detected and where}
-- **Detected**: {when, during which task}
-
-## Breakdown Decisions
-
-### task: {taskId}
-- Broken into {N} subtasks based on hints: {hint-id-1}, {hint-id-2}
-```
-
-#### Custom Skill Contribution
-
-Custom skills can contribute breakdown hints by:
-
-1. Including `provides: task-breakdown-hints` in the skill's **description** string
-2. Adding a `## Breakdown Hints` section with hints in this format:
-
-```markdown
-### hint: {unique-id}
-**Applies to task types**: {which tasks this is relevant for}
-**Condition**: {what to detect}
-**Detection**:
-- {concrete file/pattern/metadata to look for}
-**Recommendation**: {what to do when detected}
-**Priority**: MUST | SHOULD
-```
-
-Custom hints with the same `hint: {id}` as a scenario hint override it.
-Hints are discovered fresh on each task execution — no registration needed.
+📖 **For the `breakdown-context.md` file format and how custom skills author breakdown hints, read [references/decomposition.md](references/decomposition.md).**
 
 ### Decision
 
@@ -188,16 +137,7 @@ Always add direct children of the parent task.
 
 ### Subtask Design Principles
 
-Each subtask should be **atomic** per the criteria in Section 1:
-- **Unambiguous done state** — verifiable completion (builds, tests pass, no more usages of X)
-- **No internal replanning** — if execution would require stopping to decide what to do next, decompose further
-- **Clean failure boundary** — partial failure doesn't corrupt the repo; can be retried or rolled back independently
-
-**Minimum 2 subtasks** — if you can't identify at least 2 meaningful subtasks,
-the task is probably atomic. Don't decompose into a single subtask — that's
-just renaming, not decomposing.
-
-Research and decision-making happen naturally during task execution (see "Research and Enrich task.md" in Section 3) — they don't need to be separate subtasks unless the decision blocks other subtasks that could otherwise proceed independently.
+Each subtask should be **atomic** per the Section 1 criteria: an unambiguous done state, no internal replanning, and a clean failure boundary. **Require at least 2 meaningful subtasks** — if you can't identify two, the task is probably atomic (decomposing into one is just renaming). Research and decisions happen naturally during execution and don't need separate subtasks unless a decision blocks otherwise-independent work.
 
 ### Select Breakdown Strategy
 
@@ -230,30 +170,9 @@ When multiple strategies could apply, prefer: skill-contributed > scenario-speci
    Each entry needs: `id` (dot-notation), `description` (short), `content` (full task.md body)
 3. **Pause behavior depends on flow mode**. **Guided mode**: pause for user review. **Automatic mode**: show structure, proceed immediately.
 
-### Replanning
+### Replanning & Discovery
 
-Calling `break_down_task` again is **declarative/idempotent** — provide the complete list of desired subtasks:
-
-```
-break_down_task(parentTaskId, subtasks)
-```
-
-- **Existing subtasks with matching IDs** keep their current state (e.g., InProgress stays InProgress)
-- **Non-completed subtasks not in the new list** are removed — entries deleted from tasks.md, task folders deleted
-- **Completed subtasks are always preserved** — work already done cannot be undone
-- **Truly new IDs** are added as Pending
-
-Use when the remaining work needs restructuring, or when discoveries change the subtask plan.
-
-### Discovery Pattern
-
-Work discovered during execution becomes subtasks of the current task:
-1. Decompose current task: original scope + discovery → subtasks
-2. Call `break_down_task` with all subtasks
-3. Parent won't complete until all children complete → siblings stay ordered
-
-For completely new top-level work unrelated to any task, note it under
-`## Discoveries` in task.md and surface to the user.
+📖 **For idempotent `break_down_task` replanning semantics and the discovery pattern (turning work found mid-execution into subtasks), read [references/decomposition.md](references/decomposition.md).**
 
 *⚡ Continue reading — Sections 3-5 cover execution flow, validation, and completion.*
 
@@ -269,21 +188,11 @@ start_task(taskId)
 
 Returns: `taskId`, `taskFolder`, `folderCreated`, `taskContent` (task.md content, potentially enriched with related skills), `staleTaskWarnings`
 
+`start_task()` creates the task folder JIT if needed (`folderCreated`). **task.md is a living document** — seeded by `break_down_task` or `start_task`, then enriched with research findings during execution; treat it as your working plan.
+
 #### ⚠️ Handling Stale Task Warnings
 
-`start_task` (and `get_state`) may return a `staleTaskWarnings` array — tasks stuck in 🔄 from a previous session that were never completed.
-
-Each warning contains:
-- `TaskId`: The stale task's ID
-- `Description`: What the task is
-- `Instruction`: Specific action to take — **follow this instruction**
-
-**Before proceeding with the current task**, handle each stale warning:
-1. Read the `Instruction` field and follow it
-2. Assess the task's state — check its task folder for evidence of completed work (e.g., `progress-details.md`, code changes)
-3. Call `complete_task(taskId)` to finalize it, or `complete_task(taskId, failed=true)` to abandon it
-
-Do not ignore stale task warnings — they indicate state inconsistency that must be resolved before new work begins.
+If `start_task`/`get_state` returns a `staleTaskWarnings` array, resolve each one **before** starting new work — follow its `Instruction` and `complete_task` it (or `complete_task(taskId, failed=true)` to abandon). 📖 **See [references/execution-details.md](references/execution-details.md).**
 
 ### ⛔ Execution Order Rule
 
@@ -325,8 +234,6 @@ before executing tasks.
 
 Do not narrate skill selection to the user.
 
-**Why this is not optional**: The tool pre-filtered these skills for this task. They contain tool selection logic, error prevention patterns, and edge case handling specific to the work you're about to do. Loading a skill takes seconds; debugging without it takes much longer.
-
 #### Step 2: Research the task
 
 **Research happens BEFORE decomposition** — what you discover during
@@ -345,11 +252,7 @@ research determines whether the task needs breaking down.
    into the existing task description so anyone reading task.md sees everything needed
    to understand and execute the task.
 
-For single-project tasks modifying ≤3 files with no package changes,
-a brief mental assessment is sufficient — but you MUST still write at
-least a 2-3 line summary in `tasks/{taskId}/task.md`
-documenting what you checked and what you found. The exception is about
-depth of research, not about skipping the written record.
+For single-project tasks modifying ≤3 files with no package changes, a brief mental assessment is sufficient — but you MUST still write a 2-3 line summary in `tasks/{taskId}/task.md` of what you checked and found. The exception is about research depth, not skipping the written record.
 
 #### Already-Done Check
 
@@ -366,13 +269,7 @@ Apply Section 1 criteria **against your research findings** (not just
 the task description). Research often reveals complexity that wasn't
 apparent from the description alone.
 
-If decomposition is needed → `break_down_task()` (Section 2) → pause
-for user review (Guided mode) or proceed (Automatic mode) → recurse.
-
-If the task is atomic → proceed to Step 4.
-
-**Chat behavior**: Do not show decomposition reasoning to the user.
-If breaking down, briefly state why (one sentence). If atomic, say nothing.
+If decomposition is needed → `break_down_task()` (Section 2) → pause for user review (Guided mode) or proceed (Automatic mode) → recurse. If atomic → proceed to Step 4. Don't show decomposition reasoning to the user: if breaking down, state why in one sentence; if atomic, say nothing.
 
 #### Step 4: Execute
 
@@ -386,30 +283,13 @@ If breaking down, briefly state why (one sentence). If atomic, say nothing.
 
 ### Change Guidelines
 
-- Make incremental changes that can be tested
-- Keep changes within task scope
-- Document non-obvious fixes in task.md
+Make incremental, testable changes; keep them within task scope; document non-obvious fixes in `task.md`.
 
-### Delegated Execution Checklist
+### Delegated Execution & Direct tasks.md Edits
 
-When delegating task execution to a sub-agent:
+📖 **When delegating a task to a sub-agent (mandatory `sub-agent-delegation` skill + artifact rules) or editing `tasks.md`/`task.md` directly (cosmetic edits are fine; structural changes go through tools), read [references/execution-details.md](references/execution-details.md).**
 
-1. **Load the `sub-agent-delegation` skill** — `get_instructions(kind='skill', query='sub-agent-delegation')`. It contains a mandatory job description template and checklists. Use it every time.
-2. Your job description MUST include artifact instructions:
-   - "Enrich `tasks/{taskId}/task.md` with your research findings — add affected files, dependencies, packages, patterns discovered directly into the document"
-   - "Write `tasks/{taskId}/progress-details.md` with: files modified, build/test results, issues resolved"
-   - "Do NOT call `complete_task` — return results to me"
-3. After the sub-agent returns, run the post-return checklist from the skill: verify artifacts exist and quality bar is met before calling `complete_task`.
-
-### Direct Edits to tasks.md
-
-**Cosmetic changes** to task descriptions, names, or content don't require tool calls. If the user asks to rename a task, change its description, or adjust task content — edit `tasks.md` and/or `tasks/{taskId}/task.md` files directly.
-
-Tools are for **structural operations** (add subtasks, change state, complete task) where state-machine consistency matters. The task snapshot re-parses `tasks.md` on each access, so direct edits are picked up automatically.
-
-> **Auto-generated links:** Task lines in `tasks.md` may end with `([Content](...), [Progress](...))` links. These are auto-managed by the system — do not add, remove, or update them manually. If your edit drops them, they are re-added on the next regeneration.
-
-*⚡ Continue reading — Sections 4-9 cover validation, completion, commit strategy, workflow files reference, and error recovery.*
+*⚡ Continue reading — Sections 4-8 cover validation, completion, commit strategy, branch sync, workflow files, error recovery, and communication.*
 
 ---
 
@@ -423,19 +303,7 @@ The **"Done when"** section in task.md is your validation checklist — not just
 
 ### Post-Task Build Invariant
 
-After completing ANY top-level task, the **entire solution** must build
-successfully. If the task's changes cause build errors in other projects
-(not directly modified), those errors must be fixed as part of this task
-before marking it complete.
-
-This includes:
-- Projects that reference modified projects (transitive build breaks)
-- Projects that consume changed APIs or packages
-- Test projects that reference modified production code
-
-Do not reason that unrelated projects' build failures are "out of scope" —
-if the solution built before this task and doesn't build after, this task
-caused the regression and must fix it.
+After completing ANY top-level task, the **entire solution** must build. If your changes break other projects — those referencing modified projects (transitive breaks), consuming changed APIs/packages, or test projects referencing modified code — fix them as part of this task. If the solution built before this task and doesn't after, this task caused the regression and must fix it; "out of scope" is not a valid excuse.
 
 ### Required Validations
 
@@ -459,11 +327,7 @@ caused the regression and must fix it.
 
 ### Handling Warnings
 
-**Warnings are treated like errors — fix them before completing the task.** After a successful build, review all warnings in the projects you modified and fix them. Do not leave warnings behind for a later task.
-
-- **Every task**: Fix all warnings in projects you touched, not just warnings caused by your changes. The projects you modified should build warning-free when the task completes.
-- **Final task**: Build the full solution and fix all remaining warnings across all projects. The solution should be warning-free after the upgrade.
-- **Never suppress silently**: Do not add `#pragma warning disable`, `/nowarn`, or `<NoWarn>` without the user's explicit approval.
+**Warnings are treated like errors.** After a successful build, fix every warning in the projects you touched (not just ones you caused) — they must build warning-free. On the **final task**, build the full solution and clear all remaining warnings. **Never suppress silently** (`#pragma warning disable`, `/nowarn`, `<NoWarn>`) without the user's explicit approval.
 
 ### No-Change Short Circuit
 
@@ -552,24 +416,9 @@ If no commit strategy is set in `scenario-instructions.md` (e.g., scenario plann
 
 ### Applying the Strategy
 
-1. Read `Commit Strategy` from `scenario-instructions.md`
-2. Determine if a commit is due at this point based on the strategy
-3. If yes: stage **all** modified files — both code changes and workflow artifacts — and commit with the appropriate message format
-4. If no: proceed to the next task — changes stay in the working tree
+Read `Commit Strategy` from `scenario-instructions.md`, decide whether a commit is due now, and if so stage **everything** that changed — code **and** workflow artifacts (`tasks.md`, `progress-details.md`, `task.md`, anything under `.github/upgrades/`) — with `git add -A`, then commit using the strategy's message format. **Artifact-only tasks still commit** when the strategy says to: the state change is a meaningful snapshot, and skipping it breaks the "one commit per task" guarantee.
 
-For **After Each Phase**: a "phase" is a top-level task group. If tasks are flat (no subtasks), treat each task as its own phase (equivalent to After Each Task). If tasks have subtasks, the phase boundary is when the parent task completes.
-
-### What to Stage
-
-Always stage **everything** that changed during the task, including:
-- **Code changes**: source files, project files, config files modified by the task
-- **Workflow artifacts**: `tasks.md`, `tasks/{taskId}/progress-details.md`, `tasks/{taskId}/task.md`, and any other files under `.github/upgrades/` that were updated
-
-Use `git add -A` (or stage all modified/new files in the scenario and code directories) to ensure nothing is missed.
-
-### Artifact-Only Commits
-
-Some tasks produce no code changes — for example, research tasks, planning tasks, or tasks that only update documentation/configuration. **Still commit** if the strategy says to. The workflow artifact updates (`tasks.md` state change, `progress-details.md`) are meaningful changes that should be captured. Skipping the commit would leave the task's completion state uncommitted, breaking the "one commit per task" guarantee that users expect from the After Each Task strategy.
+📖 **For phase-boundary rules, the full stage list, and the artifact-only rationale, read [references/committing-and-syncing.md](references/committing-and-syncing.md).**
 
 ---
 
@@ -584,80 +433,30 @@ After the task is committed (§6) and **before** picking the next task, sync the
 - Source branch equals working branch.
 - A sync already failed at this same boundary in this session.
 
-Otherwise:
-
-1. Load and run the `branch-sync` skill (`get_instructions(kind='skill', query='branch-sync')`). It owns strategy interpretation, divergence detection, conflict resolution, build validation, rollback, `Last Sync Commit` persistence, and user messaging.
-2. **If `branch-sync` reports a successful merge of ≥1 commit**, load and run the `plan-reconciliation` skill (`get_instructions(kind='skill', query='plan-reconciliation')`). It owns structural diff, proposal generation, user confirmation, plan application, and `Last Reconciled Commit` persistence. Skip step 2 when `Branch Sync` is `Manual` (no auto-merge) or when `branch-sync` reported no-op or rollback.
-3. If `branch-sync` reports rollback, mark this boundary as "sync attempted, failed" so the next boundary's guard kicks in, then continue to the next task.
-
-Do not duplicate either skill's logic here.
+Otherwise, run branch sync and then plan reconciliation. 📖 **See [references/committing-and-syncing.md](references/committing-and-syncing.md)** for the exact sequence — it loads the `branch-sync` skill, then loads `plan-reconciliation` only if a merge brought in ≥1 commit. Do not duplicate either skill's logic here.
 
 ---
 
-## Workflow Files
+## 7. Workflow Files
 
 | File | Audience | Purpose |
 |------|----------|--------|
 | `tasks/{taskId}/task.md` | LLM | Task description enriched with research findings — everything needed to execute the task |
 | `tasks/{taskId}/progress-details.md` | User | Per-task change record — what actually changed, build/test results, issues resolved |
-| `tasks.md` | Both | Task hierarchy with status. Lines may include auto-generated `([Content](...), [Progress](...))` links — system-managed, not manually edited. |
+| `tasks.md` | Both | Task hierarchy with status. Lines may include auto-generated Content and Progress links — system-managed, not manually edited. |
 | `scenario-instructions.md` | Both | Scenario spec, user preferences, always in context |
 
 ---
 
-## Lazy Task Creation
+## 8. Error Recovery & Communication
 
-**Task folders are created JIT** — `start_task()` creates the folder if needed.
+### Error Recovery
 
-**task.md is a living document:**
-- Initial version may be created by `break_down_task` (with content from the subtask definition)
-- During execution, **enrich it with research findings** — analysis results, files to modify, decisions made
-- Use it as your working plan throughout task execution
-- Other tasks or the user may also contribute to it
-
-After `start_task()` returns:
-1. Consider each skill in `<task_related_skills>` — read descriptions, load the relevant ones at `{path}/skill.md`. Also check Available Skills for additional matches.
-2. Research the task if needed (analyze projects, packages, breaking changes)
-3. Enrich `tasks/{taskId}/task.md` with research results so it becomes a complete task reference
-4. Execute the changes
-5. Validate (build/test)
-6. Write `tasks/{taskId}/progress-details.md` with what actually changed
-7. Call `complete_task(taskId, filesModified)` when done
-8. Commit (if applicable per commit strategy — includes both code and artifact changes)
-9. Branch sync & plan reconciliation (if applicable — see Section 6.5)
+📖 **For build-error, test-failure, and blocked-task recovery steps — and when to search for skills mid-task — read [references/execution-details.md](references/execution-details.md).**
 
 ---
 
-## Error Recovery
-
-### Build Errors
-1. **Search for relevant skills first** — `get_instructions(kind='skill', query='<technology or error pattern>')`. Skills often contain specific fix patterns for common build errors (MSBuild issues, SDK-style vs legacy, multi-targeting, etc.).
-2. Analyze error messages
-3. Check for missing package references
-4. Look for API changes in upgraded packages
-5. Consider rolling back and breaking down further
-
-### Test Failures
-1. Identify failing tests
-2. Determine if failure is expected (API change) or regression
-3. Update tests for expected changes
-4. Document unexpected failures for user review
-
-### Blocked Tasks
-1. Identify blocker cause
-2. Consider alternative approaches
-3. Ask user for direction if needed
-
-### When to Search for Skills Mid-Task
-
-Call `get_instructions(kind='skill', query='<topic>')` during task execution when:
-- You encounter **repeated build/test failures** that aren't resolving with basic fixes
-- You're working with a **technology not covered** by the skills loaded at task start (e.g., WPF, Entity Framework, a specific migration pattern)
-- The task scope expanded during research and **new domains** emerged that weren't anticipated by `start_task`'s skill matching
-
----
-
-## Communication
+### Reporting
 
 After completing each task:
 - Report success/failure clearly

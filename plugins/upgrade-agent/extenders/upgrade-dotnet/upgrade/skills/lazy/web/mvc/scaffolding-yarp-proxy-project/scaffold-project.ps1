@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Scaffold ASP.NET Core project with YARP proxy for side-by-side migration.
-# Copies template files from the skill's templates/ folder and applies variable substitution.
+# Copies template files from the skill's tmpl/ folder and applies variable substitution.
 
 param(
     [Parameter(Mandatory)]
@@ -57,7 +57,7 @@ if ($slnCheck -match [regex]::Escape("`"$NewProjectName`"")) {
 
 # Locate template folder
 if (-not $TemplatesRoot) {
-    $TemplatesRoot = Join-Path $PSScriptRoot 'templates'
+    $TemplatesRoot = Join-Path $PSScriptRoot 'tmpl'
 }
 
 $templateKey = if ($ProjectType -eq 'WebAPI') { 'webapi' } else { 'mvc' }
