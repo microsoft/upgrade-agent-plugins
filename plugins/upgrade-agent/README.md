@@ -35,6 +35,8 @@ The plugin includes an MCP server (Upgrade) that provides upgrade and analysis t
 upgrade-agent/
 ├── agents/
 │   └── upgrade.agent.md
+├── assets/
+│   └── preview.png
 ├── extenders/
 │   └── upgrade-dotnet/
 │       ├── upgrade/
@@ -47,11 +49,11 @@ upgrade-agent/
 │       │       │   │       └── SKILL.md
 │       │       │   ├── common/
 │       │       │   │   ├── building-projects/
-│       │       │   │   │   ├── references/
+│       │       │   │   │   ├── ref/
 │       │       │   │   │   │   └── error-codes.md
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   ├── converting-to-cpm/
-│       │       │   │   │   ├── references/
+│       │       │   │   │   ├── ref/
 │       │       │   │   │   │   ├── audit-complexities.md
 │       │       │   │   │   │   ├── baseline-comparison.md
 │       │       │   │   │   │   ├── directory-packages-props.md
@@ -67,7 +69,7 @@ upgrade-agent/
 │       │       │   │   ├── managing-target-frameworks/
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   ├── migrating-csharp-nullable-references/
-│       │       │   │   │   ├── references/
+│       │       │   │   │   ├── ref/
 │       │       │   │   │   │   ├── aspnet-core.md
 │       │       │   │   │   │   ├── breaking-changes.md
 │       │       │   │   │   │   ├── ef-core.md
@@ -97,7 +99,7 @@ upgrade-agent/
 │       │       │   │   ├── migrating-ef6-code-first-to-ef-core/
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   ├── migrating-linq-to-sql-to-ef-core/
-│       │       │   │   │   ├── references/
+│       │       │   │   │   ├── ref/
 │       │       │   │   │   │   ├── concurrency-and-change-tracking.md
 │       │       │   │   │   │   ├── datacontext-to-dbcontext.md
 │       │       │   │   │   │   ├── entity-mapping-conversion.md
@@ -110,10 +112,9 @@ upgrade-agent/
 │       │       │   ├── desktop/
 │       │       │   │   └── winforms/
 │       │       │   │       ├── building-winforms-applications/
-│       │       │   │       │   ├── references/
-│       │       │   │       │   │   ├── enhancements/
-│       │       │   │       │   │   │   ├── async-apis.md
-│       │       │   │       │   │   │   └── dark-mode.md
+│       │       │   │       │   ├── ref/
+│       │       │   │       │   │   ├── async-apis.md
+│       │       │   │       │   │   ├── dark-mode.md
 │       │       │   │       │   │   └── detailed-guide.md
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       ├── creating-winforms-custom-controls/
@@ -121,23 +122,23 @@ upgrade-agent/
 │       │       │   │       ├── managing-winforms-async-apis/
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       ├── managing-winforms-data-binding/
-│       │       │   │       │   ├── references/
+│       │       │   │       │   ├── ref/
 │       │       │   │       │   │   └── detailed-guide.md
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       ├── managing-winforms-designer-code/
-│       │       │   │       │   ├── references/
+│       │       │   │       │   ├── ref/
 │       │       │   │       │   │   └── detailed-guide.md
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       ├── managing-winforms-high-dpi-layout/
-│       │       │   │       │   ├── references/
+│       │       │   │       │   ├── ref/
 │       │       │   │       │   │   └── detailed-guide.md
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       ├── managing-winforms-mvvm/
-│       │       │   │       │   ├── references/
+│       │       │   │       │   ├── ref/
 │       │       │   │       │   │   └── detailed-guide.md
 │       │       │   │       │   └── SKILL.md
 │       │       │   │       └── managing-winforms-rendering/
-│       │       │   │           ├── references/
+│       │       │   │           ├── ref/
 │       │       │   │           │   └── detailed-guide.md
 │       │       │   │           └── SKILL.md
 │       │       │   ├── libraries/
@@ -182,7 +183,7 @@ upgrade-agent/
 │       │       │   │   ├── migrating-razorengine-to-razorlight/
 │       │       │   │   │   └── SKILL.md
 │       │       │   │   ├── migrating-semantic-kernel-to-agents/
-│       │       │   │   │   ├── references/
+│       │       │   │   │   ├── ref/
 │       │       │   │   │   │   ├── api-mappings.md
 │       │       │   │   │   │   └── provider-patterns.md
 │       │       │   │   │   └── SKILL.md
@@ -248,7 +249,7 @@ upgrade-agent/
 │       │       │       │   ├── migrating-owin-to-aspnet-core/
 │       │       │       │   │   └── SKILL.md
 │       │       │       │   └── scaffolding-yarp-proxy-project/
-│       │       │       │       ├── templates/
+│       │       │       │       ├── tmpl/
 │       │       │       │       │   ├── mvc/
 │       │       │       │       │   │   ├── Properties/
 │       │       │       │       │   │   │   └── launchSettings.json
@@ -270,16 +271,16 @@ upgrade-agent/
 │       │       │       │       └── SKILL.md
 │       │       │       └── webforms/
 │       │       │           ├── managing-blazor-server-authentication/
-│       │       │           │   ├── references/
+│       │       │           │   ├── ref/
 │       │       │           │   │   ├── cookie-auth-pattern.md
 │       │       │           │   │   └── endpoint-templates.md
 │       │       │           │   └── SKILL.md
 │       │       │           ├── managing-blazor-server-data-access/
-│       │       │           │   ├── references/
+│       │       │           │   ├── ref/
 │       │       │           │   │   └── session-state-patterns.md
 │       │       │           │   └── SKILL.md
 │       │       │           └── migrating-webforms-to-blazor-server/
-│       │       │               ├── references/
+│       │       │               ├── ref/
 │       │       │               │   ├── ajax-toolkit.md
 │       │       │               │   ├── code-transforms.md
 │       │       │               │   ├── control-reference.md
@@ -356,7 +357,7 @@ upgrade-agent/
 │       │           ├── sqlclient-migration/
 │       │           │   └── SKILL.md
 │       │           ├── vssdk-sdk-style-conversion/
-│       │           │   ├── references/
+│       │           │   ├── ref/
 │       │           │   │   └── vssdk-project-format.md
 │       │           │   └── SKILL.md
 │       │           ├── webforms-to-blazor-upgrade/
@@ -405,6 +406,10 @@ upgrade-agent/
 │           ├── sub-agent-delegation/
 │           │   └── SKILL.md
 │           ├── task-execution/
+│           │   ├── references/
+│           │   │   ├── committing-and-syncing.md
+│           │   │   ├── decomposition.md
+│           │   │   └── execution-details.md
 │           │   └── SKILL.md
 │           ├── tasks-consistency/
 │           │   └── SKILL.md

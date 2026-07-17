@@ -44,10 +44,10 @@ Use this skill when:
 
 
 ## Detailed Guidance
-Read [Detailed guide](references/detailed-guide.md) for comprehensive patterns, examples, and troubleshooting.
+Read [Detailed guide](ref/detailed-guide.md) for comprehensive patterns, examples, and troubleshooting.
 
 ## Workflow
 1. Confirm the scenario matches the triggers in this skill.
 2. Apply the baseline pattern from this file.
-3. Read [Detailed guide](references/detailed-guide.md) for advanced or edge-case handling.
+3. Read [Detailed guide](ref/detailed-guide.md) for advanced or edge-case handling.
 4. Validate changes with an actual build and runtime check.

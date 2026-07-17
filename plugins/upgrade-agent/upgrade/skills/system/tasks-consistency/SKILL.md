@@ -63,7 +63,7 @@ Read the actual files directly — do not use tool APIs for this since they may 
    - Parent-child relationships from indentation
    - The Progress line and other sections
 
-   > **Note:** Task lines may have auto-generated trailing links like `([Content](tasks/{id}/task.md), [Progress](tasks/{id}/progress-details.md))`. These are appended by the system when the corresponding files exist. **Ignore them when parsing** — extract only the description before any `(` that starts a link group. When inserting new lines, use the plain format without links — the system adds them on the next regeneration.
+   > **Note:** Task lines may have auto-generated trailing links — a parenthesized group containing a `Content` link to `tasks/{id}/task.md` and a `Progress` link to `tasks/{id}/progress-details.md`. These are appended by the system when the corresponding files exist. **Ignore them when parsing** — extract only the description before any `(` that starts a link group. When inserting new lines, use the plain format without links — the system adds them on the next regeneration.
 
 Build two lists: `planTasks[]` (from plan.md) and `currentTasks[]` (from tasks.md).
 

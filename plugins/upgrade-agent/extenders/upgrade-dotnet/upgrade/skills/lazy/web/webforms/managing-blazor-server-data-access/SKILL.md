@@ -272,7 +272,7 @@ app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 | **Option C: Database-Backed** | Business-critical state (cart, preferences) | ✅ Yes | ✅ Yes |
 | **Option D: ProtectedSessionStorage** | Browser tab-specific state | ✅ Yes | ❌ No |
 
-**For detailed implementation examples and decision guidance**, read **[references/session-state-patterns.md](references/session-state-patterns.md)**.
+**For detailed implementation examples and decision guidance**, read **[ref/session-state-patterns.md](ref/session-state-patterns.md)**.
 
 **Quick reference:**
 - Shopping carts, user preferences → **Option C** (database-backed)
@@ -324,7 +324,7 @@ The underlying concepts (IConfiguration, IOptions<T>, registration in Program.cs
 
 For detailed implementation patterns and code examples:
 
-- **[references/session-state-patterns.md](references/session-state-patterns.md)** — Session state migration patterns (scoped services, database-backed, ProtectedSessionStorage, minimal API endpoints)
+- **[ref/session-state-patterns.md](ref/session-state-patterns.md)** — Session state migration patterns (scoped services, database-backed, ProtectedSessionStorage, minimal API endpoints)
 
 ---
 

@@ -23,7 +23,7 @@ For each task in plan.md:
 **Task type:** Enable Dark Mode Application-Wide
 
 **Skills/guides to load:**
-- `building-winforms-applications/references/enhancements/dark-mode.md` - focused dark mode guide
+- `building-winforms-applications/ref/dark-mode.md` - focused dark mode guide
 
 **Changes to make:**
 1. Open Program.cs (or Program.vb)
@@ -62,7 +62,7 @@ End Sub
 **Task type:** Adapt Form for Dark Mode
 
 **Skills/guides to load:**
-- `building-winforms-applications/references/enhancements/dark-mode.md` - focused dark mode guide
+- `building-winforms-applications/ref/dark-mode.md` - focused dark mode guide
 - `managing-winforms-rendering` - if form has custom drawing
 
 **Changes to make:**
@@ -94,7 +94,7 @@ End Sub
 **Task type:** Modernize Form Async Patterns
 
 **Skills/guides to load:**
-- `building-winforms-applications/references/enhancements/async-apis.md` - focused async guide
+- `building-winforms-applications/ref/async-apis.md` - focused async guide
 - `managing-winforms-async-apis` - comprehensive async patterns (if needed)
 
 **Changes to make:**

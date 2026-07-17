@@ -40,12 +40,12 @@ For specialized topics, see:
 
 
 ## Detailed Guidance
-Read [Detailed guide](references/detailed-guide.md) for comprehensive patterns, examples, and troubleshooting.
+Read [Detailed guide](ref/detailed-guide.md) for comprehensive patterns, examples, and troubleshooting.
 
-**For opt-in enhancement features** (dark mode, async APIs), see focused guides in [references/enhancements/](references/enhancements/) - these are only applied when explicitly requested or invoked by the winforms-feature-adoption scenario.
+**For opt-in enhancement features** (dark mode, async APIs), see the focused guides [dark mode](ref/dark-mode.md) and [async APIs](ref/async-apis.md) - these are only applied when explicitly requested or invoked by the winforms-feature-adoption scenario.
 
 ## Workflow
 1. Confirm the scenario matches the triggers in this skill.
 2. Apply the baseline pattern from this file.
-3. Read [Detailed guide](references/detailed-guide.md) for advanced or edge-case handling.
+3. Read [Detailed guide](ref/detailed-guide.md) for advanced or edge-case handling.
 4. Validate changes with an actual build and runtime check.

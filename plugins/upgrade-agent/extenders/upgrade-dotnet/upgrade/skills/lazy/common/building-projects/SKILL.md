@@ -241,7 +241,7 @@ On subsequent builds, check this section first:
 
 When a build fails, analyze the error codes and take targeted action rather than blindly retrying.
 
-**Load [references/error-codes.md](references/error-codes.md)** for the full error catalog
+**Load [ref/error-codes.md](ref/error-codes.md)** for the full error catalog
 with specific recovery actions per error code.
 
 Key recovery principles:

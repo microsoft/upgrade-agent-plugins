@@ -130,7 +130,7 @@ After base conversion, the project is SDK-style but missing VSSDK-specific confi
 
 ### Phase 2: VSSDK Overlay
 
-Load [references/vssdk-project-format.md](references/vssdk-project-format.md) for detailed property values, package versions, and the complete template.
+Load [ref/vssdk-project-format.md](ref/vssdk-project-format.md) for detailed property values, package versions, and the complete template.
 
 Apply these changes in order:
 

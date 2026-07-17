@@ -88,8 +88,8 @@ Projects that are transitive-only consumers (no direct SK agent code) still need
 
 Execute the plan task by task. For any task that involves migrating SK agent code or packages, apply the **migrating-semantic-kernel-to-agents** feature skill. It provides:
 - Package replacement mappings
-- API and namespace transformations (`references/api-mappings.md`)
-- Provider-specific patterns (`references/provider-patterns.md`)
+- API and namespace transformations (`ref/api-mappings.md`)
+- Provider-specific patterns (`ref/provider-patterns.md`)
 - Validation checklist
 
 After completing all tasks, do a final solution-wide search for any remaining `Microsoft.SemanticKernel.Agents` references and fix stragglers.

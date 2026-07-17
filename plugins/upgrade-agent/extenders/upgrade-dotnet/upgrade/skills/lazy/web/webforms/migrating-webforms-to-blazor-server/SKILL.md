@@ -216,7 +216,7 @@ Apply these mechanical transformations to each `.razor` file:
 - `<asp:Login>` → `<form method="post">` → minimal API endpoint (see managing-blazor-server-authentication)
 - `<asp:LoginView>` → `<AuthorizeView>` with `<NotAuthorized>` / `<Authorized>` templates
 - `<asp:LoginName>` → `@context.User.Identity?.Name` inside `<AuthorizeView>`
-- See **[references/control-reference.md](references/control-reference.md)** for complete mapping table
+- See **[ref/control-reference.md](ref/control-reference.md)** for complete mapping table
 
 **Directive conversions:**
 - `<%@ Page Title="X" ... %>` → `@page "/route"` (derive route from file path)
@@ -246,13 +246,13 @@ Apply these mechanical transformations to each `.razor` file:
 - `<asp:ContentPlaceHolder ID="MainContent" />` → `@Body` (in layouts)
 - `<form runat="server">` → `<div>` (preserves CSS block formatting context)
 
-Read **[references/markup-transforms.md](references/markup-transforms.md)** for complete transformation tables and examples.
+Read **[ref/markup-transforms.md](ref/markup-transforms.md)** for complete transformation tables and examples.
 
 ---
 
 ## Step 7: Transform Code-Behind (Structural)
 
-For each `.razor.cs` file, apply these structural transformations. Read **[references/code-transforms.md](references/code-transforms.md)** for detailed patterns:
+For each `.razor.cs` file, apply these structural transformations. Read **[ref/code-transforms.md](ref/code-transforms.md)** for detailed patterns:
 
 **Lifecycle conversions:**
 - `Page_Load` → `OnInitializedAsync` (for first-load initialization)
@@ -285,7 +285,7 @@ For each `.razor.cs` file, apply these structural transformations. Read **[refer
 - `ViewState["key"]` → component field (`private string _value;`)
 - `Session["key"]` → scoped DI service pattern
 
-Read **[references/code-transforms.md](references/code-transforms.md)** for detailed patterns.
+Read **[ref/code-transforms.md](ref/code-transforms.md)** for detailed patterns.
 
 ## Step 8: Build and Validate Migration Quality
 
@@ -353,9 +353,9 @@ protected override async Task OnInitializedAsync() { }
 
 For detailed transformation patterns, control mappings, and troubleshooting:
 
-- **[references/markup-transforms.md](references/markup-transforms.md)** — Directive conversion, expression syntax, URL transformations, form wrapper handling
-- **[references/code-transforms.md](references/code-transforms.md)** — Lifecycle methods, event handlers, navigation, data binding SelectMethod patterns, query strings, Master Page to Layout migration
-- **[references/control-reference.md](references/control-reference.md)** — Complete control translation tables mapping Web Forms controls to native HTML/Blazor equivalents, Ajax Control Toolkit migration, structural components, theming infrastructure
+- **[ref/markup-transforms.md](ref/markup-transforms.md)** — Directive conversion, expression syntax, URL transformations, form wrapper handling
+- **[ref/code-transforms.md](ref/code-transforms.md)** — Lifecycle methods, event handlers, navigation, data binding SelectMethod patterns, query strings, Master Page to Layout migration
+- **[ref/control-reference.md](ref/control-reference.md)** — Complete control translation tables mapping Web Forms controls to native HTML/Blazor equivalents, Ajax Control Toolkit migration, structural components, theming infrastructure
 
 
 ---

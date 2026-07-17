@@ -48,7 +48,7 @@ If the scope is unclear, ask the user.
 
 ### Step 2: Establish baseline build
 
-Verify the scope builds successfully and capture baseline artifacts. See [baseline-comparison.md](references/baseline-comparison.md) for the full procedure. If the baseline build fails, stop and inform the user — the scope must build cleanly before conversion. Do not delete artifacts — they are needed for the post-conversion comparison.
+Verify the scope builds successfully and capture baseline artifacts. See [baseline-comparison.md](ref/baseline-comparison.md) for the full procedure. If the baseline build fails, stop and inform the user — the scope must build cleanly before conversion. Do not delete artifacts — they are needed for the post-conversion comparison.
 
 ### Step 3: Check for existing CPM
 
@@ -58,7 +58,7 @@ Search for `Directory.Packages.props` in scope or ancestor directories. If CPM i
 
 Run `dotnet package list --format json` across all in-scope projects. Scan `<Import>` elements for shared `.props`/`.targets` files containing package references.
 
-Check for complexities per [audit-complexities.md](references/audit-complexities.md): version conflicts, MSBuild property-based versions, conditional references, security advisories, existing `VersionOverride` usage.
+Check for complexities per [audit-complexities.md](ref/audit-complexities.md): version conflicts, MSBuild property-based versions, conditional references, security advisories, existing `VersionOverride` usage.
 
 Present audit results to the user before proceeding — a table of packages, versions, and consuming projects, plus any conflicts or complexities requiring decisions.
 
@@ -66,7 +66,7 @@ For version conflicts, present each individually with resolution options and tra
 
 ### Step 5: Create or update Directory.Packages.props
 
-Create with `dotnet new packagesprops` (.NET 8+) or manually. Add `<PackageVersion>` entries for each unique package. See [directory-packages-props.md](references/directory-packages-props.md) for placement, conditional versions, and `VersionOverride` patterns.
+Create with `dotnet new packagesprops` (.NET 8+) or manually. Add `<PackageVersion>` entries for each unique package. See [directory-packages-props.md](ref/directory-packages-props.md) for placement, conditional versions, and `VersionOverride` patterns.
 
 ### Step 6: Update project files
 
@@ -74,11 +74,11 @@ Remove `Version` from every `<PackageReference>` that has a corresponding `<Pack
 
 ### Step 7: Handle MSBuild version properties
 
-For `PackageReference` items that used MSBuild properties for versions, determine whether to inline or keep the property reference. See [msbuild-property-handling.md](references/msbuild-property-handling.md) for the decision workflow, import order requirements, and cleanup procedure. Clean up inlined properties only after validation succeeds in step 8.
+For `PackageReference` items that used MSBuild properties for versions, determine whether to inline or keep the property reference. See [msbuild-property-handling.md](ref/msbuild-property-handling.md) for the decision workflow, import order requirements, and cleanup procedure. Clean up inlined properties only after validation succeeds in step 8.
 
 ### Step 8: Restore and validate
 
-Run a clean restore and build, capturing post-conversion artifacts. See [baseline-comparison.md](references/baseline-comparison.md) for the procedure. If errors occur, see [validation-and-errors.md](references/validation-and-errors.md) for NuGet error codes and multi-TFM guidance.
+Run a clean restore and build, capturing post-conversion artifacts. See [baseline-comparison.md](ref/baseline-comparison.md) for the procedure. If errors occur, see [validation-and-errors.md](ref/validation-and-errors.md) for NuGet error codes and multi-TFM guidance.
 
 Do not delete any artifacts — `baseline.binlog`, `after-cpm.binlog`, `baseline-packages.json`, `after-cpm-packages.json` are deliverables for the user.
 
@@ -88,7 +88,7 @@ Create a `convert-to-cpm.md` file alongside the artifacts — do not substitute 
 
 - Conversion overview (scope, project count, packages centralized, anything skipped)
 - Version conflict resolutions and their impact per project
-- Baseline vs. result package comparison tables (see [baseline-comparison.md](references/baseline-comparison.md))
+- Baseline vs. result package comparison tables (see [baseline-comparison.md](ref/baseline-comparison.md))
 - Risk assessment (low/moderate/high based on whether versions changed)
 - Follow-up items checklist (security advisories, deprecated packages, `VersionOverride` alignment opportunities)
 
