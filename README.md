@@ -54,3 +54,9 @@ Prompt the agent:
 ```
 upgrade my solution to .NET 10
 ```
+
+### GitHub Copilot Coding Agent
+
+A custom agent definition and setup steps are provided for use with [Copilot Coding Agent](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent) in GitHub. This allows Copilot to upgrade projects directly via pull requests.
+
+See the [cloud-agent README](cloud-agent/README.md) for setup instructions.
