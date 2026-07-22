@@ -4,6 +4,17 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.247] - 2026-07-22
+
+### Changed
+
+- Increased the Upgrade MCP server startup timeout so its tools load reliably when the server is slow to start.
+
+### Fixed
+
+- Fixed an inverted SDK-style project guard that caused the Azure Functions upgrade analysis rule (`AzureFunctionsUpgrade.0001`) to be skipped.
+- Fixed invalid JSON in the YARP scaffold `launchSettings.json` templates.
+
 ## [1.1.222] - 2026-07-16
 
 ### Changed

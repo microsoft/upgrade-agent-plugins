@@ -7,13 +7,20 @@ mcp-servers:
     command: 'dnx'
     args: [
       'Microsoft.GitHubCopilot.Upgrade.Mcp',
-      '--prerelease',
       '--yes',
       '--ignore-failed-sources'
     ]
     cwd: '~'
     tools: ['*']
     deferTools: 'never'
+    # On a cold NuGet cache, `dnx` has to hit the feed, download,
+    # and extract the package before it can answer the MCP `initialize`
+    # handshake. The host's connect timeout floor is max(timeout, 60000)ms
+    # (capped at 600000ms) - the 60s default is often not enough, which
+    # silently drops the Upgrade tools for the first turn (they show up once
+    # the package is cached). 300000 (5 min) gives the cold start headroom
+    # while staying well under the 10-minute cap.
+    timeout: 300000
     env:
       # NOTE: the local inner-loop installer (tools/install-local.ps1) builds
       # its own env block by hand and does NOT read this file. If you add,

@@ -125,7 +125,7 @@ the `$placeholder$` variables:
 | `$HttpsPort$` | HTTPS port (pick 7100-7999, avoid old project's ports) |
 | `$HttpPort$` | HTTP port (pick 5100-5999, avoid old project's ports) |
 | `$NewPort$` | IIS Express HTTP port (pick 60000-65000) |
-| `$NewSslPort$` | IIS Express SSL port (pick 44300-44399) |
+| `$NewSslPort$` | IIS Express SSL port (pick 44300-44399) — in `launchSettings.json` this placeholder is quoted (`"sslPort": "$NewSslPort$"`) so the template stays valid JSON; after substituting, remove the surrounding quotes so `sslPort` stays a JSON number, e.g. `"sslPort": 44355` |
 | `$OldAppUrl$` | Old app's URL (e.g., `https://localhost:44319`) |
 
 Then manually:
