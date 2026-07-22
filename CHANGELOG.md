@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Added a connect timeout to the Upgrade MCP server configuration to prevent indefinite startup hangs.
+- Increased the Upgrade MCP server startup timeout so its tools load reliably when the server is slow to start.
 
 ### Fixed
 
