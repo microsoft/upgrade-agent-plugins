@@ -6,7 +6,6 @@
     "command": "dnx",
     "args": [
       "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp",
-      "--prerelease",
       "--yes",
       "--ignore-failed-sources"
     ]

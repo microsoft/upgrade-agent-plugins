@@ -129,6 +129,13 @@ function Copy-TemplateWithSubstitutions {
         foreach ($key in $Vars.Keys) {
             $content = $content.Replace($key, $Vars[$key])
         }
+
+        # launchSettings.json templates author "sslPort" as a quoted placeholder
+        # (e.g. "sslPort": "$NewSslPort$") so the template itself is valid JSON;
+        # unquote the substituted value here since IIS Express expects sslPort
+        # as a JSON number, not a string.
+        $content = $content -replace '("sslPort":\s*)"(\d+)"', '$1$2'
+
         [System.IO.File]::WriteAllText($destFile, $content, [System.Text.UTF8Encoding]::new($false))
         Write-Host "    -> $relativePath"
     }
