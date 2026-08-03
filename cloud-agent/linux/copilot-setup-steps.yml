@@ -11,6 +11,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: dotnet/modernize-dotnet-actions@upgrade-agent-actions
+      - uses: microsoft/upgrade-agent-actions@main
         with:
           dotnet-version: '10.0.x'
