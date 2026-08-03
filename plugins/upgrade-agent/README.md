@@ -431,7 +431,7 @@ GitHub Copilot upgrade uses GitHub Copilot to help modify code in your current
 workspace. It does not retain code snippets beyond the immediate session and
 does not collect, transmit, or store your custom tasks. See the
 [Microsoft Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839)
-does not collect, transmit, or store your custom tasks.
+for more information.
 
 ### Telemetry
 The upgrade tools collect telemetry about usage. Telemetry collection is on by default.
