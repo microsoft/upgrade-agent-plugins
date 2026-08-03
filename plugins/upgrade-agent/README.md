@@ -425,6 +425,18 @@ upgrade-agent/
 
 - .NET SDK 10.0 or later
 
+## Privacy
+
+GitHub Copilot upgrade uses GitHub Copilot to help modify code in your current
+workspace. It does not retain code snippets beyond the immediate session and
+does not collect, transmit, or store your custom tasks. See the
+[Microsoft Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839)
+does not collect, transmit, or store your custom tasks.
+
+### Telemetry
+The upgrade tools collect telemetry about usage. Telemetry collection is on by default.
+To opt out, set the environment variable `APPMOD_DISABLE_TELEMETRY` to `true` in the environment where you run the plugin.
+
 ## Links
 
 - [Source](https://github.com/microsoft/upgrade-agent-plugins)
