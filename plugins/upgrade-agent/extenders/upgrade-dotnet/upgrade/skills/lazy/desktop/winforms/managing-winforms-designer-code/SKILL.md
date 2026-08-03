@@ -17,7 +17,7 @@ metadata:
 
 # WinForms Designer Code Rules
 
-The WinForms Designer generates serialization code, not regular C# code. Understanding and following these rules is CRITICAL for Designer compatibility. **All WinForms Forms and UserControls should be Designer-compatible** ─ these rules are not optional guidance but mandatory constraints for any code that the Designer must be able to round-trip (read, modify, and re-serialize).
+The WinForms Designer generates serialization code, not regular C# code. Understanding and following these rules is CRITICAL for Designer compatibility. **All WinForms Forms and UserControls should be Designer-compatible** — these rules are not optional guidance but mandatory constraints for any code that the Designer must be able to round-trip (read, modify, and re-serialize).
 
 ## When to Use This Skill
 

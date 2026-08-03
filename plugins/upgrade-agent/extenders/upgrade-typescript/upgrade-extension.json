@@ -1,0 +1,13 @@
+{
+  "id": "upgrade-typescript",
+  "displayName": "TypeScript / JavaScript Upgrade",
+  "version": "0.1.5",
+  "mcp": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@microsoft/jsts-upgrade-assistant"
+    ]
+  },
+  "traits": "NodeJs|TypeScript|JavaScript"
+}

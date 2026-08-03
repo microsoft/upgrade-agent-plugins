@@ -49,7 +49,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 
 **Don't duplicate into plan.md:** package update tables, per-project breaking changes, per-project specs. Assessment.md already has this; task.md captures execution details.
 
-*⚡ Continue reading — Sections 3-5 cover decomposition rules, execution sequence, and anti-patterns.*
+*Continue reading — Sections 3-5 cover decomposition rules, execution sequence, and anti-patterns.*
 
 ---
 
@@ -81,7 +81,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
      (TFM updates → package updates → code fixes)
    - Breakdown hints may fire at execution time for detected technologies
 
-   *── If side-by-side web migration: scaffold + migrate tasks insert here ──*
+   *(If side-by-side web migration: scaffold + migrate tasks insert here.)*
 
 4. **Final validation**
    - Full solution build, test suite, document deferred recommendations
@@ -94,7 +94,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 - Web projects using side-by-side approach are excluded from SDK conversion
   (they stay old-style throughout migration)
 
-During execution, the task-execution skill may break any plan task into subtasks
+During execution, tasks may be broken into subtasks
 (e.g., per-project) based on complexity. This plan structure defines the
 **planning** granularity, not a ceiling on execution-time breakdown.
 

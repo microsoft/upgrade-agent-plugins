@@ -9,7 +9,7 @@ metadata:
 
 Instructions for managing workflow state files.
 
-> **This skill covers 7 sections.** Read all before starting work.
+> **This skill covers 8 sections.** Read all before starting work.
 >
 > | # | Section | Key Content |
 > |---|---------|-------------|
@@ -20,6 +20,7 @@ Instructions for managing workflow state files.
 > | 5 | Tool-Driven Navigation | Use `availableTasks` from tool responses |
 > | 6 | File Consistency & Reconciliation | **Critical** — source of truth hierarchy, drift detection, reconciliation protocol |
 > | 7 | Progress Bar Calculation | Counting rules, update timing |
+> | 8 | Context Recovery | Cold-start / post-compaction re-sync steps, recall-intent table |
 
 ## State Files Overview
 
@@ -201,7 +202,7 @@ Each warning contains:
 
 Stale warnings indicate state inconsistency. Do not ignore them.
 
-*⚡ Continue reading — Sections 6-7 cover file consistency, drift detection, and progress bar calculation.*
+*Continue reading — Sections 6-7 cover file consistency, drift detection, and progress bar calculation.*
 
 ## Best Practices
 
@@ -257,7 +258,7 @@ When files conflict, this is the priority order:
 - **task.md elaborations** — these refine scope, they don't define the task list
 - **Scenario properties** — managed by tools, not user-editable
 
-*⚡ Continue reading — Section 7 covers progress bar counting rules.*
+*Continue reading — Section 7 covers progress bar counting rules.*
 
 ## Progress Bar Calculation
 
@@ -275,3 +276,35 @@ The **Progress** line in tasks.md tracks completion across all tasks and subtask
 - `percent` = floor(completed / total * 100)
 
 **Update this line** after every `complete_task()` or `break_down_task()` call, using the `progress` statistics from the tool response.
+
+## Context Recovery
+
+Use these steps when starting a new session, or after context compaction (you can't reliably
+recall the active scenario, current stage, or recent tasks).
+
+### Detecting Context Compression
+
+Context compression can happen mid-session without warning. Signs it occurred:
+- You remember *that* you loaded a skill but can't recall its *specific instructions* (only vague concepts)
+- You can't recall what happened in the last few tasks or what tools returned
+- You feel uncertain about the current state or recent decisions
+
+### Standard Recovery Steps
+
+1. **Call `get_state(path)`** — re-establish current scenario, task progress, available/blocked tasks.
+2. **Re-read `scenario-instructions.md`** — your persistent memory (user preferences, decisions,
+   custom instructions, **flow mode**).
+3. **If a task is in-progress**, read `tasks/{taskId}/task.md` — working memory for that task.
+4. **For recent context**, read `progress-details.md` of the last 1-2 completed tasks — what
+   actually changed, build results, issues resolved.
+5. **Re-load all skills for the current task** — do not assume they are still in context. The cost
+   of reloading is seconds; the cost of executing without them is wrong decomposition, missed
+   tools, and failed migrations.
+
+### Recall Intents
+
+| User intent | Source | Example phrases |
+|---|---|---|
+| Recent activity | `progress-details.md` of completed tasks | "what happened?", "recap", "catch me up" |
+| Task-specific history | `tasks/{taskId}/task.md` + `progress-details.md` | "what happened with task X?" |
+| Overall status | `get_state(path)` + `tasks.md` | "status", "where are we?" |

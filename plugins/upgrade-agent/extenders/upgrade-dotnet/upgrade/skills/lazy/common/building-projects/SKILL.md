@@ -105,27 +105,18 @@ Escalate to the full Visual Studio MSBuild (`msbuild.exe`) when ANY of these con
    If the project still uses `<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets">`
    rather than `<Project Sdk="Microsoft.NET.Sdk">`, only `msbuild.exe` will work.
 
-#### Decision flowchart
+#### Build tool decision guide
 
-```
-Is the project file SDK-style?
-├── NO → Use msbuild.exe (full VS). Stop.
-└── YES
-    ├── Does it target any net4xx TFM?
-    │   ├── YES → Is Microsoft.NETFramework.ReferenceAssemblies present?
-    │   │   ├── YES → Try dotnet build first, fall back to msbuild.exe on failure
-    │   │   └── NO → Use msbuild.exe (or add the ReferenceAssemblies package first)
-    │   └── NO
-    │       ├── Does it contain .resx with embedded images/icons?
-    │       │   ├── YES → Use msbuild.exe
-    │       │   └── NO
-    │       │       ├── Is it WPF / has XAML pages?
-    │       │       │   ├── YES → Use msbuild.exe
-    │       │       │   └── NO → Use dotnet build ✓
-    │       └── COM refs / VSIX / T4 / vcxproj?
-    │           ├── YES → Use msbuild.exe
-    │           └── NO → Use dotnet build ✓
-```
+- **Is the project file SDK-style?**
+  - **No** → use `msbuild.exe` (full VS). Stop.
+  - **Yes** → does it target any net4xx TFM?
+    - **Yes** → is `Microsoft.NETFramework.ReferenceAssemblies` present?
+      - **Yes** → try `dotnet build` first, fall back to `msbuild.exe` on failure.
+      - **No** → use `msbuild.exe` (or add the ReferenceAssemblies package first).
+    - **No** → use `msbuild.exe` if ANY of the following apply, otherwise use `dotnet build`:
+      - `.resx` with embedded images/icons
+      - WPF / has XAML pages
+      - COM references / VSIX / T4 / vcxproj
 
 ### Step 2: Execute the Build
 

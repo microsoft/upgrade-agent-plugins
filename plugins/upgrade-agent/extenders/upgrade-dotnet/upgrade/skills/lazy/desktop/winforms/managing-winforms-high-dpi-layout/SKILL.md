@@ -16,7 +16,7 @@ metadata:
 
 # WinForms High-DPI Fluent Layout Guide
 
-Fluent layout strategies for scalable, DPI-aware WinForms form designs using TableLayoutPanel and FlowLayoutPanel. All layout code shown here must follow the **managing-winforms-designer-code** skill rules ─ control configuration belongs in `InitializeComponent` inside the `.Designer.cs` file.
+Fluent layout strategies for scalable, DPI-aware WinForms form designs using TableLayoutPanel and FlowLayoutPanel. All layout code shown here must follow the **managing-winforms-designer-code** skill rules — control configuration belongs in `InitializeComponent` inside the `.Designer.cs` file.
 
 ## When to Use This Skill
 
@@ -32,7 +32,7 @@ Use this skill when:
 
 ## Designer Compatibility Note
 
-**CRITICAL:** All control instantiation, property assignment, and layout wiring shown in this skill belongs inside `InitializeComponent` in the `.Designer.cs` file. Do NOT extract control configuration into helper methods like `CreateDetailsPanel()` or `SetupLayout()` ─ this breaks the WinForms Designer. See the **managing-winforms-designer-code** skill for the authoritative rules.
+**CRITICAL:** All control instantiation, property assignment, and layout wiring shown in this skill belongs inside `InitializeComponent` in the `.Designer.cs` file. Do NOT extract control configuration into helper methods like `CreateDetailsPanel()` or `SetupLayout()` — this breaks the WinForms Designer. See the **managing-winforms-designer-code** skill for the authoritative rules.
 
 ## Related Skills
 

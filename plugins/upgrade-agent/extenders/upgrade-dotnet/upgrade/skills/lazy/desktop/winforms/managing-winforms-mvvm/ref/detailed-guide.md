@@ -56,23 +56,23 @@ WinForms added these APIs in .NET 8 to enable MVVM:
 **Use a separate class library for ViewModels** - source generators are not transitive across projects.
 
 ```
-MySolution/
-├── MyApp.WinForms/              # WinForms presentation layer
-│   ├── Forms/
-│   │   ├── MainForm.cs
-│   │   └── MainForm.Designer.cs
-│   ├── Controls/                # Custom UserControls
-│   └── Properties/
-│       └── DataSources/         # .datasource files for ViewModels
-├── MyApp.ViewModels/            # ViewModels class library (CRITICAL)
-│   ├── PersonViewModel.cs
-│   └── MainViewModel.cs
-├── MyApp.Models/                # Domain models
-│   ├── Person.cs
-│   └── Order.cs
-└── MyApp.Services/              # Business logic
-    ├── IDataService.cs
-    └── DataService.cs
+- `MySolution/`
+  - `MyApp.WinForms/` — WinForms presentation layer
+    - `Forms/`
+      - `MainForm.cs`
+      - `MainForm.Designer.cs`
+    - `Controls/` — Custom UserControls
+    - `Properties/`
+      - `DataSources/` — .datasource files for ViewModels
+  - `MyApp.ViewModels/` — ViewModels class library (CRITICAL)
+    - `PersonViewModel.cs`
+    - `MainViewModel.cs`
+  - `MyApp.Models/` — Domain models
+    - `Person.cs`
+    - `Order.cs`
+  - `MyApp.Services/` — Business logic
+    - `IDataService.cs`
+    - `DataService.cs`
 ```
 
 **ViewModels Project Configuration:**

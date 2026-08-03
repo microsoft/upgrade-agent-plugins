@@ -1,0 +1,2696 @@
+<!doctype html>
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Upgrade Agent Dashboard</title>
+<link rel="icon" href="data:," />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" integrity="sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
+<style>
+:root {
+	/* === Structural tokens (never themed by the host) ===
+	 * Shape scale, font, and the backwards-compat aliases. The aliases point at
+	 * the canonical color tokens, so they follow whatever those resolve to — the
+	 * host-injected theme when embedded, or the standalone dark fallback below. */
+
+	/* Shape scale */
+	--radius-small: 4px;
+	--radius-compact: 6px;
+	--radius-medium: 8px;
+	--radius-large: 12px;
+	--radius-full: 9999px;
+
+	/* Control border hover/active aren't part of the host token set; map them
+	 * onto an emphasized border so they still follow the theme. */
+	--border-color-control-hover: var(--border-color-emphasis, #8b949e);
+	--border-color-control-active: var(--border-color-emphasis, #8b949e);
+
+	/* Backwards-compat aliases (older selectors reference these short names). */
+	--fg: var(--text-color-default);
+	--fg-muted: var(--text-color-muted);
+	--bg: var(--background-color-default);
+	--bg-subtle: var(--background-color-muted);
+	--border: var(--border-color-default);
+	--accent: var(--text-color-accent);
+	/* Static fallback for color-mix-less browsers, then the canonical mix. */
+	--accent-bg: rgba(88, 166, 255, 0.16);
+	--accent-bg: color-mix(in srgb, var(--text-color-accent) 16%, transparent);
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+/* === Canonical GitHub App canvas tokens (standalone dark fallback) ===
+ * Mirrors the GitHub Copilot canvas Primer palette. When the GitHub App canvas
+ * host injects its theme it sets `data-color-mode` on <html> and supplies these
+ * same token names with the user's light/dark values, so this block is skipped
+ * and the host theme wins. Standalone (CLI / browser) uses this dark palette. */
+:root:not([data-color-mode]) {
+	color-scheme: dark;
+
+	/* Text */
+	--text-color-default: #e6edf3;
+	--text-color-muted: #8b949e;
+	--text-color-accent: #58a6ff;
+	--text-color-success: #3fb950;
+	--text-color-attention: #d29922;
+	--text-color-danger: #f85149;
+	--text-color-on-emphasis: #ffffff;
+	--text-color-control-placeholder: #6e7681;
+	--text-color-control-disabled: #6e7681;
+
+	/* Backgrounds */
+	--background-color-default: #0d1117;
+	--background-color-muted: #161b22;
+	--background-color-overlay: #161b22;
+	--background-color-control-rest: #21262d;
+	--background-color-control-hover: #30363d;
+	--background-color-control-active: #282e33;
+	--background-color-control-disabled: #161b22;
+	--background-color-neutral-muted: #30363d;
+
+	/* Borders */
+	--border-color-default: #30363d;
+	--border-color-muted: rgba(240, 246, 252, 0.12);
+	--border-color-control-rest: #30363d;
+	--border-color-control-hover: #8b949e;
+	--border-color-control-active: #8b949e;
+	--border-color-control-danger: #f85149;
+	--outline-color-focus-default: #58a6ff;
+
+	/* Status surfaces (semantic tints) */
+	--background-color-success-muted: #0f2a17;
+	--background-color-attention-muted: #2d230c;
+	--background-color-danger-muted: #2d1117;
+
+	/* Button: primary (green) */
+	--background-color-button-primary-rest: #238636;
+	--background-color-button-primary-hover: #2ea043;
+	--background-color-button-primary-active: #238636;
+	--text-color-button-primary-rest: #ffffff;
+	--border-color-button-primary-rest: rgba(240, 246, 252, 0.1);
+	--border-color-button-primary-hover: #238636;
+	--border-color-button-primary-active: #1a7f37;
+
+	/* Button: default (neutral surface) */
+	--background-color-button-default-rest: #21262d;
+	/* Static fallback for browsers without color-mix() support. */
+	--background-color-button-default-hover: #2a3038;
+	--background-color-button-default-hover: color-mix(in srgb, var(--text-color-default) 4%, var(--background-color-button-default-rest));
+	--background-color-button-default-active: #2f353e;
+	--background-color-button-default-active: color-mix(in srgb, var(--text-color-default) 6%, var(--background-color-button-default-rest));
+	--text-color-button-default-rest: #e6edf3;
+	--text-color-button-default-hover: #e6edf3;
+	--text-color-button-default-active: #e6edf3;
+	--border-color-button-default-rest: rgba(240, 246, 252, 0.12);
+	--border-color-button-default-hover: var(--border-color-button-default-rest);
+	--border-color-button-default-active: rgba(240, 246, 252, 0.18);
+
+	/* Button: invisible (transparent, used for icon-only chrome buttons) */
+	--background-color-button-invisible-rest: transparent;
+	/* Static fallback then color-mix override. */
+	--background-color-button-invisible-hover: rgba(230, 237, 243, 0.04);
+	--background-color-button-invisible-hover: color-mix(in srgb, var(--text-color-default) 4%, transparent);
+	--background-color-button-invisible-active: rgba(230, 237, 243, 0.06);
+	--background-color-button-invisible-active: color-mix(in srgb, var(--text-color-default) 6%, transparent);
+	--text-color-button-invisible-rest: #c9d1d9;
+	--text-color-button-invisible-hover: #e6edf3;
+	--text-color-button-invisible-active: #e6edf3;
+	--border-color-button-invisible-rest: transparent;
+	--border-color-button-invisible-hover: transparent;
+}
+
+/* Native controls (scrollbars, form fields) follow the host's chosen mode. */
+:root[data-color-mode="light"] {
+	color-scheme: light;
+}
+:root[data-color-mode="dark"] {
+	color-scheme: dark;
+}
+:root[data-color-mode="auto"] {
+	color-scheme: light dark;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	background: var(--background-color-default);
+	color: var(--text-color-default);
+	font-size: 13px;
+	line-height: 1.4;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	user-select: none;
+	cursor: default;
+}
+
+/* Match the host app's desktop selection model: chrome is non-selectable; only
+ * explicitly-marked content (markdown bodies, code, snippets) is copyable. */
+body ::selection {
+	background: color-mix(in srgb, var(--text-color-accent) 30%, transparent);
+	color: inherit;
+}
+
+[data-selectable="true"],
+.md,
+.md-code,
+.md-table,
+.scenario-instructions,
+.scenario-description,
+.task-details,
+.issues-incident-snippet,
+.issues-incident-loc,
+.issues-incident-desc,
+.proj-path,
+.proj-name,
+.proj-tfm,
+.path-display,
+.diag-path,
+.deps-table td,
+.assess-table td,
+pre.overview,
+.activity .detail,
+.meta,
+input,
+textarea,
+[contenteditable]:not([contenteditable="false"]) {
+	user-select: text;
+	cursor: text;
+}
+
+.topbar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	min-height: 44px;
+	padding: 0 14px;
+	border-bottom: 1px solid var(--border-color-muted);
+	background: var(--background-color-muted);
+}
+
+.topbar-left {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.topbar .title {
+	font-weight: 600;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+/* Header progress strip — subtle and right-aligned in the topbar. Layout:
+   bar first, label second, both pushed to the right with a discreet hover. */
+.header-progress {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 2px 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	color: var(--fg-muted);
+	font-size: 11px;
+	cursor: pointer;
+	text-align: right;
+	font-family: inherit;
+	flex: 0 1 320px;
+	min-width: 0;
+	margin-left: auto;
+}
+
+.header-progress[hidden] {
+	display: none;
+}
+
+.header-progress:hover {
+	background: var(--bg-subtle);
+	color: var(--fg);
+	border-color: var(--border);
+}
+
+.header-progress:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+
+.header-progress-bar {
+	flex: 1;
+	height: 4px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 2px;
+	overflow: hidden;
+	min-width: 60px;
+}
+
+.header-progress-fill {
+	display: block;
+	height: 100%;
+	background: var(--text-color-accent);
+	opacity: 0.7;
+	transition: width 200ms ease, opacity 150ms ease, background-color 150ms ease;
+	width: 0;
+}
+
+.header-progress:hover .header-progress-fill {
+	opacity: 1;
+}
+
+.header-progress-label {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 55%;
+	opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+	.topbar { flex-wrap: wrap; }
+	.header-progress {
+		flex: 1 1 100%;
+		margin: 4px 0 0;
+		order: 99;
+	}
+}
+
+/* Footer (was the old topbar status line + refresh icon). */
+.footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 4px 14px;
+	border-top: 1px solid var(--border);
+	background: var(--bg-subtle);
+	color: var(--fg-muted);
+	font-size: 11px;
+	min-height: 22px;
+}
+
+.footer-status {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+}
+
+.footer .refresh {
+	font-size: 12px;
+	padding: 2px 6px;
+}
+
+/* Diagnostics overlay. Debug-only surface: no UI affordance opens it — it is
+   reachable solely via the `set_panel` canvas action (agent-driven) or a
+   `?panel=diagnostics` URL in the standalone CLI. */
+.diagnostics-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.diagnostics-overlay[hidden] {
+	display: none;
+}
+
+.diagnostics-overlay-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.diagnostics-overlay-card {
+	position: relative;
+	max-width: 720px;
+	max-height: 80vh;
+	width: calc(100% - 40px);
+	overflow: auto;
+	background: var(--background-color-overlay);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.diagnostics-overlay-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--border);
+	background: var(--bg-subtle);
+}
+
+.diagnostics-overlay-head h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.diagnostics-overlay-close {
+	background: transparent;
+	border: none;
+	color: var(--fg-muted);
+	font-size: 20px;
+	cursor: pointer;
+	padding: 0 6px;
+}
+
+.diagnostics-overlay-close:hover {
+	color: var(--fg);
+}
+
+#diagnostics-overlay-body {
+	padding: 14px 16px;
+}
+
+.tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--border);
+}
+
+.tabs .spacer {
+	flex: 1;
+}
+
+.tab,
+.refresh {
+	background: var(--background-color-button-invisible-rest);
+	color: var(--text-color-button-invisible-rest);
+	border: 1px solid transparent;
+	border-radius: var(--radius-medium);
+	padding: 4px 10px;
+	font: inherit;
+	cursor: pointer;
+	transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+.tab[aria-selected="true"] {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+	border-color: var(--text-color-accent);
+}
+
+.tab:hover,
+.refresh:hover {
+	background: var(--background-color-button-invisible-hover);
+	color: var(--text-color-button-invisible-hover);
+}
+
+.tab[aria-selected="true"]:hover {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+}
+
+.tab:focus-visible,
+.refresh:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+main {
+	flex: 1;
+	overflow: auto;
+	padding: 12px 16px;
+}
+
+.panel h2 {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.meta {
+	color: var(--fg-muted);
+	font-size: 11px;
+	margin-bottom: 8px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	word-break: break-all;
+}
+
+.empty {
+	color: var(--fg-muted);
+	font-style: italic;
+}
+
+/* Compact path chip: shortened text with the full path on hover plus a
+ * copy button that only shows on hover/focus so it costs no layout space. */
+.path-display {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 2px;
+	min-width: 0;
+	max-width: 100%;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.path-display .path-dir {
+	color: var(--fg-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.path-display .path-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.copy-path-btn {
+	flex: none;
+	margin-left: 4px;
+	padding: 0 3px;
+	border: 0;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--fg-muted);
+	font: inherit;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 80ms ease-in;
+}
+
+.path-display:hover .copy-path-btn,
+.path-display:focus-within .copy-path-btn {
+	opacity: 1;
+}
+
+.copy-path-btn:hover {
+	color: var(--fg);
+	background: var(--bg-subtle);
+}
+
+.activity {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.activity li {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--border);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	display: grid;
+	grid-template-columns: max-content max-content max-content 1fr max-content;
+	gap: 4px 10px;
+	align-items: baseline;
+}
+
+.activity li .log-counts {
+	display: flex;
+	gap: 6px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.activity li.activity-task-failed .ev {
+	color: var(--text-color-danger, #f85149);
+}
+
+.activity li.activity-task .ev {
+	color: var(--text-color-success, #3fb950);
+}
+
+.activity li.activity-build .ev {
+	color: var(--text-color-attention, #d29922);
+}
+
+.activity li.activity-commit .ev {
+	color: var(--text-color-done, #a371f7);
+}
+
+.activity li.activity-branch .ev {
+	color: var(--text-color-accent, #58a6ff);
+}
+
+.activity li.activity-phase .ev {
+	color: var(--fg);
+	background: var(--bg-subtle);
+	padding: 0 4px;
+	border-radius: 3px;
+}
+
+/* Compact relative ages ("now", "5m", "10mo"). One rule for both columns so
+   the two can't drift apart again; .fh-time is deliberately excluded because
+   it renders a wall clock, not an age. */
+.activity li .ts,
+.commit-header .commit-time {
+	color: var(--fg-muted);
+	min-width: 34px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.activity li .ev {
+	color: var(--accent);
+	font-weight: 600;
+}
+
+.activity li .tag {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-size: 11px;
+	color: var(--fg-muted);
+}
+
+.activity li .detail {
+	color: var(--fg);
+}
+
+.activity li.activity-file {
+	cursor: pointer;
+}
+
+.activity li.activity-file:hover {
+	background: var(--bg-subtle);
+}
+
+.activity li.diff-viewer {
+	display: block;
+	padding: 0;
+	border-bottom: 1px solid var(--border);
+}
+
+.activity-view-tabs {
+	display: flex;
+	gap: 2px;
+	margin-bottom: 12px;
+	border-bottom: 1px solid var(--border);
+	padding-bottom: 0;
+}
+
+.activity-view-tab {
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	padding: 6px 12px;
+	color: var(--fg-muted);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.activity-view-tab:hover {
+	color: var(--fg);
+}
+
+.activity-view-tab.active {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
+.activity-group {
+	margin-bottom: 12px;
+	background: var(--bg-subtle);
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	overflow: hidden;
+}
+
+.activity-group-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 14px 16px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 14px;
+	color: var(--fg);
+}
+
+.activity-group-header:hover {
+	background: rgba(255,255,255,0.03);
+}
+
+.activity-group-header .file-path {
+	color: var(--fg-muted);
+}
+
+.activity-group-header .file-name {
+	font-weight: 700;
+	color: var(--fg);
+}
+
+.activity-group-header .count {
+	background: var(--accent);
+	color: #000;
+	border-radius: 4px;
+	padding: 1px 7px;
+	font-size: 12px;
+	font-weight: 600;
+	margin-left: auto;
+	white-space: nowrap;
+}
+
+.activity-group-header .chevron {
+	transition: transform 0.15s;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.activity-group.collapsed .chevron {
+	transform: rotate(-90deg);
+}
+
+.activity-group.collapsed .file-history,
+.activity-group.collapsed .commit-files {
+	display: none;
+}
+
+.file-history {
+	padding: 4px 16px 12px 16px;
+}
+
+.file-history-entry {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0;
+	font-size: 13px;
+	border-left: 2px solid var(--accent);
+	padding-left: 12px;
+	margin-left: 8px;
+}
+
+/* Wall clock with seconds — wide enough for "10:04:37 AM" without wrapping. */
+.file-history-entry .fh-time {
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	color: var(--fg-muted);
+	font-size: 12px;
+	min-width: 64px;
+	white-space: nowrap;
+}
+
+.file-history-entry .fh-action {
+	font-weight: 700;
+	color: var(--fg);
+	min-width: 70px;
+}
+
+.file-history-entry .fh-adds,
+.commit-file-entry .fh-adds,
+.activity li .fh-adds {
+	color: #3fb950;
+	font-weight: 600;
+}
+
+.file-history-entry .fh-dels,
+.commit-file-entry .fh-dels,
+.activity li .fh-dels {
+	color: #f85149;
+	font-weight: 600;
+}
+
+.file-history-entry {
+	cursor: pointer;
+}
+.file-history-entry:hover {
+	background: var(--bg-subtle);
+	border-radius: var(--radius-small);
+}
+
+.diff-viewer {
+	margin: 4px 0 8px 22px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-compact);
+	overflow: hidden;
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	font-size: 12px;
+	line-height: 1.45;
+}
+.diff-viewer table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+.diff-viewer td, .diff-viewer th {
+	padding: 0;
+	vertical-align: top;
+	border: none;
+}
+.diff-scroll {
+	max-height: 400px;
+	overflow-y: auto;
+	overflow-x: auto;
+}
+
+/* Line number gutters */
+.diff-ln {
+	width: 40px;
+	min-width: 40px;
+	padding: 0 8px 0 4px;
+	text-align: right;
+	color: rgba(139, 148, 158, 0.5);
+	font-size: 11px;
+	user-select: none;
+	vertical-align: top;
+	white-space: nowrap;
+	background: rgba(0, 0, 0, 0.15);
+	border-right: 1px solid var(--border);
+}
+.diff-ln-new {
+	border-right: 1px solid var(--border);
+}
+
+/* Code content cell */
+.diff-code {
+	padding: 0 12px;
+	white-space: pre;
+	overflow: visible;
+}
+.diff-code-prefix {
+	display: inline-block;
+	width: 12px;
+	user-select: none;
+	color: rgba(139, 148, 158, 0.6);
+}
+
+/* Row type colors — background tint only; text colors come from highlight.js */
+.diff-row-add { background: rgba(63, 185, 80, 0.10); }
+.diff-row-add .diff-ln { background: rgba(63, 185, 80, 0.12); }
+.diff-row-add .diff-code-prefix { color: #3fb950; }
+
+.diff-row-del { background: rgba(248, 81, 73, 0.10); }
+.diff-row-del .diff-ln { background: rgba(248, 81, 73, 0.12); }
+.diff-row-del .diff-code-prefix { color: #f85149; }
+
+.diff-row-hunk { background: rgba(56, 139, 253, 0.08); }
+.diff-row-hunk .diff-code { color: #58a6ff; font-style: italic; }
+.diff-row-hunk .diff-ln { background: rgba(56, 139, 253, 0.10); }
+
+.diff-row-ctx { background: transparent; }
+.diff-row-ctx .diff-code { color: var(--fg-muted); }
+
+/* Collapsed unchanged lines */
+.diff-fold {
+	background: rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	user-select: none;
+}
+.diff-fold td {
+	padding: 3px 12px;
+	text-align: center;
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-style: italic;
+	border-top: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+}
+.diff-fold:hover td {
+	background: rgba(255, 255, 255, 0.04);
+}
+.diff-fold-hidden { display: none; }
+
+.diff-empty {
+	padding: 12px;
+	color: var(--fg-muted);
+	font-style: italic;
+}
+.diff-loading {
+	padding: 12px;
+	color: var(--fg-muted);
+}
+
+/* Override highlight.js background to be transparent inside diff rows */
+.diff-code code.hljs {
+	background: transparent;
+	padding: 0;
+	display: inline;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.commit-header {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 14px 16px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 13px;
+}
+
+.commit-header:hover {
+	background: rgba(255,255,255,0.03);
+}
+
+.commit-header .commit-hash {
+	font-family: "SFMono-Regular", "Consolas", monospace;
+	color: var(--accent);
+	font-weight: 600;
+	font-size: 13px;
+	min-width: 62px;
+}
+
+.commit-header .commit-time {
+	font-size: 12px;
+}
+
+.commit-header .commit-msg {
+	color: var(--fg);
+	font-weight: 400;
+}
+
+.commit-files {
+	padding: 0 16px 12px 16px;
+}
+
+.commit-file-entry {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 0 5px 12px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.commit-file-entry:hover {
+	background: var(--bg-subtle);
+}
+
+.commit-file-entry .cf-icon {
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.commit-file-entry .cf-path {
+	color: var(--fg-muted);
+}
+
+.commit-file-entry .cf-name {
+	color: var(--fg);
+	font-weight: 700;
+}
+
+.commit-file-entry .cf-counts {
+	margin-left: auto;
+	display: flex;
+	gap: 6px;
+	font-size: 12px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.projects {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 4px;
+}
+
+.projects li {
+	padding: 6px 10px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	display: grid;
+	grid-template-columns: 1fr max-content;
+	grid-template-areas:
+		"name tfm"
+		"path path";
+	gap: 2px 8px;
+}
+
+.projects li .proj-name {
+	grid-area: name;
+	font-weight: 600;
+}
+
+.projects li .proj-tfm {
+	grid-area: tfm;
+	color: var(--accent);
+}
+
+.projects li .proj-path {
+	grid-area: path;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+.tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.tile {
+	border: 1px solid var(--border);
+	background: var(--bg-subtle);
+	border-radius: 6px;
+	padding: 8px 12px;
+}
+
+.tile-value {
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.tile-label {
+	color: var(--fg-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.tile.sev-medium {
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.tile.sev-high {
+	border-color: var(--text-color-danger, #f85149);
+}
+
+.tile.sev-high .tile-value {
+	color: var(--text-color-danger, #f85149);
+}
+
+.bars {
+	margin: 12px 0;
+}
+
+.bars h4 {
+	margin: 0 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.bar-row {
+	display: grid;
+	grid-template-columns: 120px 1fr 40px;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 3px;
+	font-size: 12px;
+}
+
+.bar-label {
+	color: var(--fg);
+}
+
+.bar-trough {
+	height: 10px;
+	background: var(--bg-subtle);
+	border-radius: 5px;
+	overflow: hidden;
+	display: block;
+}
+
+.bar-fill {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+}
+
+.bar-fill.bar-high {
+	background: var(--text-color-danger, #f85149);
+}
+
+.bar-fill.bar-medium {
+	background: var(--text-color-attention, #d29922);
+}
+
+.bar-fill.bar-low {
+	background: var(--text-color-accent, #58a6ff);
+}
+
+.bar-fill.bar-info {
+	background: var(--text-color-done, #a371f7);
+}
+
+.bar-fill.bar-cat {
+	background: var(--accent);
+}
+
+.bar-value {
+	text-align: right;
+	color: var(--fg-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.assess-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 8px;
+	font-size: 12px;
+}
+
+.assess-table th,
+.assess-table td {
+	border-bottom: 1px solid var(--border);
+	padding: 4px 8px;
+	text-align: left;
+}
+
+.assess-table th {
+	color: var(--fg-muted);
+	font-weight: 500;
+	text-transform: uppercase;
+	font-size: 10px;
+	letter-spacing: 0.04em;
+}
+
+.assess-table td.num,
+.assess-table th.num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.assess-table .tag {
+	background: var(--accent-bg);
+	color: var(--accent);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-size: 10px;
+	margin-left: 4px;
+}
+
+.kv {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin-bottom: 12px;
+}
+
+.kv dt {
+	color: var(--fg-muted);
+	font-weight: 500;
+}
+
+.kv dd {
+	margin: 0;
+}
+
+pre.json {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	padding: 10px;
+	overflow: auto;
+	font-size: 11px;
+	max-height: 60vh;
+}
+
+.badge {
+display: inline-block;
+padding: 0 6px;
+border-radius: 3px;
+font-size: 11px;
+font-weight: 600;
+}
+
+.badge.compat-ok {
+background: var(--background-color-success-muted, #0f2a17);
+color: var(--text-color-success, #3fb950);
+}
+
+.badge.compat-bad {
+background: var(--background-color-danger-muted, #2d1117);
+color: var(--text-color-danger, #f85149);
+}
+
+.badge.compat-unk {
+background: var(--bg-subtle);
+color: var(--fg-muted);
+}
+
+td.sev-medium {
+color: var(--text-color-attention, #d29922);
+font-weight: 600;
+}
+
+td.sev-high {
+color: var(--text-color-danger, #f85149);
+font-weight: 600;
+}
+
+.progress {
+display: grid;
+grid-template-columns: 1fr max-content;
+gap: 10px;
+align-items: center;
+margin-bottom: 12px;
+}
+
+.progress .bar-trough {
+height: 8px;
+}
+
+pre.overview {
+background: var(--bg-subtle);
+border: 1px solid var(--border);
+border-radius: 6px;
+padding: 10px;
+white-space: pre-wrap;
+font-family: inherit;
+font-size: 12px;
+margin: 4px 0 12px;
+}
+
+ol.tasks {
+list-style: none;
+margin: 0;
+padding: 0;
+}
+
+ol.tasks-sub {
+margin-left: 22px;
+border-left: 1px dashed var(--border);
+padding-left: 10px;
+margin-top: 2px;
+}
+
+li.task {
+	display: block;
+	padding: 0;
+	border-bottom: 1px solid var(--border);
+	font-size: 12px;
+}
+
+li.task .task-header {
+	display: grid;
+	grid-template-columns: 18px 18px max-content 1fr;
+	gap: 6px 10px;
+	align-items: baseline;
+	padding: 6px 8px;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: none;
+	color: inherit;
+	font: inherit;
+}
+
+li.task .task-header-clickable {
+	cursor: pointer;
+}
+
+li.task .task-header-clickable:hover {
+	background: var(--bg-subtle);
+}
+
+li.task .task-chevron {
+	color: var(--fg-muted);
+	text-align: center;
+	transition: color 100ms;
+	font-family: inherit;
+}
+
+li.task .task-header-clickable:hover .task-chevron {
+	color: var(--accent);
+}
+
+li.task .task-state {
+	text-align: center;
+}
+
+li.task .task-id {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+li.task .task-name {
+	color: var(--fg);
+}
+
+li.task-complete .task-name {
+	color: var(--fg-muted);
+	text-decoration: line-through;
+}
+
+li.task-in-progress .task-name {
+	font-weight: 600;
+}
+
+li.task-failed .task-name {
+	color: var(--text-color-danger, #f85149);
+}
+
+li.task-skipped .task-name {
+	color: var(--text-color-attention, #d29922);
+}
+
+.diag-path {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+	word-break: break-all;
+}
+
+.task-details {
+	margin: 0 8px 12px 40px;
+	padding: 12px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 12px;
+	line-height: 1.5;
+	max-height: 60vh;
+	overflow: auto;
+}
+
+.task-details .md-h {
+	margin: 12px 0 6px;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.task-details .md-h:first-child {
+	margin-top: 0;
+}
+
+.task-details p {
+	margin: 6px 0;
+}
+
+.task-details .md-ul,
+.task-details .md-ol {
+	margin: 6px 0;
+	padding-left: 22px;
+}
+
+.task-details li {
+	margin: 2px 0;
+}
+
+.task-details code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.task-details .md-code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 8px 10px;
+	margin: 8px 0;
+	font-size: 11px;
+	overflow: auto;
+	white-space: pre;
+}
+
+.task-details .md-code code {
+	background: transparent;
+	border: none;
+	padding: 0;
+}
+
+/* Canonical markdown body typography — used wherever .md is applied (e.g.,
+ * Assessment > Summary, Tasks > progress-details). 13px body, 16px H1, 14px
+ * H2, 13px H3 per the gist's typography guidance. */
+.md {
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--text-color-default);
+}
+.md .md-h {
+	margin: 16px 0 8px;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--text-color-default);
+}
+/* Keep a heading clear of the panel's top edge when scrolled to via a
+   table-of-contents anchor link. */
+.md-h {
+	scroll-margin-top: 12px;
+}
+.md-anchor {
+	cursor: pointer;
+}
+.md h1.md-h { font-size: 16px; }
+.md h2.md-h { font-size: 14px; }
+.md h3.md-h,
+.md h4.md-h,
+.md h5.md-h,
+.md h6.md-h { font-size: 13px; }
+.md p {
+	margin: 6px 0;
+}
+.md .md-code {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-medium);
+	padding: 8px 10px;
+	margin: 8px 0;
+	overflow: auto;
+}
+.md code {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 12px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	padding: 1px 4px;
+	border-radius: 3px;
+}
+.md .md-ul,
+.md .md-ol {
+	margin: 4px 0 8px 22px;
+	padding: 0;
+}
+
+/* GFM-style tables anywhere markdown is rendered. */
+.md-table {
+	border-collapse: collapse;
+	margin: 10px 0;
+	width: 100%;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.md-table th,
+.md-table td {
+	border: 1px solid var(--border);
+	padding: 4px 8px;
+	text-align: left;
+	vertical-align: top;
+}
+
+.md-table thead th {
+	background: var(--bg-subtle);
+	font-weight: 600;
+}
+
+.md-table tbody tr:nth-child(even) {
+	background: var(--bg-subtle);
+}
+
+/* Popover anchored under an icon-action button in a panel title row. */
+.assessment-title-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	position: relative;
+}
+.assessment-title-row h2 { margin: 0; flex: 1; }
+.assessment-title-actions {
+	display: inline-flex;
+	gap: 4px;
+}
+
+.popover {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 6px);
+	z-index: 20;
+	width: min(360px, calc(100vw - 32px));
+	background: var(--background-color-overlay);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-medium);
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+	padding: 10px 14px 14px;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+.popover[hidden] { display: none; }
+.popover-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+.popover-head h3 {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.popover-close {
+	background: transparent;
+	border: none;
+	color: var(--fg-muted);
+	font-size: 16px;
+	cursor: pointer;
+	padding: 0 4px;
+}
+.popover-close:hover { color: var(--fg); }
+.popover dl.glossary {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin: 4px 0 0;
+}
+.popover dl.glossary dt {
+	font-weight: 600;
+	color: var(--fg);
+}
+.popover dl.glossary dd {
+	margin: 0;
+}
+
+.icon-action {
+	background: var(--background-color-button-invisible-rest);
+	color: var(--text-color-button-invisible-rest);
+	border: 1px solid var(--border-color-button-invisible-rest);
+	border-radius: var(--radius-medium);
+	padding: 4px 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+	transition: background-color 150ms, color 150ms;
+}
+.icon-action:hover {
+	background: var(--background-color-button-invisible-hover);
+	color: var(--text-color-button-invisible-hover);
+}
+.icon-action:active,
+.icon-action[aria-pressed="true"] {
+	background: var(--background-color-button-invisible-active);
+	color: var(--text-color-button-invisible-active);
+}
+.icon-action:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+/* Two-column summary layout: tiles + categories on the left, bars on the right. */
+.assessment-summary-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	gap: 14px;
+	margin: 10px 0 4px;
+}
+.assessment-summary-left,
+.assessment-summary-right {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+@media (max-width: 720px) {
+	.assessment-summary-grid { grid-template-columns: 1fr; }
+}
+
+/* Dependencies tab — Projects "scope" header (separate from dep-type tiles). */
+.deps-scope {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin: 12px 0 4px;
+	padding: 10px 14px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+}
+.deps-scope-num {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--accent);
+	font-variant-numeric: tabular-nums;
+}
+.deps-scope-label {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+.deps-tiles {
+	margin-top: 8px;
+}
+.tile-with-help {
+	cursor: help;
+}
+.tile-help {
+	margin-top: 4px;
+	font-size: 10px;
+	color: var(--fg-muted);
+	line-height: 1.35;
+}
+
+/* Click-to-Assessment link on the per-project incident count. */
+.incidents-link {
+	background: transparent;
+	border: none;
+	color: var(--accent);
+	cursor: pointer;
+	font-variant-numeric: tabular-nums;
+	font: inherit;
+	padding: 0;
+	text-decoration: underline dotted;
+}
+.incidents-link:hover {
+	color: var(--fg);
+	text-decoration-style: solid;
+}
+.th-help-icon {
+	color: var(--fg-muted);
+	font-size: 11px;
+	cursor: help;
+}
+
+/* Inline help banner that sits above table-style panels — matches the visual
+ * weight of the Dependencies "scope" header. */
+.panel-help {
+	margin: 8px 0 10px;
+	padding: 8px 12px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-medium);
+	line-height: 1.45;
+}
+.panel-help strong { color: var(--fg); font-weight: 600; }
+
+/* scenario-instructions.md rendered on the Options tab. */
+.scenario-instructions {
+	font-size: 13px;
+	line-height: 1.55;
+}
+.scenario-instructions.empty {
+	color: var(--fg-muted);
+	padding: 6px 0;
+}
+.scenario-instructions .md-h {
+	margin: 14px 0 6px;
+	font-size: 14px;
+	font-weight: 600;
+}
+.scenario-instructions h3.md-h { font-size: 13px; }
+.scenario-instructions ul,
+.scenario-instructions ol {
+	margin: 4px 0 8px 18px;
+	padding: 0;
+}
+.scenario-instructions code {
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	padding: 1px 4px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+.task-details a {
+	color: var(--accent);
+}
+
+.task-details strong {
+	font-weight: 600;
+}
+
+.action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 32px;
+	background: var(--background-color-button-default-rest);
+	color: var(--text-color-button-default-rest);
+	border: 1px solid var(--border-color-button-default-rest);
+	border-radius: var(--radius-medium);
+	padding: 0 12px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 150ms, color 150ms, border-color 150ms, box-shadow 150ms;
+}
+
+.action-btn:hover:not(:disabled) {
+	background: var(--background-color-button-default-hover);
+	color: var(--text-color-button-default-hover);
+	border-color: var(--border-color-button-default-hover);
+}
+
+.action-btn:active:not(:disabled),
+.action-btn[aria-pressed="true"] {
+	background: var(--background-color-button-default-active);
+	border-color: var(--border-color-button-default-active);
+}
+
+.action-btn:focus-visible {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+.action-btn:disabled,
+.action-btn[aria-busy="true"] {
+	opacity: 0.6;
+	cursor: progress;
+}
+
+/* Icons inside non-primary buttons are muted per the canonical spec. */
+.action-btn:not(.action-btn-primary) svg {
+	color: var(--text-color-muted);
+}
+
+.explain-btn {
+	padding: 2px 8px;
+	font-size: 11px;
+}
+
+.toast {
+	position: fixed;
+	bottom: 16px;
+	right: 16px;
+	max-width: 360px;
+	padding: 10px 14px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	font-size: 12px;
+	z-index: 1000;
+}
+
+.toast[data-kind="error"] {
+	border-left-color: var(--text-color-danger, #f85149);
+}
+
+.toast[data-kind="info"] {
+	border-left-color: var(--accent);
+}
+
+/* Options tab */
+.option-card {
+	background: var(--background-color-muted);
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	padding: 14px 16px;
+	margin-bottom: 14px;
+}
+
+.option-card h3 {
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.setting-row {
+	display: grid;
+	grid-template-columns: 180px 1fr auto;
+	gap: 10px;
+	align-items: center;
+	padding: 6px 0;
+	border-top: 1px solid var(--border-color-muted);
+}
+
+.setting-row:first-of-type {
+	border-top: none;
+}
+
+.setting-label {
+	color: var(--text-color-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.setting-value {
+	font-size: 13px;
+	word-break: break-word;
+}
+
+.setting-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.setting-action-btn {
+	font-size: 11px;
+	padding: 3px 10px;
+}
+
+.setting-notes {
+	margin: 10px 0 0;
+	padding-left: 18px;
+	color: var(--text-color-muted);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.setting-notes li {
+	margin: 2px 0;
+}
+
+/* Scenario tab: hero (framework banner + phase stepper + description) */
+#scenario-active-hero {
+	margin-bottom: 16px;
+}
+
+.framework-banner {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	margin-bottom: 14px;
+}
+
+.scenario-id-label {
+	color: var(--fg-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.framework-arrow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.framework-pill {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 6px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.framework-pill.source {
+	color: var(--fg-muted);
+}
+
+.framework-pill.target {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.framework-sep {
+	color: var(--fg-muted);
+	font-weight: 400;
+}
+
+/* Phase stepper */
+.phase-stepper {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0;
+	padding: 12px 4px;
+	margin-bottom: 16px;
+}
+
+.phase {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	color: var(--fg);
+	white-space: nowrap;
+}
+
+.phase-clickable {
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.phase-clickable:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.phase-clickable:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+.framework-on-target {
+	background: var(--accent-bg);
+	border-radius: 6px;
+	padding: 4px 10px;
+}
+
+.framework-check {
+	color: var(--text-color-success, #3fb950);
+	font-weight: 700;
+}
+
+.phase-num {
+	color: var(--fg-muted);
+	font-variant-numeric: tabular-nums;
+	font-size: 10px;
+}
+
+.phase-glyph {
+	font-size: 12px;
+	line-height: 1;
+}
+
+.phase-label {
+	font-weight: 500;
+}
+
+.phase.phase-complete {
+	background: var(--background-color-success-muted, #0f2a17);
+	border-color: var(--text-color-success, #3fb950);
+	color: var(--text-color-success, #3fb950);
+}
+
+.phase.phase-in-progress {
+	background: var(--accent-bg);
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.phase.phase-failed {
+	background: var(--background-color-danger-muted, #2d1117);
+	border-color: var(--text-color-danger, #f85149);
+	color: var(--text-color-danger, #f85149);
+}
+
+.phase.phase-skipped {
+	color: var(--text-color-attention, #d29922);
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.phase-connector {
+	flex: 0 0 18px;
+	height: 1px;
+	background: var(--border);
+	margin: 0 4px;
+}
+
+/* Markdown description body */
+.scenario-description {
+	padding: 12px 16px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.scenario-description .md-h {
+	margin: 8px 0 4px;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.scenario-description .md-h:first-child {
+	margin-top: 0;
+}
+
+.scenario-description p {
+	margin: 6px 0;
+}
+
+.scenario-description code {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.scenario-description a {
+	color: var(--accent);
+}
+
+.scenario-description ul,
+.scenario-description ol {
+	margin: 6px 0;
+	padding-left: 22px;
+}
+
+/* Projects tab: summary tiles + table */
+.projects-tiles {
+	margin-bottom: 12px;
+}
+
+.projects-table {
+	width: 100%;
+	margin-top: 8px;
+}
+
+.projects-table td .proj-name {
+	font-weight: 600;
+}
+
+.projects-table td .proj-path {
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	margin-top: 2px;
+}
+
+.projects-table .proj-tfm {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.projects-table .proj-tfm.tfm-on-target {
+	color: var(--text-color-success, #3fb950);
+	font-weight: 600;
+}
+
+.projects-table tr.has-incidents {
+	/* Currently no row-level styling beyond td.sev-medium; reserved for future use */
+}
+
+/* Dependencies tab: target framework banner, breakdown bar, legend */
+.deps-banner {
+	margin-bottom: 14px;
+}
+
+.deps-breakdown-heading {
+	margin: 14px 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.compat-stack {
+	display: flex;
+	width: 100%;
+	height: 22px;
+	border-radius: 4px;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	background: var(--bg-subtle);
+	margin-bottom: 8px;
+}
+
+.compat-seg {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-color-on-emphasis, #ffffff);
+	font-size: 11px;
+	font-weight: 600;
+	min-width: 0;
+}
+
+/* Compatibility breakdown bar segments. Saturated emphasis fills carry white
+ * on-emphasis text — the canonical GitHub colored-chip pattern, so contrast
+ * holds in both light and dark host themes. */
+.compat-seg-valid {
+	background: var(--background-color-success-emphasis, #238636);
+}
+
+.compat-seg-partial {
+	background: var(--background-color-attention-emphasis, #9e6a03);
+}
+
+.compat-seg-incompatible {
+	background: var(--background-color-danger-emphasis, #da3633);
+}
+
+.compat-seg-unknown {
+	background: var(--text-color-control-placeholder);
+	color: var(--text-color-on-emphasis);
+}
+
+.compat-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 14px;
+	font-size: 12px;
+}
+
+.compat-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.compat-swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+}
+
+/* Assessment sub-tabs + categories + features list */
+.subtabs {
+	display: flex;
+	gap: 4px;
+	margin: 14px 0 10px;
+	border-bottom: 1px solid var(--border);
+}
+
+.subtabs[hidden] {
+	display: none;
+}
+
+.subtab {
+	background: transparent;
+	color: var(--fg-muted);
+	border: none;
+	border-bottom: 2px solid transparent;
+	padding: 6px 12px;
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	margin-bottom: -1px;
+}
+
+.subtab[aria-selected="true"] {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
+.subtab:hover:not([aria-selected="true"]) {
+	color: var(--fg);
+}
+
+.section-subhead {
+	margin: 14px 0 6px;
+	font-size: 12px;
+	color: var(--fg-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.categories-tiles .tile {
+	background: var(--bg);
+}
+
+.features-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+
+.feature-item {
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	background: var(--bg-subtle);
+}
+
+.feature-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.feature-id {
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.feature-count {
+	color: var(--fg-muted);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.feature-projects {
+	list-style: none;
+	margin: 8px 0 0;
+	padding-left: 0;
+	display: grid;
+	gap: 2px;
+	font-size: 12px;
+}
+
+.feature-projects li {
+	display: flex;
+	justify-content: space-between;
+	color: var(--fg-muted);
+	padding: 2px 0;
+}
+
+.feature-projects .proj-name {
+	color: var(--fg);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+/* Issues explorer (Assessment > Issues sub-tab) */
+.issues-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0 12px;
+}
+
+.issues-search, .issues-group-select {
+	font-size: 13px;
+	min-height: 32px;
+	padding: 0 12px;
+	border: 1px solid var(--border-color-control-rest);
+	border-radius: var(--radius-medium);
+	background: var(--background-color-default);
+	color: var(--text-color-default);
+	margin-left: 4px;
+	transition: border-color 150ms, box-shadow 150ms;
+}
+
+.issues-search::placeholder {
+	color: var(--text-color-control-placeholder);
+}
+
+.issues-search:focus,
+.issues-group-select:focus {
+	outline: 2px solid var(--outline-color-focus-default);
+	outline-offset: -1px;
+}
+
+.issues-search {
+	min-width: 240px;
+}
+
+.issues-status {
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.issues-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.issues-group {
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--bg-subtle);
+}
+
+.issues-group[open] {
+	background: var(--bg);
+}
+
+.issues-group-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+}
+
+.issues-group-head::-webkit-details-marker {
+	display: none;
+}
+
+.issues-group-head::before {
+	content: "▸";
+	color: var(--fg-muted);
+	font-size: 10px;
+	width: 10px;
+	display: inline-block;
+}
+
+.issues-group[open] .issues-group-head::before {
+	content: "▾";
+}
+
+.issues-group-label-txt {
+	flex: 1;
+	font-weight: 500;
+	font-size: 13px;
+}
+
+.issues-group-count {
+	font-variant-numeric: tabular-nums;
+	color: var(--fg-muted);
+	font-size: 12px;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+}
+
+.issues-incident-list {
+	list-style: none;
+	margin: 0;
+	padding: 0 10px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.issues-incident {
+	border-top: 1px solid var(--border);
+	padding-top: 8px;
+}
+
+.issues-incident-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.issues-incident-rule {
+	font-weight: 500;
+	font-size: 13px;
+}
+
+.issues-incident-project {
+	margin-left: auto;
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.issues-incident-loc {
+	margin-top: 4px;
+	color: var(--fg-muted);
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+}
+
+.issues-incident-snippet {
+	display: block;
+	margin-top: 4px;
+	padding: 6px 8px;
+	background: var(--bg-subtle);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+	font-size: 11px;
+	overflow-x: auto;
+	white-space: pre;
+}
+
+.issues-incident-desc {
+	margin-top: 4px;
+	color: var(--fg);
+	font-size: 12px;
+}
+
+.sev-badge {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: var(--radius-compact);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	border: 1px solid transparent;
+}
+
+/* Status badges follow the canonical "muted bg + bright text" pattern so the
+ * label stays readable. All combinations clear WCAG AA at 11px/600.
+ *   danger    on danger-muted    ≈ 6.0:1
+ *   attention on attention-muted ≈ 6.5:1
+ *   accent    on background-muted ≈ 5.5:1
+ *   muted     on background-muted ≈ 4.7:1
+ */
+.sev-badge.sev-mandatory {
+	background: var(--background-color-danger-muted);
+	color: var(--text-color-danger);
+	border-color: color-mix(in srgb, var(--text-color-danger) 40%, transparent);
+}
+.sev-badge.sev-optional {
+	background: var(--background-color-attention-muted);
+	color: var(--text-color-attention);
+	border-color: color-mix(in srgb, var(--text-color-attention) 40%, transparent);
+}
+.sev-badge.sev-potential {
+	background: var(--accent-bg);
+	color: var(--text-color-accent);
+	border-color: color-mix(in srgb, var(--text-color-accent) 40%, transparent);
+}
+.sev-badge.sev-information {
+	background: var(--background-color-neutral-muted);
+	color: var(--text-color-muted);
+	border-color: var(--border-color-muted);
+}
+
+/* Scenario picker card grid */
+.scenario-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+	gap: 12px;
+	margin-top: 10px;
+}
+
+.scenario-card {
+	border: 1px solid var(--border-color-muted);
+	border-radius: var(--radius-large);
+	padding: 12px 14px;
+	background: var(--background-color-muted);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.scenario-card.is-active {
+	border-color: var(--text-color-accent);
+	box-shadow: 0 0 0 1px var(--text-color-accent);
+}
+
+.scenario-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.scenario-card-title {
+	font-weight: 600;
+	font-size: 14px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+.scenario-card-target {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.scenario-card-status {
+	font-size: 12px;
+	color: var(--fg);
+}
+
+.scenario-card-phases {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.scenario-phase-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	border: 1px solid var(--border);
+	background: var(--bg);
+}
+
+.scenario-phase-dot.phase-complete {
+	background: var(--text-color-success, #3fb950);
+	border-color: var(--text-color-success, #3fb950);
+}
+
+.scenario-phase-dot.phase-in-progress {
+	background: var(--accent);
+	border-color: var(--accent);
+}
+
+.scenario-phase-dot.phase-failed {
+	background: var(--text-color-danger, #f85149);
+	border-color: var(--text-color-danger, #f85149);
+}
+
+.scenario-phase-dot.phase-skipped {
+	background: var(--text-color-attention, #d29922);
+	border-color: var(--text-color-attention, #d29922);
+}
+
+.scenario-card-description {
+	font-size: 12px;
+	color: var(--fg-muted);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	line-clamp: 3;
+	overflow: hidden;
+}
+
+/* Projects graph (force-directed bubble chart) */
+.projects-graph-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 12px 0 6px;
+	min-height: 18px;
+}
+
+.projects-graph-status {
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.projects-graph-host {
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg-subtle);
+	overflow: hidden;
+}
+
+.projects-graph-svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+.projects-graph-edge {
+	stroke: var(--border);
+	stroke-width: 1.5;
+	stroke-opacity: 0.6;
+}
+
+.projects-graph-node circle {
+	stroke: var(--bg);
+	stroke-width: 1.5;
+	cursor: default;
+}
+
+.projects-graph-label {
+	font-size: 10px;
+	fill: var(--fg);
+	pointer-events: none;
+}
+
+.projects-graph-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin-top: 10px;
+	font-size: 12px;
+	color: var(--fg-muted);
+}
+
+.projects-graph-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.projects-graph-legend-swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	border: 1px solid var(--bg);
+}
+</style>
+  <script type="module" crossorigin src="./assets/index-aRgQm4v_.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BR7TvC0B.css">
+</head>
+<body>
+<header class="topbar">
+	<div class="topbar-left">
+		<div class="title">Upgrade Agent Dashboard</div>
+	</div>
+	<button type="button" class="header-progress" id="header-progress" hidden title="Open Scenario tab">
+		<span class="header-progress-bar"><span class="header-progress-fill" id="header-progress-fill"></span></span>
+		<span class="header-progress-label" id="header-progress-label"></span>
+	</button>
+</header>
+<nav class="tabs" role="tablist">
+<button class="tab" data-panel="overview" role="tab" aria-selected="true">Overview</button>
+<button class="tab" data-panel="scenario" role="tab">Scenario</button>
+<button class="tab" data-panel="tasks" role="tab">Tasks</button>
+<button class="tab" data-panel="projects" role="tab">Projects</button>
+<button class="tab" data-panel="dependencies" role="tab">Dependencies</button>
+<button class="tab" data-panel="assessment" role="tab">Assessment</button>
+<button class="tab" data-panel="options" role="tab">Options</button>
+<button class="tab" data-panel="activity" role="tab">Activity</button>
+<span class="spacer"></span>
+</nav>
+<main>
+<section class="panel" id="panel-overview" data-panel="overview">
+<h2>Overview</h2>
+<div id="overview-react-root"></div>
+</section>
+<section class="panel" id="panel-activity" data-panel="activity" hidden>
+<h2>Activity</h2>
+<div class="meta" id="activity-meta"></div>
+<div class="activity-view-tabs">
+	<button class="activity-view-tab active" data-view="log">Log</button>
+	<button class="activity-view-tab" data-view="commits">Commits</button>
+	<button class="activity-view-tab" data-view="by-file">By File</button>
+</div>
+<div id="activity-view-log"><ol class="activity" id="activity-list"></ol></div>
+<div id="activity-view-commits" hidden></div>
+<div id="activity-view-by-file" hidden></div>
+</section>
+<section class="panel" id="panel-tasks" data-panel="tasks" hidden>
+<h2>Tasks</h2>
+<div id="tasks-content" class="empty">No tasks.md found.</div>
+</section>
+<section class="panel" id="panel-scenario" data-panel="scenario" hidden>
+<h2>Scenario</h2>
+<nav class="subtabs" id="scenario-subtabs" role="tablist" aria-label="Scenario views" hidden>
+	<button type="button" class="subtab" id="scenario-tab-active" data-subtab="active" role="tab" aria-controls="scenario-active" aria-selected="true" tabindex="0">Active</button>
+	<button type="button" class="subtab" id="scenario-tab-picker" data-subtab="picker" role="tab" aria-controls="scenario-picker" aria-selected="false" tabindex="-1">All scenarios</button>
+</nav>
+<div id="scenario-active" class="subtab-panel" role="tabpanel" aria-labelledby="scenario-tab-active">
+	<div id="scenario-active-hero" hidden>
+		<div class="framework-banner" id="scenario-framework-banner"></div>
+		<div class="phase-stepper" id="scenario-phase-stepper" role="list" aria-label="Scenario phases"></div>
+		<div class="scenario-description md-body" id="scenario-description"></div>
+	</div>
+	<div id="scenario-content" class="empty">No scenario detected.</div>
+</div>
+<div id="scenario-picker" class="subtab-panel" role="tabpanel" aria-labelledby="scenario-tab-picker" hidden></div>
+</section>
+<section class="panel" id="panel-projects" data-panel="projects" hidden>
+<h2>Projects</h2>
+<div class="tiles" id="projects-tiles" hidden></div>
+<div class="meta" id="projects-meta"></div>
+<nav hidden role="tablist" class="subtabs" id="projects-subtabs" aria-label="Projects views">
+	<button type="button" class="subtab" id="projects-tab-table" data-subtab="table" role="tab" aria-controls="projects-table-panel" aria-selected="true" tabindex="0">Table</button>
+	<button type="button" class="subtab" id="projects-tab-graph" data-subtab="graph" role="tab" aria-controls="projects-graph-panel" aria-selected="false" tabindex="-1">Graph</button>
+</nav>
+<div id="projects-table-panel" class="subtab-panel" role="tabpanel" aria-labelledby="projects-tab-table" data-subtab="table">
+	<p class="panel-help" id="projects-help" hidden>
+	<strong>Incidents</strong> are individual locations in code that triggered an assessment rule.
+	One project may have many incidents across multiple rules.
+</p>
+<table class="assess-table projects-table" id="projects-table" hidden>
+	<thead>
+		<tr>
+			<th>Project</th>
+			<th>Framework</th>
+			<th>Kind</th>
+			<th class="num">Incidents</th>
+		</tr>
+	</thead>
+	<tbody id="projects-tbody"></tbody>
+</table>
+<ul class="projects" id="projects-list" hidden></ul>
+</div>
+<div id="projects-graph-panel" class="subtab-panel" role="tabpanel" aria-labelledby="projects-tab-graph" data-subtab="graph" hidden>
+	<div class="projects-graph-toolbar" id="projects-graph-toolbar"></div>
+	<div class="projects-graph-host" id="projects-graph-host"></div>
+	<div class="projects-graph-legend" id="projects-graph-legend"></div>
+</div>
+</section>
+<section class="panel" id="panel-dependencies" data-panel="dependencies" hidden>
+<h2>Dependencies</h2>
+<div id="dependencies-content" class="empty">No dependencies-health.json found.</div>
+</section>
+<section class="panel" id="panel-assessment" data-panel="assessment" hidden>
+<div class="assessment-title-row">
+	<h2>Assessment</h2>
+	<div class="assessment-title-actions">
+		<button type="button" class="icon-action" id="assessment-glossary-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="assessment-glossary-popover" title="What do these terms mean?" aria-label="Show glossary of assessment terms">
+			<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+				<circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+				<path fill="currentColor" d="M7.5 6.5h1V12h-1z"/>
+				<circle cx="8" cy="4.5" r="0.9" fill="currentColor"/>
+			</svg>
+		</button>
+		<button type="button" class="icon-action" id="assessment-share-btn" data-action="share_assessment_as_gist" hidden title="Share as private gist…" aria-label="Share assessment as a private GitHub gist">
+			<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+				<path fill="currentColor" d="M12 1.5a2.5 2.5 0 100 4 2.5 2.5 0 000-4zM4 6a2.5 2.5 0 100 4 2.5 2.5 0 000-4zm8 4.5a2.5 2.5 0 100 4 2.5 2.5 0 000-4zM5.7 6.7l4.6-2.4M5.7 9.3l4.6 2.4" stroke="currentColor" stroke-width="1.2" fill="none"/>
+			</svg>
+		</button>
+	</div>
+	<div class="popover" id="assessment-glossary-popover" role="dialog" aria-labelledby="assessment-glossary-popover-title" hidden>
+		<header class="popover-head">
+			<h3 id="assessment-glossary-popover-title">Assessment terms</h3>
+			<button type="button" class="popover-close" id="assessment-glossary-popover-close" aria-label="Close glossary">×</button>
+		</header>
+		<dl class="glossary">
+			<dt>Issue</dt><dd>A distinct rule that fired at least once. One issue can have many incidents.</dd>
+			<dt>Incident</dt><dd>A single location in code that triggered a rule. The total incident count is what you usually care about when sizing effort.</dd>
+			<dt>Mandatory</dt><dd>An issue that <em>must</em> be addressed for the upgrade to succeed. Other severities are advisory.</dd>
+			<dt>Feature</dt><dd>A higher-level capability (WCF, Remoting, etc.) that the assessment detected — usually a group of related rules.</dd>
+			<dt>Category</dt><dd>How rules are grouped on the JSON side (NuGet, Api, Project, …) for top-line statistics.</dd>
+		</dl>
+	</div>
+</div>
+<div id="assessment-summary"></div>
+<nav class="subtabs" id="assessment-subtabs" role="tablist" aria-label="Assessment views" hidden>
+<button type="button" class="subtab" id="assessment-tab-summary" data-subtab="summary" role="tab" aria-controls="assessment-summary-md" aria-selected="true" tabindex="0">Summary</button>
+<button type="button" class="subtab" id="assessment-tab-issues" data-subtab="issues" role="tab" aria-controls="assessment-issues" aria-selected="false" tabindex="-1">Issues</button>
+<button type="button" class="subtab" id="assessment-tab-features" data-subtab="features" role="tab" aria-controls="assessment-features" aria-selected="false" tabindex="-1">Features</button>
+</nav>
+<div id="assessment-summary-md" class="subtab-panel md" role="tabpanel" aria-labelledby="assessment-tab-summary" data-subtab="summary"></div>
+<div id="assessment-issues" class="subtab-panel" role="tabpanel" aria-labelledby="assessment-tab-issues" data-subtab="issues" hidden></div>
+<div id="assessment-features" class="subtab-panel" role="tabpanel" aria-labelledby="assessment-tab-features" data-subtab="features" hidden></div>
+<div id="assessment-content" class="empty">No assessment.json found.</div>
+</section>
+<section class="panel" id="panel-options" data-panel="options" hidden>
+	<h2>Options</h2>
+	<p class="panel-help" id="options-empty-hint" hidden>
+		No active scenario detected — open one to view and adjust its options.
+	</p>
+	<div id="options-sections"></div>
+</section>
+<section class="panel" id="panel-diagnostics" data-panel="diagnostics" hidden>
+<h2>Diagnostics</h2>
+<div id="diagnostics-content" class="empty">Loading…</div>
+</section>
+</main>
+<footer class="footer" id="footer">
+	<div class="footer-status" id="status">connecting…</div>
+	<div class="footer-actions">
+		<button type="button" class="refresh" id="refresh" title="Refresh" aria-label="Refresh dashboard">↻</button>
+	</div>
+</footer>
+<div class="diagnostics-overlay" id="diagnostics-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="diagnostics-overlay-title">
+	<div class="diagnostics-overlay-backdrop" id="diagnostics-overlay-backdrop"></div>
+	<div class="diagnostics-overlay-card" role="document">
+		<header class="diagnostics-overlay-head">
+			<h2 id="diagnostics-overlay-title">Diagnostics</h2>
+			<button type="button" class="diagnostics-overlay-close" id="diagnostics-overlay-close" title="Close" aria-label="Close diagnostics">×</button>
+		</header>
+		<div id="diagnostics-overlay-body"></div>
+	</div>
+</div>
+<div class="toast" id="toast" hidden></div>
+</body>
+</html>

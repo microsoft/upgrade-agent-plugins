@@ -32,12 +32,13 @@ Do not ignore stale task warnings — they indicate state inconsistency that mus
 
 When delegating task execution to a sub-agent:
 
-1. **Load the `sub-agent-delegation` skill** — `get_instructions(kind='skill', query='sub-agent-delegation')`. It contains a mandatory job description template and checklists. Use it every time.
-2. Your job description MUST include artifact instructions:
-   - "Enrich `tasks/{taskId}/task.md` with your research findings — add affected files, dependencies, packages, patterns discovered directly into the document"
-   - "Write `tasks/{taskId}/progress-details.md` with: files modified, build/test results, issues resolved"
-   - "Do NOT call `complete_task` — return results to me"
-3. After the sub-agent returns, run the post-return checklist from the skill: verify artifacts exist and quality bar is met before calling `complete_task`.
+1. Put all task-specific detail in the dispatch turn — the worker rehydrates from disk, not from
+   replayed conversation. Pass the workflow folder, `scenario-instructions.md`, the task's
+   `task.md`/`progress-details.md` paths, and the `<task_related_skills>` block from `start_task`.
+   Each worker declares its own boundaries, required artifacts, and return format in its own
+   agent prompt — you do not need to restate them.
+2. After the sub-agent returns, verify its artifacts exist and the quality bar is met (task.md
+   enriched, progress-details.md written, build green/warning-free) before calling `complete_task`.
 
 ## Direct Edits to tasks.md
 

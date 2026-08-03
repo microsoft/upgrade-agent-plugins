@@ -183,7 +183,7 @@ Affects all repositories in src/services/.
 ~25 components. Query assessment for full list.
 ```
 
-*⚡ Continue reading — Sections 4-5 cover scenario-instructions.md and tasks.md specifications.*
+*Continue reading — Sections 4-5 cover scenario-instructions.md and tasks.md specifications.*
 
 ---
 
@@ -221,6 +221,9 @@ Living document for user preferences and key decisions. Always in context when w
 - **Append-only for Decisions**: New decisions go at the bottom
 - **User-editable**: Custom Instructions section for per-task overrides
 - **No duplication**: Task descriptions → plan.md, inventory → assessment.md, progress → tasks.md
+- **Never touch `## Source Control`**: it is written at initialization and owned by pre-init and
+  `branch-sync`. When updating this file, preserve every field in that section verbatim —
+  dropping `Source Branch`, `Source Type`, `Source Commit`, or `Branch Sync` breaks syncing.
 
 ### Commit Strategy Default
 
@@ -232,7 +235,7 @@ Living document for user preferences and key decisions. Always in context when w
 
 This ensures every scenario has a visible, editable commit strategy — even scenarios that don't mention commits at all.
 
-*⚡ Continue reading — Section 5 covers tasks.md template and how to present the plan for approval.*
+*Continue reading — Section 5 covers tasks.md template and how to present the plan for approval.*
 
 ---
 
@@ -240,7 +243,7 @@ This ensures every scenario has a visible, editable commit strategy — even sce
 
 ### Purpose
 
-Visual progress document for user consumption. Updated automatically after each task completion.
+Visual progress document for user consumption. During execution, task status is written by the workflow tools (start_task/complete_task) — don't hand-edit this file to mark a task complete.
 
 ### Template
 
@@ -276,7 +279,7 @@ Follow the `tasks_template` template below, replacing placeholders with actual d
 ## Presenting Plan to User
 
 After creating all documents:
-- **Open `plan.md` and `tasks.md` in the editor** (regardless of flow mode) so the user can see them. Follow the **How to Open Files** fallback chain from the user-interaction skill: first search your available tools for one that opens files in the IDE; if none exists, include the full file paths in your response. Never launch external programs via the terminal.
+- **Open `plan.md` and `tasks.md` in the editor** (regardless of flow mode) so the user can see them. Follow this fallback chain: first search your available tools for one that opens files in the IDE; if none exists, include the full file paths in your response. Never launch external programs via the terminal.
 - Present a summary per flow mode:
 
 ### Guided Mode

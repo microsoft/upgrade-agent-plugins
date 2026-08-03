@@ -18,7 +18,7 @@ metadata:
 
 # ASP.NET Framework → ASP.NET Core Migration
 
-## ⛔ Read This First
+## Read This First
 
 This skill defines **how to execute** a web project migration task:
 - The migration steps and gates between them

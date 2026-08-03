@@ -4,6 +4,29 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.290] - 2026-08-03
+
+### Added
+
+- Suppport for modernization of JS/TS projects alongside .NET.
+- New ARM64 migration scenario to assess, fix, and validate .NET projects for ARM64.
+
+### Changed
+
+- The plugin now retries MCP server launches instead of failing permanently, bounds its initialize handshake with a time budget, and terminates the full process tree when a MCP is abandoned.
+
+### Fixed
+
+- Project assessment returning empty when the common root is the filesystem root.
+- Scenario filtering when a solution contains WebForms projects.
+- Non-numeric task IDs being silently dropped from `tasks.md`.
+- Improved assessment accuracy with fixes to API graph type indexing, `[Bind]` attribute token trimming, Django trait detection, and Azure Functions upgrade risk evaluation.
+
+### Removed
+
+- Deprecated `sub-agent-delegation` system skill (superseded by sub-agent token optimization).
+- Unsupported Azure migration documentation.
+
 ## [1.1.247] - 2026-07-22
 
 ### Changed

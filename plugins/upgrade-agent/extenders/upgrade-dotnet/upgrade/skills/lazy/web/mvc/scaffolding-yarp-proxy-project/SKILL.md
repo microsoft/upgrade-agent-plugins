@@ -19,7 +19,7 @@ MVC or WebAPI project. The new project is configured with a YARP reverse proxy
 that routes unhandled requests to the old project, enabling incremental
 controller-by-controller migration.
 
-## ⛔ REQUIRED: Read This File Completely
+## REQUIRED: Read This File Completely
 
 This file contains **2 steps** and **10 sub-steps** for manual scaffolding. You MUST read all sections before starting:
 
@@ -68,7 +68,7 @@ The LLM handles the parts that need judgment (finding the old app URL, resolving
 
 ### 2.1 Gather Parameters
 
-⛔ **All parameters are mandatory.** The new project will not work correctly with the
+**All parameters are mandatory.** The new project will not work correctly with the
 old project unless every value is accurate. Do not use defaults without verifying them.
 
 Before running the script, determine these values:
@@ -80,9 +80,9 @@ Before running the script, determine these values:
 | `TargetFramework` | Upgrade TFM (e.g., `net10.0`) |
 | `NewProjectName` | Name for new project (default: `{OldName}.Core`). Must be unique in the solution — check existing project names and folder names |
 | `ProjectType` | `MVC` or `WebAPI` — match the old project's type |
-| `OldAppUrl` | ⛔ **Must be the actual URL the old app runs on.** Find it in the old project's `Properties/launchSettings.json` (look for `applicationUrl` in the active profile), or in IIS/IIS Express bindings. Do NOT guess — if the proxy points to the wrong URL, all forwarded requests will fail silently. |
-| `SystemWebAdaptersVersion` | ⛔ Use `get_supported_package_version` for `Microsoft.AspNetCore.SystemWebAdapters.CoreServices` |
-| `YarpVersion` | ⛔ Use `get_supported_package_version` for `Yarp.ReverseProxy` |
+| `OldAppUrl` | **Must be the actual URL the old app runs on.** Find it in the old project's `Properties/launchSettings.json` (look for `applicationUrl` in the active profile), or in IIS/IIS Express bindings. Do NOT guess — if the proxy points to the wrong URL, all forwarded requests will fail silently. |
+| `SystemWebAdaptersVersion` | Use `get_supported_package_version` for `Microsoft.AspNetCore.SystemWebAdapters.CoreServices` |
+| `YarpVersion` | Use `get_supported_package_version` for `Yarp.ReverseProxy` |
 
 **NewProjectName validation:**
 - Must not match any existing project name in the solution

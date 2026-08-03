@@ -6,8 +6,8 @@ changes between the current and target versions of each package, and record ever
 
 ## Entry Criteria
 
-- Pre-initialization complete (scope, package list, and version policy confirmed by the
-  `scenario-initialization` skill).
+- Pre-initialization complete (scope, package list, and version policy confirmed during
+  pre-initialization).
 - `initialize_scenario` already called — working folder exists at `.github/upgrades/{scenarioId}/`.
 - If git repo: on the correct working branch.
 

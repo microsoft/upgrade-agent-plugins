@@ -52,41 +52,37 @@ Check `Web.config` for any `<staticContent>` MIME type mappings or custom `<hand
 Create the `wwwroot/` folder at the project root and move assets into it following ASP.NET Core conventions:
 
 **Before (ASP.NET MVC):**
-```
-MyApp/
-├── Content/
-│   ├── Site.css
-│   └── images/
-│       └── logo.png
-├── Scripts/
-│   ├── jquery-3.6.0.min.js
-│   └── site.js
-├── App_Data/
-│   └── data.json
-├── fonts/
-│   └── custom.woff2
-└── Web.config
-```
+- `MyApp/`
+  - `Content/`
+    - `Site.css`
+    - `images/`
+      - `logo.png`
+  - `Scripts/`
+    - `jquery-3.6.0.min.js`
+    - `site.js`
+  - `App_Data/`
+    - `data.json`
+  - `fonts/`
+    - `custom.woff2`
+  - `Web.config`
 
 **After (ASP.NET Core):**
-```
-MyApp/
-├── wwwroot/
-│   ├── css/
-│   │   └── Site.css
-│   ├── js/
-│   │   ├── jquery-3.6.0.min.js
-│   │   └── site.js
-│   ├── images/
-│   │   └── logo.png
-│   ├── fonts/
-│   │   └── custom.woff2
-│   └── data/
-│       └── data.json    (only if public access needed)
-├── App_Data/
-│   └── data.json        (keep here if private — read via file I/O)
-└── Program.cs
-```
+- `MyApp/`
+  - `wwwroot/`
+    - `css/`
+      - `Site.css`
+    - `js/`
+      - `jquery-3.6.0.min.js`
+      - `site.js`
+    - `images/`
+      - `logo.png`
+    - `fonts/`
+      - `custom.woff2`
+    - `data/`
+      - `data.json` (only if public access needed)
+  - `App_Data/`
+    - `data.json` (keep here if private — read via file I/O)
+  - `Program.cs`
 
 Key decisions:
 - `Content/` → `wwwroot/css/` (rename to match Core convention)

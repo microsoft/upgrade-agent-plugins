@@ -30,7 +30,7 @@ across Framework and modern .NET is too fragile for libraries).
 - These have different failure modes and must not be conflated
 - Do NOT generate if all projects are already SDK-style
 
-> ⛔ **Side-by-side web projects are EXCLUDED from SDK-style conversion.**
+> **Side-by-side web projects are EXCLUDED from SDK-style conversion.**
 > When Project Approach = Side-by-side for a web project, that project keeps
 > its old-style csproj throughout migration. The new Core project created during
 > scaffold is already SDK-style. Count only non-web projects when writing the
@@ -53,7 +53,7 @@ across Framework and modern .NET is too fragile for libraries).
   not a planning concern. The plan has one task; breakdown creates subtasks
   by dependency tier or project group when scope inventory reveals many projects.
 
-> ⛔ **Side-by-side web projects are EXCLUDED from the TFM upgrade task.**
+> **Side-by-side web projects are EXCLUDED from the TFM upgrade task.**
 > They get their own scaffold/migrate tasks (see below).
 > Count only non-web projects when writing the task scope.
 

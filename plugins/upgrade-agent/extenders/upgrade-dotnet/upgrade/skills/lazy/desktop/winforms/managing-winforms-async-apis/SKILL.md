@@ -29,7 +29,7 @@ Use this skill when generating or reviewing WinForms code that:
 - Hits `InvokeAsync` overload-resolution errors/warnings (e.g. `WFO2001`).
 
 Do **not** reach for these APIs to replace plain `await` of background work that
-never touches the UI ─ that needs no marshalling.
+never touches the UI — that needs no marshalling.
 
 ## The APIs at a glance
 
@@ -41,19 +41,19 @@ never touches the UI ─ that needs no marshalling.
 | `TaskDialog.ShowDialogAsync` | Stable (.NET 10) | Show a Task Dialog asynchronously. |
 
 The form/dialog APIs were experimental in .NET 9 (required suppressing
-`WFO5002`). As of .NET 10 they are stable ─ `WFO5002` is no longer raised, and no
+`WFO5002`). As of .NET 10 they are stable — `WFO5002` is no longer raised, and no
 opt-in is needed.
 
 ## Control.InvokeAsync
 
 `InvokeAsync` *posts* the delegate to the WinForms message queue and returns
-immediately ─ the calling thread is not blocked. Contrast with `Control.Invoke`,
+immediately — the calling thread is not blocked. Contrast with `Control.Invoke`,
 which *sends* the delegate and blocks until the UI thread finishes it.
 
 | Operation | Method | Blocking |
 | --- | --- | --- |
-| Send | `Control.Invoke` | Yes ─ waits for completion. |
-| Post | `Control.InvokeAsync` | No ─ queues and returns. |
+| Send | `Control.Invoke` | Yes — waits for completion. |
+| Post | `Control.InvokeAsync` | No — queues and returns. |
 
 Posting keeps the message loop free to repaint, handle clicks, and process input,
 so the UI stays responsive even under many UI-bound tasks.
@@ -117,7 +117,7 @@ accept a `CancellationToken`, and resolve to the async overload.
 
 ### Overload resolution with Task.Run
 
-`InvokeAsync` returns a `Task` ─ that `Task` cannot be passed to `Task.Run`,
+`InvokeAsync` returns a `Task` — that `Task` cannot be passed to `Task.Run`,
 which needs an `Action` or a `Func<Task>`. Wrap the call in a local function:
 
 ```csharp
@@ -141,7 +141,7 @@ drains what's pending.
 
 **Letting a Windows message finish before reacting to it.** Inside a `KeyDown`
 handler, calling `SelectAll` directly can be defeated by the still-in-flight key
-message. Posting it sidesteps that ─ and works whether or not `e.Handled` was set:
+message. Posting it sidesteps that — and works whether or not `e.Handled` was set:
 
 ```csharp
 private async void TextBox_KeyDown(object sender, KeyEventArgs e)
@@ -157,7 +157,7 @@ private async void TextBox_KeyDown(object sender, KeyEventArgs e)
 
 **Kicking off work once the form is fully shown.** As the last line of `OnLoad`,
 a posted delegate runs after the framework's own show/activate/paint messages
-drain ─ i.e. once the form is not just constructed but visible and active. It
+drain — i.e. once the form is not just constructed but visible and active. It
 keeps `OnLoad` synchronous (no `async void` on the override) and the kickoff
 non-blocking, with its own `try`/`catch`:
 
@@ -174,13 +174,13 @@ protected override void OnLoad(EventArgs e)
 ```
 
 Note: this defers the kickoff past the *framework's* remaining init/paint
-messages ─ not past your own `OnLoad` code, which has already run synchronously
+messages — not past your own `OnLoad` code, which has already run synchronously
 by this point.
 
 ## Form and dialog async APIs
 
 `Form.ShowAsync` and `Form.ShowDialogAsync` show forms asynchronously without
-blocking the UI thread ─ handy when juggling multiple instances of the same
+blocking the UI thread — handy when juggling multiple instances of the same
 form type (e.g. one window per document). `ShowAsync` returns a plain `Task`
 that completes when the form is closed or disposed; it returns immediately even
 for a large, slow-to-initialize form.
@@ -220,7 +220,7 @@ the same instance). Forms are shown on the UI thread.
 
 ## Starting async work from synchronous code
 
-Avoid `async void` ─ the caller cannot await or observe completion, and
+Avoid `async void` — the caller cannot await or observe completion, and
 exceptions escape normal `Task` error handling.
 
 **Exception:** event handlers (and methods with event-handler signatures) cannot
@@ -247,7 +247,7 @@ private async void Button_Click(object sender, EventArgs e)
 
 Kicking an async loop off from `OnLoad` is the standard pattern. `OnLoad`
 completes at the first `await`; the message loop stays free, and the runtime
-resumes the method after each awaited task ─ so an infinite async loop does not
+resumes the method after each awaited task — so an infinite async loop does not
 freeze the UI:
 
 ```csharp
@@ -258,7 +258,7 @@ protected override async void OnLoad(EventArgs e)
 }
 ```
 
-This is cooperative, not parallel ─ like a relay race passing a baton ─ until the
+This is cooperative, not parallel — like a relay race passing a baton — until the
 loop is explicitly moved onto another thread via `Task.Run`. At that point any UI
 access inside it must go through `InvokeAsync`, or a cross-thread exception is
 thrown.
@@ -322,11 +322,11 @@ setting a label color); skip it where the continuation must stay on the UI threa
 
 - Marshalling to the UI thread, non-blocking → `InvokeAsync`, not `Invoke`.
 - Match the overload to sync/async and return-value needs.
-- Async callbacks: return `ValueTask`, take a `CancellationToken` ─ avoid `WFO2001`.
+- Async callbacks: return `ValueTask`, take a `CancellationToken` — avoid `WFO2001`.
 - Don't pass an `InvokeAsync` `Task` into `Task.Run`; wrap it in a local function.
 - `async void` only for event handlers, always with `try`/`catch`.
 - To run work after the message queue drains, post it with `InvokeAsync` from the
-  UI thread (e.g. last line of `OnLoad`) ─ keeps `OnLoad` sync and non-blocking.
+  UI thread (e.g. last line of `OnLoad`) — keeps `OnLoad` sync and non-blocking.
 - Form/dialog async APIs are stable in .NET 10 (no `WFO5002` suppression needed).
 
 ## Related Skills

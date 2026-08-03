@@ -53,7 +53,7 @@ AutoSize > Percent > Absolute
 | **Percent** | Content columns | `Top, Bottom, Left, and Right` | Distribute by reasoning |
 | **Absolute** | Fixed content only | Varies | Icons, buttons (avoid when possible) |
 
-**CRITICAL:** Never dock controls in TableLayoutPanel cells ─ always use Anchor!
+**CRITICAL:** Never dock controls in TableLayoutPanel cells — always use Anchor!
 
 ### Row Sizing Rules
 
@@ -348,7 +348,7 @@ private ToolStripStatusLabel _statusLabel;
 **Key points:**
 
 - All controls are backing fields, not local variables
-- No helper methods ─ everything is in `InitializeComponent`
+- No helper methods — everything is in `InitializeComponent`
 - SuspendLayout/ResumeLayout called for each container
 - ISupportInitialize used for SplitContainer
 - Form configuration is LAST
@@ -457,7 +457,7 @@ private RadioButton _rbOption3;
 
 - Class constructor has NOT run yet
 - Accessing backing fields may get `null` or uninitialized values
-- Return const values for `DefaultSize` ─ don't depend on constructor state
+- Return const values for `DefaultSize` — don't depend on constructor state
 
 **Example:**
 

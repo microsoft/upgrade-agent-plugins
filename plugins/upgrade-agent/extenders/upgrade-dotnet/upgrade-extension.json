@@ -8,7 +8,8 @@
       "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp",
       "--yes",
       "--ignore-failed-sources"
-    ]
+    ],
+    "initializationTimeoutSeconds": 300
   },
   "traits": ".NET|CSharp|VisualBasic|DotNetCore"
 }

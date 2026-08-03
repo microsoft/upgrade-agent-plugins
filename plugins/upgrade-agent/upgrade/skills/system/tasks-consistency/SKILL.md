@@ -108,7 +108,7 @@ For each top-level task in plan.md that is **not** in tasks.md:
    ```
 4. **No subtasks** — new tasks start without subtasks; breakdown happens during execution
 
-*⚡ Continue reading — Steps 5-8 cover reordering, task.md syncing, statistics, and logging.*
+*Continue reading — Steps 5-8 cover reordering, task.md syncing, statistics, and logging.*
 
 ### Step 5: Handle Reordering
 
@@ -142,7 +142,7 @@ After all edits to tasks.md, recalculate and update inline:
 3. **Last Updated** — set to current timestamp
 4. **Legend** — ensure present: `**Legend**: ✅ Complete | 🔄 In Progress | 🔲 Pending | ⚠️ Blocked | ❌ Failed`
 
-*⚡ Continue reading — Edge cases and the verification checklist are essential for correct reconciliation.*
+*Continue reading — Edge cases and the verification checklist are essential for correct reconciliation.*
 
 ## Edge Cases
 

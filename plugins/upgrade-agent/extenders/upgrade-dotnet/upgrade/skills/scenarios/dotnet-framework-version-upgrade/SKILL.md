@@ -44,14 +44,14 @@ Upgrade .NET Framework projects from their current framework version (e.g., net4
 
 Run these stages in order:
 
-0. **Pre-Initialization** — Target = `net481` (fixed — no options tool call), platform = Windows. Confirm which projects to upgrade. Uses the `scenario-initialization` system skill.
+0. **Pre-Initialization** — Target = `net481` (fixed — no options tool call), platform = Windows. Confirm which projects to upgrade. Consumed during pre-initialization by the scenario-initializer worker.
 1. **Assessment** — Tool: `generate_dotnet_upgrade_assessment`. Focus on NuGet compatibility and minor API changes. Creates `assessment.md`.
 2. **Planning** — Strategy: All-at-Once (≤10 projects) or Bottom-Up by dependency order (10+ projects). Tasks cover the TFM bump plus NuGet retarget/update. Creates `plan.md` and `scenario-instructions.md`.
 3. **Execution** — Edit `TargetFrameworkVersion` / `TargetFramework(s)`, retarget `packages.config` metadata, build with msbuild (legacy) or `dotnet build`. Creates `tasks/*/task.md` and `execution-log.md`.
 
 ## Pre-Initialization
 
-This section is used by the `scenario-initialization` system skill. It defines the scenario-specific parameters and tools for this scenario.
+This section is consumed during pre-initialization by the scenario-initializer worker. It defines the scenario-specific parameters and tools for this scenario.
 
 ### Tools to Call
 

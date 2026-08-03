@@ -1,6 +1,6 @@
 # Assessment Stage Instructions
 
-## ⛔ REQUIRED: Read This File Completely
+## REQUIRED: Read This File Completely
 
 This file contains **2 required steps** and **edge case handling**. You MUST read all sections before starting:
 
@@ -21,7 +21,7 @@ Analyze the target projects to create a comprehensive assessment for the upgrade
 
 ## Entry Criteria
 
-- Pre-initialization complete (handled by `scenario-initialization` skill)
+- Pre-initialization complete (handled during pre-initialization)
 - If git repo: source control set up — on the correct working branch
 - `initialize_scenario` already called — working folder exists at `.github/upgrades/{scenarioId}/`
 - Upgrade parameters confirmed and saved in `scenario-instructions.md` (target framework, and source/working branch if git repo)
@@ -36,7 +36,7 @@ Analyze the target projects to create a comprehensive assessment for the upgrade
 
 ## Step 1: Analyze Projects
 
-*⚡ Continue reading - Step 2 contains the approval flow and edge case handling.*
+*Continue reading - Step 2 contains the approval flow and edge case handling.*
 
 > **Note**: Parameter gathering (target framework, source control) was handled during pre-initialization.
 > The confirmed target framework is available in `scenario-instructions.md`.
@@ -77,13 +77,13 @@ These will be addressed as part of the upgrade.
 
 ## Step 2: Present Assessment
 
-*⚡ Continue reading - Edge case handling and final checklist follow this section.*
+*Continue reading - Edge case handling and final checklist follow this section.*
 
 The `generate_dotnet_upgrade_assessment` tool creates `assessment.md` on disk. Do **not** rewrite, reformat, or supplement the generated file — it is complete as-is.
 
 ### 2.1 Open Assessment in Editor
 
-Open `assessment.md` in the editor so the user can review it. Follow the **How to Open Files** fallback chain from the user-interaction skill.
+Open `assessment.md` in the editor so the user can review it: search your available tools for one that opens a file in the IDE and use it; if none exists (CLI/terminal), print the full file path instead. Never launch an external program to open it.
 
 ### 2.2 Show Summary to User
 

@@ -16,7 +16,8 @@ Keeps the upgrade working branch close to its source branch so merge-back at the
 upgrade is incremental rather than catastrophic. The skill is invoked two ways:
 
 - **On demand** \u2014 when the user says "sync with main", "merge from main", "rebase on main", etc.
-- **Automatically between tasks** \u2014 by the `task-execution` skill (\u00a76.5) when the persisted
+- **Automatically between tasks** \u2014 by the Orchestrator's per-task lifecycle (after a task
+  is committed, before the next task starts) when the persisted
   `Branch Sync` strategy in `scenario-instructions.md` is `Auto (Merge)` or `Auto (Rebase)`.
 
 Both paths run the same lifecycle below.
@@ -64,13 +65,14 @@ silently — surface the situation so the user can decide.
 
 | Guard | Check | If fails |
 |-------|-------|----------|
+| Source is syncable | `## Source Control` in `scenario-instructions.md` has no `Source Type: Detached HEAD` | No-op; report "The upgrade is based on a fixed ref ({Source Branch}) that never moves — nothing to sync." Check this **first**: `git ls-remote` succeeds for a tag, so the remote guard below will not catch it, and §4 would then fetch a remote-tracking ref that does not exist. |
 | Working tree clean | `git status --porcelain` returns empty | Tell the user there are uncommitted changes; ask whether to commit, stash, or cancel. |
 | Source ≠ working | `Source Branch` from `scenario-instructions.md` differs from `git branch --show-current` | No-op; report "Already on the source branch — nothing to sync." |
 | Inside a git repo | `git rev-parse --is-inside-work-tree` | Report "Not a git repository — sync not applicable." |
 | Remote exists for source | `git ls-remote --exit-code origin {source_branch}` (or whatever remote tracks it) | If no remote, fall back to local source branch only and tell the user fetch was skipped. |
 
-`Source Branch`, `Working Branch`, `Branch Sync` (strategy), and `Last Sync Commit` come from
-the `## Source Control` block of `scenario-instructions.md`. They are written there during
+`Source Branch`, `Source Type`, `Working Branch`, `Branch Sync` (strategy), and `Last Sync Commit`
+come from the `## Source Control` block of `scenario-instructions.md`. They are written there during
 scenario initialization and updated by this skill on every successful sync. If a field is
 missing (older scenario file), fall back: missing strategy → ask once and remember in
 conversation context; missing `Last Sync Commit` → use `git merge-base HEAD {source_branch}`.
@@ -230,7 +232,8 @@ outcome.
 ## Notes
 
 - This skill is invoked both **on demand** (user says "sync with main") and **automatically**
-  between tasks by the `task-execution` skill (§6.5) when `Branch Sync` is `Auto (Merge)` or
+  between tasks by the Orchestrator's per-task lifecycle (after commit, before the next task)
+  when `Branch Sync` is `Auto (Merge)` or
   `Auto (Rebase)`.
 - All git operations shell out via the standard process runner. A future change may add
   `MergeAsync` / `RebaseAsync` / `FetchAsync` to `IGit` and route through there — the skill

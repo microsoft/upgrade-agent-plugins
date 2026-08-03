@@ -2,7 +2,7 @@
 
 **Prerequisite:** Application must target .NET 9.0 or higher.
 
-> 📖 **For general WinForms patterns**, see the [main detailed guide](detailed-guide.md).
+> **For general WinForms patterns**, see the [main detailed guide](detailed-guide.md).
 
 ## Quick Start
 

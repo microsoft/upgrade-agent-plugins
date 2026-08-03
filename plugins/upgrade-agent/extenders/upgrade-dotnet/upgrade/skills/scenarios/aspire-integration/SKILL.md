@@ -172,7 +172,7 @@ Search the repository for existing skill files:
 
 ### 1.1: Source Control Detection
 
-Detect git repo, current branch, and pending changes. Use the standard `scenario-initialization` system skill workflow.
+Detect git repo, current branch, and pending changes. Handled during pre-initialization by the scenario-initializer worker.
 
 ### 1.2: Consolidated Pre-Init Prompt
 
@@ -263,7 +263,7 @@ Save `plan.md` and present it to the user. Wait for approval before starting exe
 **Load**: [execution.md](execution.md) — read completely when entering this phase.
 **Load**: [aspire-cli.md](aspire-cli.md) — CLI command reference.
 
-Uses the system **task-execution** skill for task lifecycle. The execution file supplements task-execution — it does not replace it.
+Uses the executor's core task-execution steps for task lifecycle. The execution file supplements those steps — it does not replace them.
 
 Execute the tasks listed in the approved `plan.md` (3 tasks for inner-loop only, 4 tasks for Azure-ready). For each task, use the matching reference section below — only the tasks present in `plan.md` should run.
 

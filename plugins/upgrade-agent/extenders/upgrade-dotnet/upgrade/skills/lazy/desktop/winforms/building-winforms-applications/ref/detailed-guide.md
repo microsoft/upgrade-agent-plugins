@@ -340,7 +340,7 @@ End Class
 
 ---
 
-# 🎨 OPT-IN ENHANCEMENT FEATURES
+# OPT-IN ENHANCEMENT FEATURES
 
 > ⚠️ **OPT-IN enhancements only** — apply when:
 > - User explicitly requests the feature (e.g., "add dark mode", "modernize async patterns")
@@ -379,20 +379,18 @@ End Class
 
 ## Project Structure Example
 
-```plaintext
-MySolution/
-├── MyApp.WinForms/          # Main WinForms project
-│   ├── Forms/
-│   │   ├── MainForm.cs
-│   │   └── MainForm.Designer.cs
-│   ├── Controls/            # Custom UserControls
-│   ├── Properties/
-│   │   └── DataSources/     # .datasource files for binding
-│   └── Program.cs
-├── MyApp.ViewModels/        # ViewModels (if using MVVM)
-├── MyApp.Models/            # Domain models
-└── MyApp.Services/          # Business logic
-```
+- `MySolution/`
+  - `MyApp.WinForms/` — Main WinForms project
+    - `Forms/`
+      - `MainForm.cs`
+      - `MainForm.Designer.cs`
+    - `Controls/` — Custom UserControls
+    - `Properties/`
+      - `DataSources/` — .datasource files for binding
+    - `Program.cs`
+  - `MyApp.ViewModels/` — ViewModels (if using MVVM)
+  - `MyApp.Models/` — Domain models
+  - `MyApp.Services/` — Business logic
 
 ## Migration Checklist
 

@@ -9,7 +9,7 @@ metadata:
 
 Covers the entire task lifecycle: research → assess decomposition → break down or execute → validate → complete → commit.
 
-## ⛔ Task Completion Requirements (read first)
+## Task Completion Requirements (read first)
 
 Every task must meet ALL of these before calling `complete_task`:
 
@@ -120,7 +120,7 @@ Custom skill hints with the same `hint: {id}` override scenario hints.
 >
 > **Never skip a task because it looks complex** — if a task feels too hard to execute directly, that's a decomposition trigger, not a reason to jump to the next task. Break it down into subtasks instead.
 
-*⚡ Continue reading — Section 2 covers subtask design principles and `break_down_task` usage.*
+*Continue reading — Section 2 covers subtask design principles and `break_down_task` usage.*
 
 ---
 
@@ -174,7 +174,7 @@ When multiple strategies could apply, prefer: skill-contributed > scenario-speci
 
 📖 **For idempotent `break_down_task` replanning semantics and the discovery pattern (turning work found mid-execution into subtasks), read [references/decomposition.md](references/decomposition.md).**
 
-*⚡ Continue reading — Sections 3-5 cover execution flow, validation, and completion.*
+*Continue reading — Sections 3-5 cover execution flow, validation, and completion.*
 
 ---
 
@@ -194,7 +194,7 @@ Returns: `taskId`, `taskFolder`, `folderCreated`, `taskContent` (task.md content
 
 If `start_task`/`get_state` returns a `staleTaskWarnings` array, resolve each one **before** starting new work — follow its `Instruction` and `complete_task` it (or `complete_task(taskId, failed=true)` to abandon). 📖 **See [references/execution-details.md](references/execution-details.md).**
 
-### ⛔ Execution Order Rule
+### Execution Order Rule
 
 **Execute tasks in the order returned by `availableTasks` from `complete_task` or `get_state`.** Never skip a task, never reorder tasks. If a task looks too complex after starting it, decompose it (Section 1-2) — don't jump ahead to an easier task.
 
@@ -215,7 +215,7 @@ before executing tasks.
 
 #### Step 1: Load skills for this task
 
-⛔ **Do this BEFORE any other work — before research, before decomposition assessment, before execution.**
+**Do this BEFORE any other work — before research, before decomposition assessment, before execution.**
 
 `start_task` returns a `<task_related_skills>` block at the end of `taskContent` — skills pre-matched to this task's scope. Each entry includes the skill's description.
 
@@ -259,7 +259,7 @@ For single-project tasks modifying ≤3 files with no package changes, a brief m
 After research, verify whether the task's objective is **already met** — a prior task may have completed the work as a side effect (e.g., a batch package update that touched this task's project too). Check the done-when criteria directly: are packages already at the target version? Is the API already migrated? Does the project already build?
 
 If the task is already complete:
-1. ⛔ Write `progress-details.md` — note which prior task completed this work and the evidence (build passes, API already migrated, packages at target version, etc.). This is mandatory even for already-done tasks.
+1. Write `progress-details.md` — note which prior task completed this work and the evidence (build passes, API already migrated, packages at target version, etc.). This is mandatory even for already-done tasks.
 2. Call `complete_task` — skip execution and validation
 3. Commit if applicable per strategy (artifact-only commit)
 
@@ -287,19 +287,19 @@ Make incremental, testable changes; keep them within task scope; document non-ob
 
 ### Delegated Execution & Direct tasks.md Edits
 
-📖 **When delegating a task to a sub-agent (mandatory `sub-agent-delegation` skill + artifact rules) or editing `tasks.md`/`task.md` directly (cosmetic edits are fine; structural changes go through tools), read [references/execution-details.md](references/execution-details.md).**
+📖 **When delegating a task to a sub-agent (dispatch payload + artifact rules) or editing `tasks.md`/`task.md` directly (cosmetic edits are fine; structural changes go through tools), read [references/execution-details.md](references/execution-details.md).**
 
-*⚡ Continue reading — Sections 4-8 cover validation, completion, commit strategy, branch sync, workflow files, error recovery, and communication.*
+*Continue reading — Sections 4-8 cover validation, completion, commit strategy, branch sync, workflow files, error recovery, and communication.*
 
 ---
 
 ## 4. Validate
 
-### ⛔ Validation = Verify EVERY "Done When" Criterion
+### Validation = Verify EVERY "Done When" Criterion
 
 The **"Done when"** section in task.md is your validation checklist — not just "does it build." **Before calling `complete_task`, independently verify EVERY "Done when" item**: run the build, run the tests, confirm code changes exist, attempt runtime verification, etc.
 
-⛔ **Do NOT skip items because previous tasks succeeded or the build passes.** A passing build is ONE criterion — each item must be checked separately. Non-automatable items (e.g., "verify UI shows X") must be documented in `progress-details.md` for user verification.
+**Do NOT skip items because previous tasks succeeded or the build passes.** A passing build is ONE criterion — each item must be checked separately. Non-automatable items (e.g., "verify UI shows X") must be documented in `progress-details.md` for user verification.
 
 ### Post-Task Build Invariant
 
@@ -343,7 +343,7 @@ Proceed directly to Section 5 (Complete).
 
 ### Success
 
-⛔ **Before calling `complete_task`**, you MUST write `tasks/{taskId}/progress-details.md`. This is not optional — even for small tasks.
+**Before calling `complete_task`**, you MUST write `tasks/{taskId}/progress-details.md`. This is not optional — even for small tasks.
 
 `progress-details.md` contains:
 - What was actually changed in the repo (files modified, packages updated, APIs migrated)
@@ -397,7 +397,7 @@ When `complete_task` returns `allTasksComplete: true`, the scenario is entering 
 
 ## 6. Commit (if applicable)
 
-Commit happens **after** all task completion maintenance — after `progress-details.md` is written, `complete_task` is called, and `tasks.md` is updated. This ensures every commit is a complete snapshot: code changes **and** workflow artifact changes together.
+⛔ **Do not commit until `complete_task` has succeeded for this task** — a commit does not record completion; only `complete_task` writes the task's completed/failed state to `scenario.json`. Commit happens **after** all task completion maintenance — after `progress-details.md` is written, `complete_task` is called, and `tasks.md` is updated. This ensures every commit is a complete snapshot: code changes **and** workflow artifact changes together.
 
 If the repo is not a git repo, skip this section entirely.
 

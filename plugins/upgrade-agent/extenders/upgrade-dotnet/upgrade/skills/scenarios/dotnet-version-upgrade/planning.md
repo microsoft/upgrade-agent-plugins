@@ -58,7 +58,7 @@ the class silently and act on it.
 
 | Class | Criteria | Behavior |
 |-------|----------|----------|
-| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Evaluate Upgrade Strategy and, when the assessment recommends Test Coverage, the Test Coverage option. Skip every other option. Write and confirm `upgrade-options.md`, then write the compact block to `scenario-instructions.md`. Proceed to Step 2. |
+| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Evaluate Upgrade Strategy and, when the assessment recommends Test Coverage, the Test Coverage option. Skip every other option. Write `upgrade-options.md`, then return the gate to the Orchestrator (see **Return the gate to the Orchestrator**). |
 | **Complex** | Any .NET Framework project, incompatible packages, or other signals from the trigger index have surfaced | Proceed with Step 1.5 evaluation below |
 
 
@@ -66,13 +66,17 @@ the class silently and act on it.
 
 ### Re-entry Check
 
-Before evaluating, check the working folder (`.github/upgrades/{scenarioId}/`):
+This scenario has a **planning gate**: upgrade options must be confirmed by the user before
+the plan is generated. You are a one-shot worker and never pause for the user — the
+Orchestrator runs the confirmation and re-dispatches you. So this step runs across **two
+dispatches**. Before evaluating, determine which dispatch you are on:
 
-| State | Action |
-|-------|--------|
-| `plan.md` exists | Options already confirmed and plan generated — skip Step 1.5, proceed to Step 2 |
-| `upgrade-options.md` exists but no `plan.md` | Options written but not yet confirmed — open it, ask user to confirm, do not regenerate |
-| Neither exists | Fresh run — proceed with evaluation below |
+| State | Meaning | Action |
+|-------|---------|--------|
+| `plan.md` exists | Options confirmed and plan already generated | Skip Step 1.5, proceed to Step 2 |
+| The Orchestrator's dispatch includes **confirmed upgrade-option selections** (and no `plan.md` yet) | Gate already resolved — this is the re-dispatch | Skip evaluation. Write the confirmed selections to `scenario-instructions.md` (the compact `## Upgrade Options` block), then proceed to Step 2 to generate the plan |
+| `upgrade-options.md` exists but no `plan.md` and no confirmed selections were passed | Options written on a prior dispatch but not yet confirmed | Do not regenerate — return `STATUS: needs_confirmation` with the options payload (see **Return the gate to the Orchestrator**) |
+| Neither exists | Fresh run | Proceed with evaluation below |
 
 **CI / headless session**: If `upgrade-options.md` does not exist, fail immediately:
 ```
@@ -82,7 +86,7 @@ Run in interactive mode first to confirm options, then re-run in CI mode.
 
 ---
 
-### ⛔ CRITICAL: Step 1.5 must NOT produce visible reasoning in chat
+### CRITICAL: Step 1.5 must NOT produce visible reasoning in chat
 
 The entire Step 1.5 — classification, trigger evaluation, option loading, and
 default logic — is internal. Nothing from this step should appear in chat:
@@ -153,50 +157,26 @@ Rules:
 
 ---
 
-### User Confirmation
+### Return the gate to the Orchestrator
 
-**Always pause here — even in Automatic mode.** Upgrade options affect the
-entire upgrade approach and must be explicitly confirmed by the user.
+**Do not call `show_upgrade_options` and do not pause here.** You are a one-shot worker; only
+the Orchestrator talks to the user. Upgrade options affect the entire upgrade approach and
+must be confirmed by the user, but that confirmation is the Orchestrator's job.
 
-**If `show_upgrade_options` is in your tool list** (MCP Apps supported):
+After writing `upgrade-options.md`:
 
-1. Build the options JSON from your evaluation above (do **not** read any file — construct it in memory).
-2. Call `show_upgrade_options(optionsJson=<json>, scenarioFolder=<path>)`. The tool renders an interactive dropdown form in chat and blocks until the user confirms or cancels.
-3. Wait for the result and handle:
-   - **`confirmed=true`, `changed` is non-empty**: update `upgrade-options.md` to reflect the confirmed selections (move the `**value** (selected)` marker to the confirmed row for each changed option), then write the compact `## Upgrade Options` block to `scenario-instructions.md`. Continue to Finalize.
-   - **`confirmed=true`, `changed` is empty**: write the compact `## Upgrade Options` block to `scenario-instructions.md`. Continue to Finalize.
-   - **`confirmed=false`**: stop immediately. Ask the user how they would like to continue.
-   - **`error` returned**: fix the JSON schema error described in the response and call `show_upgrade_options` again immediately. Do not proceed until the form has been shown.
-   - **`refreshed=true` returned** (user clicked Refresh): re-read `upgrade-options.md`, rebuild the `optionsJson` from the file contents, then call `show_upgrade_options(optionsJson=<updated json>, stateId=<same stateId>)` immediately. The existing UI frame refreshes in place — do not create a new pending session.
+1. Build the options JSON from your evaluation above (construct it in memory from the same
+   applicable options and selected values — do **not** rely on re-reading the file). This is
+   the payload the Orchestrator will pass to `show_upgrade_options`.
+2. **Stop. Do not generate the plan or tasks.** Return `STATUS: needs_confirmation` with:
+   - a one-line note that upgrade options need user confirmation,
+   - the options JSON inline,
+   - the `upgrade-options.md` path.
 
-**Otherwise (no `show_upgrade_options` tool)**:
-Open `upgrade-options.md` in the editor and pause with:
-
-> Review the upgrade options above. Move `(selected)` to a different row to
-> change a selection, or tell me what to adjust. Confirm when ready to proceed.
-
-Wait for user response. Three possible outcomes:
-
-**User confirms as-is**: proceed to Finalize below.
-
-**User edits file directly**: re-read the file, validate Selected values are
-recognized options (not typos or unsupported values), confirm back, proceed to Finalize.
-
-**User asks for a change in chat**: update the `(selected)` marker in the relevant option's
-table, save the file, wait for final confirmation before proceeding.
-
----
-
-### Finalize
-
-**If `show_upgrade_options` was used**: the `selections` object in the tool result contains the confirmed values. Use those directly; do **not** re-read `upgrade-options.md` to determine selections (the file may not have been updated yet if `changed` was empty).
-
-**If the markdown flow was used**:
-1. Read all `**{value}** (selected)` markers from the option tables
-2. Write the compact `## Upgrade Options` block to `scenario-instructions.md`
-   using the format defined in [`upgrade-options/upgrade-options-index.md`](upgrade-options/upgrade-options-index.md)
-
-After either confirmation flow, proceed to Step 2 without a summary or recap.
+The Orchestrator renders the interactive form (or a text confirmation), collects the user's
+selections, and re-dispatches you with the confirmed selections. On that re-dispatch the
+Re-entry Check routes you to write the confirmed `## Upgrade Options` block to
+`scenario-instructions.md` and continue to Step 2.
 
 ---
 
@@ -211,7 +191,8 @@ Two categories of signals determine strategy:
 
 ## Step 2: Load Strategy & Generate Plan
 
-Read the confirmed strategy from `scenario-instructions.md` (written by Step 1.5 Finalize).
+Read the confirmed strategy from `scenario-instructions.md` (the confirmed `## Upgrade
+Options` block written when the gate was resolved — see the Re-entry Check).
 The strategy was selected and confirmed as part of upgrade options — no separate
 selection step is needed.
 

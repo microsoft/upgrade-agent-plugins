@@ -6,7 +6,7 @@ metadata:
   discovery: scenario
   importance: high
   weight: 10000
-  traits: (.NET|CSharp|VisualBasic|DotNetCore) & !WebForms
+  traits: .NET|CSharp|VisualBasic|DotNetCore
   scenarioTraitsSet: [.NET]
   post-completion:
     suggest-scenarios:
@@ -14,6 +14,7 @@ metadata:
       - aspire-version-upgrade
       - migrating-ef6-code-first-to-ef-core
       - winforms-feature-adoption
+      - dotnet-arm64-migration
     suggest-actions:
       - generate-report
 ---
@@ -43,44 +44,38 @@ Upgrade .NET projects from their current target framework to a newer version of 
 
 Run these stages in order:
 
-0. **Pre-Initialization** — Gather target framework defaults. Uses the `scenario-initialization` system skill. Tool: `get_dotnet_upgrade_options`.
+0. **Pre-Initialization** — Confirm target framework + source-control + flow parameters, then set up source control, call `initialize_scenario`, and write `scenario-instructions.md`. Consumed during pre-initialization by the dedicated `DotnetVersionScenarioInitializer` gatherer. Tool: `get_dotnet_upgrade_options`.
 1. **Assessment** — Analyze the solution and identify risks. Creates `assessment.md`.
-2. **Planning** — Create the upgrade plan based on the assessment. Creates `plan.md` and `scenario-instructions.md`.
-3. **Execution** — Execute tasks and validate changes. Creates `tasks/*/task.md`. Uses the system task-execution skill.
+2. **Planning** — Create the upgrade plan based on the assessment. Creates `plan.md`.
+3. **Execution** — Execute tasks and validate changes. Creates `tasks/*/task.md`. Uses the executor's execution steps.
 
 ## Pre-Initialization
 
-This section is used by the `scenario-initialization` system skill. It defines the scenario-specific parameters and tools for this scenario.
+This section is consumed during pre-initialization by the dedicated `DotnetVersionScenarioInitializer`
+gatherer. It defines the scenario-specific parameters and tools for this scenario.
 
 ### Tools to Call
 
-⛔ **Step 1**: Call `get_dotnet_upgrade_options(solutionPath, projectPath, targetFramework)` to get:
+**Step 1**: Call `get_dotnet_upgrade_options(solutionPath, projectPath, targetFramework)` to get:
 - Solution and project file paths
 - Suggested target framework version
 - Available target frameworks for upgrade (with support level and end-of-life dates)
 
-⛔ **Step 2**: Present the options and get user confirmation:
+**Step 2**: Assemble the `confirmFields` list — one entry per user-confirmable parameter, in
+display order: **Target Framework first** (suggested value first, then the available frameworks
+from `get_dotnet_upgrade_options`), then flow mode, then — **only in a git repo** — the working
+branch and commit strategy. These feed the single combined confirmation.
 
-- **If `confirm_options` is in your tool list** (MCP Apps supported): load [confirm-options-mcp.md](confirm-options-mcp.md) and follow it — it contains the full `confirm_options` call, JSON schema, and how to read the returned values.
-- **Otherwise** (text fallback): present the options as plain text using this template, then ask the user to confirm or adjust:
+  **One combined confirmation:** the framework is **one** parameter among several. It MUST appear
+  in the same single confirmation — alongside flow mode, source-control (git only), and any other
+  gathered parameters — never as its own separate question.
 
-  ```
-  #### Target Framework
-  Upgrade to: **{suggested_tfm} ({support_level})**
-
-  Available options:
-  {list of available target frameworks from get_dotnet_upgrade_options}
-  ```
-
-  Also present flow mode and (if in a git repo) working branch + commit strategy. Parse the user's reply to extract `targetFramework`, `flowMode`, `workingBranch`, and `commitStrategy`.
-
-  **Handling parameter changes**: if the user changes the target framework, call `get_dotnet_upgrade_options` again to validate the choice against available frameworks. Do NOT re-run `generate_dotnet_upgrade_assessment` — reuse the existing assessment data.
-
-**Step 3** — Proceed with the confirmed values, passing `targetFramework` to `initialize_scenario` and subsequent assessment tools.
+**Step 3** — With `confirmFields`, git facts, and `initializeDescription` assembled, proceed to the
+combined confirmation and then to `initialize_scenario`.
 
 ## Stage Instructions
 
-⛔ **IMPORTANT**: Load each stage's instructions file **only when entering that stage** (not all upfront).
+**IMPORTANT**: Load each stage's instructions file **only when entering that stage** (not all upfront).
 
 ### Stage 1: Assessment
 **When entering this stage, load**: [assessment.md](assessment.md) *(read completely - contains 3 required steps)*
@@ -90,23 +85,31 @@ Analyzes the solution and produces the assessment document:
 - Package update and vulnerability detection
 - Risk identification
 
+**Assessment gatherer:** this stage is handled by the dedicated `DotnetVersionAssessor` (the generic
+**Assessor** is the fallback if the dedicated one is unavailable or returns `BLOCKED`). It works from
+these inputs:
+- `scenario id`, repo/workspace path, and the workflow folder
+- the assessment parameters from pre-init: `inputMode`, `paths`, `targetFramework`
+- the `scenario-instructions.md` path (fallback source)
+
 ### Stage 2: Planning
 **When entering this stage, load**: [planning.md](planning.md) *(read completely - contains 5 steps)*
 
 Confirms upgrade options (including strategy) and creates the plan:
 - Upgrade options evaluation — strategy, project approach, compatibility, modernization choices
-- User reviews and confirms all options in a single upgrade-options.md file
+- **Planning gate**: upgrade options are evaluated and returned for a single combined
+  confirmation; the confirmed selections are persisted before the plan is generated
 - Task breakdown following chosen strategy's rules
 - Dependency ordering and phasing
 - Strategy and execution constraints persisted in scenario-instructions.md
 
 ### Stage 3: Execution
-**When entering this stage, load**: [execution.md](execution.md) *(read completely - contains 6 sections)*
+**When entering this stage, load**: [execution.md](execution.md) *(read completely - contains 7 sections)*
 
-Executes the upgrade tasks using the system task execution skill:
+Executes the upgrade tasks using the executor's core task-execution steps:
 - Reads execution constraints from scenario-instructions.md (distilled during planning)
 - Follows plan.md task order (which encodes the strategy structure)
-- Decomposition rules in execution.md supplement the system task-execution skill
+- Decomposition rules in execution.md supplement the core execution steps
   (stub resolution subtasks, package replacement research, multi-targeting mechanics)
 
 ## Success Criteria

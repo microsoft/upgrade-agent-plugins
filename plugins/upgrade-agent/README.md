@@ -34,342 +34,393 @@ The plugin includes an MCP server (Upgrade) that provides upgrade and analysis t
 ```
 upgrade-agent/
 ├── agents/
+│   ├── assessor.agent.md
+│   ├── break-glass.agent.md
+│   ├── build-validator.agent.md
+│   ├── code-reviewer.agent.md
+│   ├── dotnet-version-assessor.agent.md
+│   ├── dotnet-version-scenario-initializer.agent.md
+│   ├── error-fixer.agent.md
+│   ├── planner.agent.md
+│   ├── scenario-initializer.agent.md
+│   ├── task-executor.agent.md
+│   ├── terminal-executor.agent.md
 │   └── upgrade.agent.md
 ├── assets/
 │   └── preview.png
 ├── extenders/
-│   └── upgrade-dotnet/
-│       ├── upgrade/
-│       │   └── skills/
-│       │       ├── lazy/
-│       │       │   ├── cloud/
-│       │       │   │   ├── migrating-azure-functions-startup/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   └── migrating-azure-functions-to-v2/
-│       │       │   │       └── SKILL.md
-│       │       │   ├── common/
-│       │       │   │   ├── building-projects/
-│       │       │   │   │   ├── ref/
-│       │       │   │   │   │   └── error-codes.md
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── converting-to-cpm/
-│       │       │   │   │   ├── ref/
-│       │       │   │   │   │   ├── audit-complexities.md
-│       │       │   │   │   │   ├── baseline-comparison.md
-│       │       │   │   │   │   ├── directory-packages-props.md
-│       │       │   │   │   │   ├── msbuild-property-handling.md
-│       │       │   │   │   │   └── validation-and-errors.md
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── converting-to-sdk-style/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── managing-legacy-dotnet-packages/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── managing-package-references/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── managing-target-frameworks/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-csharp-nullable-references/
-│       │       │   │   │   ├── ref/
-│       │       │   │   │   │   ├── aspnet-core.md
-│       │       │   │   │   │   ├── breaking-changes.md
-│       │       │   │   │   │   ├── ef-core.md
-│       │       │   │   │   │   └── nullable-attributes.md
-│       │       │   │   │   ├── scripts/
-│       │       │   │   │   │   └── Get-NullableReadiness.ps1
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── modernizing-csharp-version/
-│       │       │   │   │   ├── csharp-10.md
-│       │       │   │   │   ├── csharp-11.md
-│       │       │   │   │   ├── csharp-12.md
-│       │       │   │   │   ├── csharp-13.md
-│       │       │   │   │   ├── csharp-14.md
-│       │       │   │   │   ├── csharp-15.md
-│       │       │   │   │   ├── csharp-7.md
-│       │       │   │   │   ├── csharp-8.md
-│       │       │   │   │   ├── csharp-9.md
-│       │       │   │   │   ├── dotnet-format-rules.md
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   └── modifying-project-properties/
-│       │       │   │       └── SKILL.md
-│       │       │   ├── data/
-│       │       │   │   ├── migrating-edmx-to-code-first/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-ef-dbcontext/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-ef6-code-first-to-ef-core/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-linq-to-sql-to-ef-core/
-│       │       │   │   │   ├── ref/
-│       │       │   │   │   │   ├── concurrency-and-change-tracking.md
-│       │       │   │   │   │   ├── datacontext-to-dbcontext.md
-│       │       │   │   │   │   ├── entity-mapping-conversion.md
-│       │       │   │   │   │   ├── query-translation-gotchas.md
-│       │       │   │   │   │   ├── relationship-migration.md
-│       │       │   │   │   │   └── stored-procedure-migration.md
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   └── migrating-to-microsoft-data-sqlclient/
-│       │       │   │       └── SKILL.md
-│       │       │   ├── desktop/
-│       │       │   │   └── winforms/
-│       │       │   │       ├── building-winforms-applications/
-│       │       │   │       │   ├── ref/
-│       │       │   │       │   │   ├── async-apis.md
-│       │       │   │       │   │   ├── dark-mode.md
-│       │       │   │       │   │   └── detailed-guide.md
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── creating-winforms-custom-controls/
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── managing-winforms-async-apis/
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── managing-winforms-data-binding/
-│       │       │   │       │   ├── ref/
-│       │       │   │       │   │   └── detailed-guide.md
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── managing-winforms-designer-code/
-│       │       │   │       │   ├── ref/
-│       │       │   │       │   │   └── detailed-guide.md
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── managing-winforms-high-dpi-layout/
-│       │       │   │       │   ├── ref/
-│       │       │   │       │   │   └── detailed-guide.md
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       ├── managing-winforms-mvvm/
-│       │       │   │       │   ├── ref/
-│       │       │   │       │   │   └── detailed-guide.md
-│       │       │   │       │   └── SKILL.md
-│       │       │   │       └── managing-winforms-rendering/
-│       │       │   │           ├── ref/
-│       │       │   │           │   └── detailed-guide.md
-│       │       │   │           └── SKILL.md
-│       │       │   ├── libraries/
-│       │       │   │   ├── integrating-autofac-with-dotnet/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-adal-to-msal/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-aspnet-signalr/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-autofac-to-dotnet-di/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-azure-keyvault/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-azure-servicebus/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-azure-storage/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-bond-interfaces/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-cosmosdb-bulk-executor/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-cryptography-namespaces/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-data-edm-to-odata/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-data-odata-to-odata-core/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-data-services-client/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-documentdb-to-cosmos/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-newtonsoft-to-system-text-json/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-owin-cookie-auth/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-owin-oauth-to-jwt/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-owin-openid-connect/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-powershell-sdk/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-razorengine-to-razorlight/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-semantic-kernel-to-agents/
-│       │       │   │   │   ├── ref/
-│       │       │   │   │   │   ├── api-mappings.md
-│       │       │   │   │   │   └── provider-patterns.md
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-spa-services-to-spa-proxy/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-system-spatial/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-to-msmq-messaging/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   ├── migrating-webapi-cors/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   └── migrating-webapi-odata/
-│       │       │   │       └── SKILL.md
-│       │       │   ├── testing/
-│       │       │   │   ├── generating-upgrade-test-baseline/
-│       │       │   │   │   └── SKILL.md
-│       │       │   │   └── managing-dotnet-test-installation/
-│       │       │   │       └── SKILL.md
-│       │       │   └── web/
-│       │       │       ├── aspnet/
-│       │       │       │   └── migrating-global-asax/
-│       │       │       │       └── SKILL.md
-│       │       │       ├── mvc/
-│       │       │       │   ├── migrating-aspnet-framework-to-core/
-│       │       │       │   │   ├── side-by-side.md
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-aspnet-identity/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-authentication/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-bundling/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-configuration/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-content-negotiation/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-controllers/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-dependency-injection/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-filters/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-http-pipeline/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-httpcontext/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-logging/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-model-binding/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-razor-views/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-routing/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-session-state/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-static-files/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-system-web-adapters/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-mvc-validation/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   ├── migrating-owin-to-aspnet-core/
-│       │       │       │   │   └── SKILL.md
-│       │       │       │   └── scaffolding-yarp-proxy-project/
-│       │       │       │       ├── tmpl/
-│       │       │       │       │   ├── mvc/
-│       │       │       │       │   │   ├── Properties/
-│       │       │       │       │   │   │   └── launchSettings.json
-│       │       │       │       │   │   ├── appsettings.Development.json
-│       │       │       │       │   │   ├── appsettings.json
-│       │       │       │       │   │   ├── Program.cs
-│       │       │       │       │   │   └── ProjectName.csproj
-│       │       │       │       │   └── webapi/
-│       │       │       │       │       ├── Properties/
-│       │       │       │       │       │   └── launchSettings.json
-│       │       │       │       │       ├── appsettings.Development.json
-│       │       │       │       │       ├── appsettings.json
-│       │       │       │       │       ├── Program.cs
-│       │       │       │       │       └── ProjectName.csproj
-│       │       │       │       ├── scaffold-project.ps1
-│       │       │       │       └── SKILL.md
-│       │       │       ├── wcf/
-│       │       │       │   └── migrating-wcf-to-corewcf/
-│       │       │       │       └── SKILL.md
-│       │       │       └── webforms/
-│       │       │           ├── managing-blazor-server-authentication/
-│       │       │           │   ├── ref/
-│       │       │           │   │   ├── cookie-auth-pattern.md
-│       │       │           │   │   └── endpoint-templates.md
-│       │       │           │   └── SKILL.md
-│       │       │           ├── managing-blazor-server-data-access/
-│       │       │           │   ├── ref/
-│       │       │           │   │   └── session-state-patterns.md
-│       │       │           │   └── SKILL.md
-│       │       │           └── migrating-webforms-to-blazor-server/
-│       │       │               ├── ref/
-│       │       │               │   ├── ajax-toolkit.md
-│       │       │               │   ├── code-transforms.md
-│       │       │               │   ├── control-reference.md
-│       │       │               │   └── markup-transforms.md
-│       │       │               └── SKILL.md
-│       │       └── scenarios/
-│       │           ├── aspire-integration/
-│       │           │   ├── aspire-cli.md
-│       │           │   ├── assessment.md
-│       │           │   ├── execution.md
-│       │           │   └── SKILL.md
-│       │           ├── aspire-version-upgrade/
-│       │           │   ├── assessment.md
-│       │           │   ├── breaking-changes.md
-│       │           │   ├── execution.md
-│       │           │   └── SKILL.md
-│       │           ├── azure-functions-upgrade/
-│       │           │   └── SKILL.md
-│       │           ├── azure-migrate/
-│       │           │   └── SKILL.md
-│       │           ├── dotnet-framework-version-upgrade/
-│       │           │   ├── assessment.md
-│       │           │   ├── execution.md
-│       │           │   ├── planning.md
-│       │           │   └── SKILL.md
-│       │           ├── dotnet-version-upgrade/
-│       │           │   ├── breakdown-hints/
-│       │           │   │   ├── common.md
-│       │           │   │   ├── framework-migration.md
-│       │           │   │   ├── framework-web-migration.md
-│       │           │   │   └── test.md
-│       │           │   ├── planning-rules/
-│       │           │   │   ├── framework-migration.md
-│       │           │   │   └── modern-upgrade.md
-│       │           │   ├── strategies/
-│       │           │   │   ├── all-at-once.md
-│       │           │   │   ├── bottom-up.md
-│       │           │   │   └── top-down.md
-│       │           │   ├── upgrade-options/
-│       │           │   │   ├── binding-redirects.md
-│       │           │   │   ├── configuration-migration.md
-│       │           │   │   ├── dependency-injection.md
-│       │           │   │   ├── entity-framework.md
-│       │           │   │   ├── logging-framework.md
-│       │           │   │   ├── nullable-reference-types.md
-│       │           │   │   ├── package-management.md
-│       │           │   │   ├── project-approach.md
-│       │           │   │   ├── strategy.md
-│       │           │   │   ├── system-web-adapters.md
-│       │           │   │   ├── test-coverage.md
-│       │           │   │   ├── unsupported-api-handling.md
-│       │           │   │   ├── unsupported-packages.md
-│       │           │   │   ├── upgrade-options-index.md
-│       │           │   │   └── windows-native-apis.md
-│       │           │   ├── assessment.md
-│       │           │   ├── confirm-options-mcp.md
-│       │           │   ├── execution.md
-│       │           │   ├── planning.md
-│       │           │   ├── post-completion.md
-│       │           │   └── SKILL.md
-│       │           ├── newtonsoft-json-migration/
-│       │           │   └── SKILL.md
-│       │           ├── nuget-package-upgrade/
-│       │           │   ├── upgrade-options/
-│       │           │   │   └── version-reconciliation.md
-│       │           │   ├── assessment.md
-│       │           │   ├── execution.md
-│       │           │   ├── planning.md
-│       │           │   └── SKILL.md
-│       │           ├── sdk-style-conversion/
-│       │           │   └── SKILL.md
-│       │           ├── semantic-kernel-to-agents-framework/
-│       │           │   └── SKILL.md
-│       │           ├── sqlclient-migration/
-│       │           │   └── SKILL.md
-│       │           ├── vssdk-sdk-style-conversion/
-│       │           │   ├── ref/
-│       │           │   │   └── vssdk-project-format.md
-│       │           │   └── SKILL.md
-│       │           ├── webforms-to-blazor-upgrade/
-│       │           │   └── SKILL.md
-│       │           └── winforms-feature-adoption/
-│       │               ├── execution.md
-│       │               ├── feature-selection.md
-│       │               ├── planning.md
-│       │               └── SKILL.md
-│       └── upgrade-extension.json
+│   ├── upgrade-dotnet/
+│   │   ├── upgrade/
+│   │   │   └── skills/
+│   │   │       ├── lazy/
+│   │   │       │   ├── cloud/
+│   │   │       │   │   ├── migrating-azure-functions-startup/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── migrating-azure-functions-to-v2/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   ├── common/
+│   │   │       │   │   ├── building-projects/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   └── error-codes.md
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── converting-to-cpm/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   ├── audit-complexities.md
+│   │   │       │   │   │   │   ├── baseline-comparison.md
+│   │   │       │   │   │   │   ├── directory-packages-props.md
+│   │   │       │   │   │   │   ├── msbuild-property-handling.md
+│   │   │       │   │   │   │   └── validation-and-errors.md
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── converting-to-sdk-style/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── managing-legacy-dotnet-packages/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── managing-package-references/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── managing-target-frameworks/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-csharp-nullable-references/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   ├── aspnet-core.md
+│   │   │       │   │   │   │   ├── breaking-changes.md
+│   │   │       │   │   │   │   ├── ef-core.md
+│   │   │       │   │   │   │   └── nullable-attributes.md
+│   │   │       │   │   │   ├── scripts/
+│   │   │       │   │   │   │   └── Get-NullableReadiness.ps1
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── modernizing-csharp-version/
+│   │   │       │   │   │   ├── csharp-10.md
+│   │   │       │   │   │   ├── csharp-11.md
+│   │   │       │   │   │   ├── csharp-12.md
+│   │   │       │   │   │   ├── csharp-13.md
+│   │   │       │   │   │   ├── csharp-14.md
+│   │   │       │   │   │   ├── csharp-15.md
+│   │   │       │   │   │   ├── csharp-7.md
+│   │   │       │   │   │   ├── csharp-8.md
+│   │   │       │   │   │   ├── csharp-9.md
+│   │   │       │   │   │   ├── dotnet-format-rules.md
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── modifying-project-properties/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   ├── data/
+│   │   │       │   │   ├── migrating-edmx-to-code-first/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-ef-dbcontext/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-ef6-code-first-to-ef-core/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-linq-to-sql-to-ef-core/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   ├── concurrency-and-change-tracking.md
+│   │   │       │   │   │   │   ├── datacontext-to-dbcontext.md
+│   │   │       │   │   │   │   ├── entity-mapping-conversion.md
+│   │   │       │   │   │   │   ├── query-translation-gotchas.md
+│   │   │       │   │   │   │   ├── relationship-migration.md
+│   │   │       │   │   │   │   └── stored-procedure-migration.md
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── migrating-to-microsoft-data-sqlclient/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   ├── desktop/
+│   │   │       │   │   └── winforms/
+│   │   │       │   │       ├── building-winforms-applications/
+│   │   │       │   │       │   ├── ref/
+│   │   │       │   │       │   │   ├── async-apis.md
+│   │   │       │   │       │   │   ├── dark-mode.md
+│   │   │       │   │       │   │   └── detailed-guide.md
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── creating-winforms-custom-controls/
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── managing-winforms-async-apis/
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── managing-winforms-data-binding/
+│   │   │       │   │       │   ├── ref/
+│   │   │       │   │       │   │   └── detailed-guide.md
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── managing-winforms-designer-code/
+│   │   │       │   │       │   ├── ref/
+│   │   │       │   │       │   │   └── detailed-guide.md
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── managing-winforms-high-dpi-layout/
+│   │   │       │   │       │   ├── ref/
+│   │   │       │   │       │   │   └── detailed-guide.md
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       ├── managing-winforms-mvvm/
+│   │   │       │   │       │   ├── ref/
+│   │   │       │   │       │   │   └── detailed-guide.md
+│   │   │       │   │       │   └── SKILL.md
+│   │   │       │   │       └── managing-winforms-rendering/
+│   │   │       │   │           ├── ref/
+│   │   │       │   │           │   └── detailed-guide.md
+│   │   │       │   │           └── SKILL.md
+│   │   │       │   ├── libraries/
+│   │   │       │   │   ├── integrating-autofac-with-dotnet/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-adal-to-msal/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-aspnet-signalr/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-autofac-to-dotnet-di/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-azure-keyvault/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-azure-servicebus/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-azure-storage/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-bond-interfaces/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-cosmosdb-bulk-executor/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-cryptography-namespaces/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-data-edm-to-odata/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-data-odata-to-odata-core/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-data-services-client/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-documentdb-to-cosmos/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-newtonsoft-to-system-text-json/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-owin-cookie-auth/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-owin-oauth-to-jwt/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-owin-openid-connect/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-powershell-sdk/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-razorengine-to-razorlight/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-semantic-kernel-to-agents/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   ├── api-mappings.md
+│   │   │       │   │   │   │   └── provider-patterns.md
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-spa-services-to-spa-proxy/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-system-spatial/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-to-msmq-messaging/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-webapi-cors/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── migrating-webapi-odata/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   ├── testing/
+│   │   │       │   │   ├── generating-upgrade-test-baseline/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── managing-dotnet-test-installation/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   └── web/
+│   │   │       │       ├── aspnet/
+│   │   │       │       │   └── migrating-global-asax/
+│   │   │       │       │       └── SKILL.md
+│   │   │       │       ├── mvc/
+│   │   │       │       │   ├── migrating-aspnet-framework-to-core/
+│   │   │       │       │   │   ├── side-by-side.md
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-aspnet-identity/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-authentication/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-bundling/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-configuration/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-content-negotiation/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-controllers/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-dependency-injection/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-filters/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-http-pipeline/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-httpcontext/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-logging/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-model-binding/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-razor-views/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-routing/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-session-state/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-static-files/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-system-web-adapters/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-mvc-validation/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   ├── migrating-owin-to-aspnet-core/
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   └── scaffolding-yarp-proxy-project/
+│   │   │       │       │       ├── tmpl/
+│   │   │       │       │       │   ├── mvc/
+│   │   │       │       │       │   │   ├── Properties/
+│   │   │       │       │       │   │   │   └── launchSettings.json
+│   │   │       │       │       │   │   ├── appsettings.Development.json
+│   │   │       │       │       │   │   ├── appsettings.json
+│   │   │       │       │       │   │   ├── Program.cs
+│   │   │       │       │       │   │   └── ProjectName.csproj
+│   │   │       │       │       │   └── webapi/
+│   │   │       │       │       │       ├── Properties/
+│   │   │       │       │       │       │   └── launchSettings.json
+│   │   │       │       │       │       ├── appsettings.Development.json
+│   │   │       │       │       │       ├── appsettings.json
+│   │   │       │       │       │       ├── Program.cs
+│   │   │       │       │       │       └── ProjectName.csproj
+│   │   │       │       │       ├── scaffold-project.ps1
+│   │   │       │       │       └── SKILL.md
+│   │   │       │       ├── wcf/
+│   │   │       │       │   └── migrating-wcf-to-corewcf/
+│   │   │       │       │       └── SKILL.md
+│   │   │       │       └── webforms/
+│   │   │       │           ├── managing-blazor-server-authentication/
+│   │   │       │           │   ├── ref/
+│   │   │       │           │   │   ├── cookie-auth-pattern.md
+│   │   │       │           │   │   └── endpoint-templates.md
+│   │   │       │           │   └── SKILL.md
+│   │   │       │           ├── managing-blazor-server-data-access/
+│   │   │       │           │   ├── ref/
+│   │   │       │           │   │   └── session-state-patterns.md
+│   │   │       │           │   └── SKILL.md
+│   │   │       │           └── migrating-webforms-to-blazor-server/
+│   │   │       │               ├── ref/
+│   │   │       │               │   ├── ajax-toolkit.md
+│   │   │       │               │   ├── code-transforms.md
+│   │   │       │               │   ├── control-reference.md
+│   │   │       │               │   └── markup-transforms.md
+│   │   │       │               └── SKILL.md
+│   │   │       └── scenarios/
+│   │   │           ├── aspire-integration/
+│   │   │           │   ├── aspire-cli.md
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── execution.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── aspire-version-upgrade/
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── breaking-changes.md
+│   │   │           │   ├── execution.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── azure-functions-upgrade/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── azure-migrate/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── dotnet-arm64-migration/
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── execution.md
+│   │   │           │   ├── planning.md
+│   │   │           │   ├── SKILL.md
+│   │   │           │   └── validation.md
+│   │   │           ├── dotnet-framework-version-upgrade/
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── execution.md
+│   │   │           │   ├── planning.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── dotnet-version-upgrade/
+│   │   │           │   ├── breakdown-hints/
+│   │   │           │   │   ├── common.md
+│   │   │           │   │   ├── framework-migration.md
+│   │   │           │   │   ├── framework-web-migration.md
+│   │   │           │   │   └── test.md
+│   │   │           │   ├── planning-rules/
+│   │   │           │   │   ├── framework-migration.md
+│   │   │           │   │   └── modern-upgrade.md
+│   │   │           │   ├── strategies/
+│   │   │           │   │   ├── all-at-once.md
+│   │   │           │   │   ├── bottom-up.md
+│   │   │           │   │   └── top-down.md
+│   │   │           │   ├── upgrade-options/
+│   │   │           │   │   ├── binding-redirects.md
+│   │   │           │   │   ├── configuration-migration.md
+│   │   │           │   │   ├── dependency-injection.md
+│   │   │           │   │   ├── entity-framework.md
+│   │   │           │   │   ├── logging-framework.md
+│   │   │           │   │   ├── nullable-reference-types.md
+│   │   │           │   │   ├── package-management.md
+│   │   │           │   │   ├── project-approach.md
+│   │   │           │   │   ├── strategy.md
+│   │   │           │   │   ├── system-web-adapters.md
+│   │   │           │   │   ├── test-coverage.md
+│   │   │           │   │   ├── unsupported-api-handling.md
+│   │   │           │   │   ├── unsupported-packages.md
+│   │   │           │   │   ├── upgrade-options-index.md
+│   │   │           │   │   └── windows-native-apis.md
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── confirm-options-mcp.md
+│   │   │           │   ├── execution.md
+│   │   │           │   ├── planning.md
+│   │   │           │   ├── post-completion.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── newtonsoft-json-migration/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── nuget-package-upgrade/
+│   │   │           │   ├── upgrade-options/
+│   │   │           │   │   └── version-reconciliation.md
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── execution.md
+│   │   │           │   ├── planning.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── sdk-style-conversion/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── semantic-kernel-to-agents-framework/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── sqlclient-migration/
+│   │   │           │   └── SKILL.md
+│   │   │           ├── vssdk-sdk-style-conversion/
+│   │   │           │   ├── ref/
+│   │   │           │   │   └── vssdk-project-format.md
+│   │   │           │   └── SKILL.md
+│   │   │           ├── webforms-to-blazor-upgrade/
+│   │   │           │   └── SKILL.md
+│   │   │           └── winforms-feature-adoption/
+│   │   │               ├── execution.md
+│   │   │               ├── feature-selection.md
+│   │   │               ├── planning.md
+│   │   │               └── SKILL.md
+│   │   └── upgrade-extension.json
+│   ├── upgrade-typescript/
+│   │   ├── upgrade/
+│   │   │   └── skills/
+│   │   │       ├── create-eval-plan/
+│   │   │       │   ├── output-contains.md
+│   │   │       │   ├── per-project-type.md
+│   │   │       │   ├── plan-schema.md
+│   │   │       │   ├── recording.md
+│   │   │       │   ├── SKILL.md
+│   │   │       │   └── tests-assertion.md
+│   │   │       ├── typescript-compiler-upgrade/
+│   │   │       │   ├── 4to5.md
+│   │   │       │   ├── 5to6.md
+│   │   │       │   ├── 6to7.md
+│   │   │       │   ├── compiler-upgrade.md
+│   │   │       │   └── SKILL.md
+│   │   │       └── typescript-dependencies-upgrade/
+│   │   │           ├── react/
+│   │   │           │   ├── 17.md
+│   │   │           │   ├── 18.md
+│   │   │           │   └── 19.md
+│   │   │           ├── angular.md
+│   │   │           ├── generate-plan.md
+│   │   │           ├── i18next.md
+│   │   │           ├── karma-jasmine.md
+│   │   │           ├── monorepo.md
+│   │   │           ├── mui.md
+│   │   │           ├── peer-dependencies.md
+│   │   │           ├── react.md
+│   │   │           ├── runtime-validation.md
+│   │   │           ├── SKILL.md
+│   │   │           └── upgrade-packages.md
+│   │   └── upgrade-extension.json
+│   └── provenance.json
 ├── extensions/
-│   └── modernize-dashboard/
+│   └── upgrade-agent-dashboard/
 ├── hooks/
 │   └── scripts/
 │       ├── track-telemetry.ps1
@@ -399,11 +450,7 @@ upgrade-agent/
 │           │   └── SKILL.md
 │           ├── scenario-discovery/
 │           │   └── SKILL.md
-│           ├── scenario-initialization/
-│           │   └── SKILL.md
 │           ├── state-management/
-│           │   └── SKILL.md
-│           ├── sub-agent-delegation/
 │           │   └── SKILL.md
 │           ├── task-execution/
 │           │   ├── references/
@@ -413,9 +460,7 @@ upgrade-agent/
 │           │   └── SKILL.md
 │           ├── tasks-consistency/
 │           │   └── SKILL.md
-│           ├── token-usage-prediction/
-│           │   └── SKILL.md
-│           └── user-interaction/
+│           └── token-usage-prediction/
 │               └── SKILL.md
 ├── hooks.json
 └── plugin.json
@@ -424,18 +469,6 @@ upgrade-agent/
 ## Requirements
 
 - .NET SDK 10.0 or later
-
-## Privacy
-
-GitHub Copilot upgrade uses GitHub Copilot to help modify code in your current
-workspace. It does not retain code snippets beyond the immediate session and
-does not collect, transmit, or store your custom tasks. See the
-[Microsoft Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839)
-for more information.
-
-### Telemetry
-The upgrade tools collect telemetry about usage. Telemetry collection is on by default.
-To opt out, set the environment variable `APPMOD_DISABLE_TELEMETRY` to `true` in the environment where you run the plugin.
 
 ## Links
 

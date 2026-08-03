@@ -37,19 +37,19 @@ the target version. Do not auto-discover packages to upgrade — act on what the
 
 Run these stages in order:
 
-0. **Pre-Initialization** — Confirm scope + packages + version policy. Uses the `scenario-initialization` system skill.
+0. **Pre-Initialization** — Confirm scope + packages + version policy. Consumed during pre-initialization by the scenario-initializer worker.
 1. **Assessment** (quick by default) — Resolve/reconcile versions and diff the API into `apidiff/*.md` + `assessment.md`; full scan is opt-in. Tool: `generate_package_upgrade_assessment`.
 2. **Planning** — Triage breaking changes + version divergence. Uses the `plan-generation` system skill to create `plan.md`, `tasks.md`, and `scenario-instructions.md`.
 3. **Execution** — Apply version changes (CPM-aware) and fix usages. Uses the system task-execution skill.
 
 ## Pre-Initialization
 
-This section is used by the `scenario-initialization` system skill. It defines the
+This section is consumed during pre-initialization by the scenario-initializer worker. It defines the
 scenario-specific parameters for this scenario.
 
 ### Parameters to Confirm
 
-⛔ **Step 1 — Scope.** Determine the scope from the user's request and normalize it to a
+**Step 1 — Scope.** Determine the scope from the user's request and normalize it to a
 concrete set of projects:
 - A single **project** → that project.
 - **Several projects** → those projects.
@@ -60,11 +60,11 @@ concrete set of projects:
 Use `get_solution_path` / `get_projects_info` to discover and confirm the project set. Pass the
 scope to the assessment tool as `inputMode` (`solution` | `projects` | `folder`) and `paths`.
 
-⛔ **Step 2 — Packages.** Collect the package name(s) the user wants to upgrade. The user must
+**Step 2 — Packages.** Collect the package name(s) the user wants to upgrade. The user must
 name at least one package. If the request is ambiguous (e.g. "update my packages"), ask the user
 which specific package(s) to upgrade — do not upgrade everything implicitly.
 
-⛔ **Step 3 — Version policy.** For each package, decide the target version:
+**Step 3 — Version policy.** For each package, decide the target version:
 - **If the user provided a version**, respect it. (The assessment tool validates that the
   version supports each scoped project's target framework and flags any project where it does
   not.)
@@ -84,7 +84,7 @@ passing them to `initialize_scenario` and then to the assessment stage.
 
 ### Source control defaults (scenario override)
 
-⛔ **Source branch = whatever the repo is currently on — do not substitute another branch.**
+**Source branch = whatever the repo is currently on — do not substitute another branch.**
 A package bump is a lightweight change that belongs on whatever the user is working on now. When
 computing source-control defaults during initialization, always set the **source branch** to the
 branch the repo is currently checked out on (`git branch --show-current`; if HEAD is detached on a
@@ -92,11 +92,11 @@ tag/commit, use that ref) — **whatever that branch is**, including `main`/`mas
 genuinely where the user is. The point is: do **not** switch the source to `main`/`master` (or any
 other branch) when the user is on a different branch. Only use a source branch other than the
 current one if the user explicitly asks for it. The working-branch selection (new branch vs.
-current branch) follows the normal `scenario-initialization` defaults.
+current branch) follows the normal pre-initialization defaults.
 
 ## Stage Instructions
 
-⛔ **IMPORTANT**: Load each stage's instructions file **only when entering that stage** (not all
+**IMPORTANT**: Load each stage's instructions file **only when entering that stage** (not all
 upfront).
 
 ### Stage 1: Assessment

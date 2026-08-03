@@ -64,15 +64,13 @@ Output: [expected output]
 
 ## Directory structure template
 
-```
-[skill-name]/
-├── SKILL.md              # Main instructions (<500 lines)
-├── references/           # Detailed docs (loaded on demand)
-│   └── [domain].md       # One file per domain or feature
-├── scripts/              # Executable utilities
-│   └── [helper].py       # Pre-made scripts for deterministic tasks
-└── templates/            # Output format templates (if needed)
-```
+- `[skill-name]/`
+  - `SKILL.md` — Main instructions (<500 lines)
+  - `references/` — Detailed docs (loaded on demand)
+    - `[domain].md` — One file per domain or feature
+  - `scripts/` — Executable utilities
+    - `[helper].py` — Pre-made scripts for deterministic tasks
+  - `templates/` — Output format templates (if needed)
 
 ## Frontmatter rules reminder
 

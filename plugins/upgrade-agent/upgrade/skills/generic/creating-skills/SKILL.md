@@ -27,40 +27,13 @@ This skill guides you through producing agent skills that follow Anthropic's off
 
 Every skill goes through this cycle. Your job is to figure out where the user is and help them progress.
 
-```
-┌──────────────┐
-│  0. DISCOVER │  Scan for existing skills that overlap
-│              │
-└──────┬───────┘
-       ▼
-┌──────────────┐
-│  1. CAPTURE  │  Understand what the skill should do
-│     INTENT   │  
-└──────┬───────┘
-       ▼
-┌──────────────┐
-│  2. DRAFT    │  Write SKILL.md + directory structure
-│              │
-└──────┬───────┘
-       ▼
-┌──────────────┐
-│  3. VALIDATE │  Run checklist against the draft
-│              │  (read references/validation-rules.md)
-└──────┬───────┘
-       ▼
-┌──────────────┐     ┌──────────────┐
-│  4. TEST     │---->│  5. IMPROVE  │
-│  (optional)  │     │  based on    │
-│              │<----│  findings    │
-└──────┬───────┘     └──────────────┘
-       ▼                    │
-   Passes all?              │
-   User happy? <------------┘
-       ▼
-┌──────────────┐
-│  6. PACKAGE  │  Final structure, ready for repo
-└──────────────┘
-```
+0. **Discover** — scan for existing skills that overlap.
+1. **Capture intent** — understand what the skill should do.
+2. **Draft** — write SKILL.md + directory structure.
+3. **Validate** — run the checklist against the draft (read `references/validation-rules.md`).
+4. **Test** (optional) — exercise the draft skill.
+5. **Improve** — refine based on findings. Loop between steps 4 and 5 until the draft passes all checks and the user is happy.
+6. **Package** — final structure, ready for repo.
 
 ---
 
@@ -140,18 +113,16 @@ The frontmatter includes `name`, `description`, and an optional `metadata` block
 
 ### Directory structure
 
-```
-skill-name/
-├── SKILL.md              # Required. Under 500 lines.
-├── references/           # Optional. Detailed docs loaded on demand.
-│   ├── some-domain.md
-│   └── another-domain.md
-├── scripts/              # Optional. Executable utilities.
-│   ├── validate.py
-│   └── helper.sh
-├── templates/            # Optional. Output templates.
-└── assets/               # Optional. Fonts, icons, images.
-```
+- `skill-name/`
+  - `SKILL.md` — Required. Under 500 lines.
+  - `references/` — Optional. Detailed docs loaded on demand.
+    - `some-domain.md`
+    - `another-domain.md`
+  - `scripts/` — Optional. Executable utilities.
+    - `validate.py`
+    - `helper.sh`
+  - `templates/` — Optional. Output templates.
+  - `assets/` — Optional. Fonts, icons, images.
 
 ### Naming rules
 

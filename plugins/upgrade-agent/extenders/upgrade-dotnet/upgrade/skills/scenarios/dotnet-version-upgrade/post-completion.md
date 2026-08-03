@@ -61,6 +61,35 @@ If WinForms is not detected or TFM is below .NET 8, skip this suggestion.
 
 ---
 
+## Candidate 4: Migrate to ARM64 (emoji: 💪)
+
+ARM64 has no dedicated `detectedSignals` entry, so evaluate this candidate from the upgraded
+project files (fallback check only).
+
+**Fallback check:**
+
+1. Confirm the upgrade landed the affected projects on **modern .NET (net8.0 or higher)** — arm64
+   is fully supported there. If the projects are still on .NET Framework, skip (arm64 on Framework
+   is a narrower, gated path the dedicated scenario handles directly).
+
+2. Confirm the projects produce a **deployable/runnable output** (an executable, service, container
+   app, or a library that ships native assets) — skip pure source-only analyzer/tooling libraries
+   where an arm64 target adds no value.
+
+3. Confirm the projects do **not already** declare an arm64 runtime identifier (`win-arm64`,
+   `linux-arm64`, `linux-musl-arm64`, or `osx-arm64`) in `<RuntimeIdentifier(s)>`. If arm64 is
+   already targeted, the migration has effectively happened — skip.
+
+**If on modern .NET AND deployable AND not already targeting arm64:**
+- **Title:** Migrate to ARM64 (Graviton / Ampere / Apple Silicon)
+- **Description:** Now that your projects are on modern .NET, they can target ARM64 — unlocking
+  cheaper cloud compute (AWS Graviton, Azure Ampere) and native Apple Silicon / Windows-on-ARM
+  support. The ARM64 migration scenario checks your RID/platform settings, native NuGet assets, and
+  x86 hardware-intrinsic usage, applies the mechanical fixes, and cross-compiles a validation gate.
+- **CTA:** Would you like me to assess your solution for ARM64 migration?
+
+---
+
 ## What NOT to suggest
 
-Do not suggest other signals from `assessment.md` (Newtonsoft.Json, WCF, ADO.NET, OWIN, etc.) — these should have been addressed during the upgrade tasks. Only suggest Aspire, EF6, and WinForms as described above.
+Do not suggest other signals from `assessment.md` (Newtonsoft.Json, WCF, ADO.NET, OWIN, etc.) — these should have been addressed during the upgrade tasks. Only suggest Aspire, EF6, WinForms, and ARM64 migration as described above.

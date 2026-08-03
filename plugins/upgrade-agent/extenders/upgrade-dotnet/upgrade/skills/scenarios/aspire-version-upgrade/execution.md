@@ -13,7 +13,7 @@ Detailed execution instructions for SKILL.md Phase 4. Read this file completely 
 - [Task: Validation Gate](#task-validation-gate)
 - [Aspire CLI Quick Reference](#aspire-cli-quick-reference)
 
-This file **supplements** the system task-execution skill — it provides Aspire-upgrade-specific implementation details for each task type.
+This file **supplements** the executor's core task-execution steps — it provides Aspire-upgrade-specific implementation details for each task type.
 
 **Also load these shared references:**
 - [../aspire-integration/aspire-cli.md](../aspire-integration/aspire-cli.md) — CLI command reference with agent-safe/unsafe prescriptions

@@ -116,7 +116,7 @@ Affects: {up to 3 project names}
 
 When the user asks for the full report (only relevant when 6+ scenarios were found and the summary was truncated), produce a markdown document using ALL data from the tool result — no truncation.
 
-⛔ **Follow this template exactly.** Do NOT add sections, recommendations, lifecycle references, or any content beyond what the tool returned. The report presents what was *found* — not what you *think* might be useful. Unverified recommendations (e.g., "enable nullable", "add Aspire") make the report unreliable. If additional analysis is wanted, that's a separate conversation.
+**Follow this template exactly.** Do NOT add sections, recommendations, lifecycle references, or any content beyond what the tool returned. The report presents what was *found* — not what you *think* might be useful. Unverified recommendations (e.g., "enable nullable", "add Aspire") make the report unreliable. If additional analysis is wanted, that's a separate conversation.
 
 Use this structure:
 

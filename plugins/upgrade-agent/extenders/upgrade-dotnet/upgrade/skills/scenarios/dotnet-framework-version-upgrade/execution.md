@@ -8,7 +8,7 @@
 - [Section 4: Build Validation](#section-4-build-validation)
 
 Scenario-specific execution guidance for .NET Framework version upgrade tasks.
-Supplements the system `task-execution` skill — does not replace it.
+Supplements the executor's core task-execution steps — does not replace them.
 
 ---
 

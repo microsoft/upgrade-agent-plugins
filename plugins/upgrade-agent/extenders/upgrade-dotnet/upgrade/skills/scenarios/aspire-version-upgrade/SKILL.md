@@ -194,7 +194,7 @@ Wait for user approval.
 **Load**: [execution.md](execution.md) — read completely when entering this phase.
 **Load**: [../aspire-integration/aspire-cli.md](../aspire-integration/aspire-cli.md) — CLI command reference.
 
-Uses the system **task-execution** skill for task lifecycle. Execute tasks from the approved `plan.md` sequentially.
+Uses the executor's core task-execution steps for task lifecycle. Execute tasks from the approved `plan.md` sequentially.
 
 ### Key Execution Principles
 

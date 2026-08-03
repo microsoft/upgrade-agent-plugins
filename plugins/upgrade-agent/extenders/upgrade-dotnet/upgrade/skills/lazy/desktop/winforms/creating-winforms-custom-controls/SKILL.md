@@ -33,35 +33,35 @@ Use it for designing UserControl to offload complex UI from forms, or when a reu
 
 **Tenets:** Assume the project's house style:
 
-- **No `using` statements** ─ globally-imported namespaces only.
-- **NRTs enabled** ─ `#nullable enable` / `nullable` mode.
-- **Modern C#** ─ pattern matching, `is`/`and`/`or`, switch expressions, collection initializers (`[]`).
-- **XML doc comments** ─ for all public members.
-- **`var` discipline** ─ use `var` only when the right-hand side is a constructor call or cast that makes the type obvious (e.g., `var cp = new CreateParams()`). Use explicit types for `int`, `bool`, `string`, `float`, `double`, `Color`, `Size`, `Point`, and similar short type names.
-- **Expression-bodied members** ─ use them for single-expression getters, simple one-liner methods, and read-only properties. Use block bodies when the logic has side effects or exceeds ~100 characters.
-- **Blank line before `return`** ─ improves readability in multi-statement methods.
-- **Be brief** ─ the code carries the intent.
+- **No `using` statements** — globally-imported namespaces only.
+- **NRTs enabled** — `#nullable enable` / `nullable` mode.
+- **Modern C#** — pattern matching, `is`/`and`/`or`, switch expressions, collection initializers (`[]`).
+- **XML doc comments** — for all public members.
+- **`var` discipline** — use `var` only when the right-hand side is a constructor call or cast that makes the type obvious (e.g., `var cp = new CreateParams()`). Use explicit types for `int`, `bool`, `string`, `float`, `double`, `Color`, `Size`, `Point`, and similar short type names.
+- **Expression-bodied members** — use them for single-expression getters, simple one-liner methods, and read-only properties. Use block bodies when the logic has side effects or exceeds ~100 characters.
+- **Blank line before `return`** — improves readability in multi-statement methods.
+- **Be brief** — the code carries the intent.
 
 ## 1. Pick the right base class
 
 Decide *generic reusable control* vs *composite/LOB control* first.
 
-- **Generic, no domain (a slider, badge, gauge, custom button):** derive from `Control`, or the closest specialized base (`ButtonBase`, `ScrollableControl`, `ListControl`, `Panel`, `Label`, —¦). `Control` gives you a blank canvas with full paint/input control. `TextBoxBase` is **not available** ─ it is `internal`; if you need text-box-like behavior, derive from `TextBox` or compose one.
+- **Generic, no domain (a slider, badge, gauge, custom button):** derive from `Control`, or the closest specialized base (`ButtonBase`, `ScrollableControl`, `ListControl`, `Panel`, `Label`, —¦). `Control` gives you a blank canvas with full paint/input control. `TextBoxBase` is **not available** — it is `internal`; if you need text-box-like behavior, derive from `TextBox` or compose one.
 - **Composite / LOB / domain-specific:** derive from `UserControl` and assemble constituent controls (see §5).
 - **List- or grid-shaped data:** derive from `DataGridView`, not `Control` from scratch (see §6).
 
-Prefer the most specific base that already solves the hard parts ─ don't reimplement `ButtonBase`'s focus/click mechanics on a raw `Control`.
+Prefer the most specific base that already solves the hard parts — don't reimplement `ButtonBase`'s focus/click mechanics on a raw `Control`.
 
-## 2. Layout & sizing ─ make it clip-proof
+## 2. Layout & sizing — make it clip-proof
 
 A control that looks fine at 100% DPI with the default font but clips at 200% / large fonts is broken. Treat sizing as first-class wherever content needs a *minimum real estate* to render fonts/glyphs/images without clipping.
 
 Implement these as a coherent set:
 
-- **`GetPreferredSize(Size proposedSize)`** ─ return the size genuinely needed for current content, font, padding, and DPI. Measure text with `TextRenderer.MeasureText` (it matches `TextRenderer.DrawText`). Always add `Padding.Size`. This is the single source of truth for "how big do I need to be."
-- **`AutoSize`** ─ expose and honor it. When `true`, the layout engine calls `GetPreferredSize`; your job is to return an honest number. Re-raise layout when size-affecting content changes (`PerformLayout()` / `Invalidate()`).
-- **`SetBounds(...)`** ─ override when you must clamp or adjust the bounds you're given (e.g. enforce a minimum). Respect the `BoundsSpecified` flags so you don't clobber a dimension the caller didn't set.
-- **`Padding`** ─ honor it in painting *and* `GetPreferredSize`. Content draws inside the padded rectangle.
+- **`GetPreferredSize(Size proposedSize)`** — return the size genuinely needed for current content, font, padding, and DPI. Measure text with `TextRenderer.MeasureText` (it matches `TextRenderer.DrawText`). Always add `Padding.Size`. This is the single source of truth for "how big do I need to be."
+- **`AutoSize`** — expose and honor it. When `true`, the layout engine calls `GetPreferredSize`; your job is to return an honest number. Re-raise layout when size-affecting content changes (`PerformLayout()` / `Invalidate()`).
+- **`SetBounds(...)`** — override when you must clamp or adjust the bounds you're given (e.g. enforce a minimum). Respect the `BoundsSpecified` flags so you don't clobber a dimension the caller didn't set.
+- **`Padding`** — honor it in painting *and* `GetPreferredSize`. Content draws inside the padded rectangle.
 
 Rule of thumb: an honest `GetPreferredSize` plus honored `AutoSize`/`Padding` survives DPI and font scaling automatically.
 
@@ -95,7 +95,7 @@ SetStyle(
     true);
 ```
 
-Do all painting in `OnPaint` ─ don't scatter logic into `OnPaintBackground`. Call `Invalidate()` (not `Refresh()`) to request a repaint so it coalesces with other invalidations rather than forcing a synchronous redraw.
+Do all painting in `OnPaint` — don't scatter logic into `OnPaintBackground`. Call `Invalidate()` (not `Refresh()`) to request a repaint so it coalesces with other invalidations rather than forcing a synchronous redraw.
 
 ## 4. Dark mode & theming
 
@@ -120,9 +120,9 @@ protected override CreateParams CreateParams
 
 This **cannot** be done in the constructor: the base constructor reads `CreateParams` *before* your constructor body runs. It must live in the `CreateParams` getter, with the `SetStyle` call placed *before* `base.CreateParams` is read.
 
-### 4.2 `SystemColors` flip in dark mode ─ names become counter-intuitive
+### 4.2 `SystemColors` flip in dark mode — names become counter-intuitive
 
-In dark mode, `SystemColors` are remapped to roughly complementary values. The **name no longer matches the apparent brightness, and that is intentional**: `ControlLightLight` is very bright in classic mode and correspondingly dark in dark mode. The remap is *not* always a strict mathematical complement ─ some colors are nudged to keep contrast adequate.
+In dark mode, `SystemColors` are remapped to roughly complementary values. The **name no longer matches the apparent brightness, and that is intentional**: `ControlLightLight` is very bright in classic mode and correspondingly dark in dark mode. The remap is *not* always a strict mathematical complement — some colors are nudged to keep contrast adequate.
 
 Consequences:
 
@@ -149,19 +149,19 @@ For a `UserControl` (or any control composed of constituent controls):
 
 When asked for anything list- or grid-shaped, **derive from `DataGridView`** rather than building from scratch.
 
-For image-rich or graphically rich data records, the best outcome is usually to **render the entire data item in one cell** via a custom `DataGridViewCell` ─ symbol fonts, multiple colors, multiple font sizes, multi-line layout, all in a single cell. Skip column headers in that case.
+For image-rich or graphically rich data records, the best outcome is usually to **render the entire data item in one cell** via a custom `DataGridViewCell` — symbol fonts, multiple colors, multiple font sizes, multi-line layout, all in a single cell. Skip column headers in that case.
 
 Keep column headers (and therefore per-field columns) only when the context genuinely needs a schema overview or per-column sort/filter. Even then, prefer **custom cell rendering** to get the rich graphical UI; don't fall back to plain text just because headers exist.
 
-Whenever cells vary in height, **compute row height from the tallest cell in the data row** ─ measure each cell's required height and set the row to the max, or the content clips.
+Whenever cells vary in height, **compute row height from the tallest cell in the data row** — measure each cell's required height and set the row to the max, or the content clips.
 
 ## 7. Designer serialization for new properties
 
 Every public property you add must tell the Designer how to serialize it. Pick **exactly one** of these three mechanisms (they conflict if combined):
 
-1. **`[DesignerSerializationVisibility(...)]`** ─ `Hidden` for runtime-only/derived properties the Designer must not write to `InitializeComponent`; `Content` for collections whose items serialize individually.
-2. **`[DefaultValue(...)]`** ─ the property serializes only when its value differs from this constant. Use for simple properties with a fixed, compile-time-constant default.
-3. **`ResetXxx()` + `ShouldSerializeXxx()` pair** ─ `ShouldSerializeXxx` returns whether the value should be written; `ResetXxx` restores the default. **Use this** for ambient properties, and whenever a default is *not constant* (depends on another property or the theme) ─ `[DefaultValue]` can't express that.
+1. **`[DesignerSerializationVisibility(...)]`** — `Hidden` for runtime-only/derived properties the Designer must not write to `InitializeComponent`; `Content` for collections whose items serialize individually.
+2. **`[DefaultValue(...)]`** — the property serializes only when its value differs from this constant. Use for simple properties with a fixed, compile-time-constant default.
+3. **`ResetXxx()` + `ShouldSerializeXxx()` pair** — `ShouldSerializeXxx` returns whether the value should be written; `ResetXxx` restores the default. **Use this** for ambient properties, and whenever a default is *not constant* (depends on another property or the theme) — `[DefaultValue]` can't express that.
 
 The method pair, for a property whose default depends on the current theme:
 
@@ -174,7 +174,7 @@ private static Color DefaultFaceColor
         ? Color.FromArgb(unchecked((int)0xFF2D2D30))
         : Color.FromArgb(unchecked((int)0xFFF0F0F0));
 
-// The Designer discovers these by naming convention ─ keep them private.
+// The Designer discovers these by naming convention — keep them private.
 private bool ShouldSerializeFaceColor()
     => FaceColor != DefaultFaceColor;
 
@@ -182,18 +182,18 @@ private void ResetFaceColor()
     => FaceColor = DefaultFaceColor;
 ```
 
-Note the convention: the methods are `private`, named exactly `ShouldSerialize<Property>` / `Reset<Property>`, and take no parameters. Don't combine them with `[DefaultValue]` on the same property ─ the two mechanisms conflict.
+Note the convention: the methods are `private`, named exactly `ShouldSerialize<Property>` / `Reset<Property>`, and take no parameters. Don't combine them with `[DefaultValue]` on the same property — the two mechanisms conflict.
 
-Don't leave a property with none of these ─ the Designer will either over-serialize or fail to round-trip.
+Don't leave a property with none of these — the Designer will either over-serialize or fail to round-trip.
 
 ### 7.1 Property-window attributes
 
 Beyond serialization, decorate every new public property so it behaves well in the Properties window and IntelliSense. These are four *distinct* concerns:
 
-- **`[Category("Appearance")]`** ─ the Properties-window group. Reuse standard names (`Appearance`, `Behavior`, `Layout`, `Data`, —¦) so your properties merge with the built-in ones.
-- **`[Description("...")]`** ─ help text in the Properties window's description pane. Write it for a control *consumer*.
-- **`[Browsable(false)]`** ─ hides the property from the Properties window. Use for runtime-only state. It almost always also needs `[DesignerSerializationVisibility(Hidden)]` ─ hiding from the grid does *not* stop serialization.
-- **`[EditorBrowsable(EditorBrowsableState.Never | Advanced)]`** ─ controls IntelliSense visibility, independent of the grid. `Never` hides from completion; `Advanced` shows only when "Hide advanced members" is off.
+- **`[Category("Appearance")]`** — the Properties-window group. Reuse standard names (`Appearance`, `Behavior`, `Layout`, `Data`, —¦) so your properties merge with the built-in ones.
+- **`[Description("...")]`** — help text in the Properties window's description pane. Write it for a control *consumer*.
+- **`[Browsable(false)]`** — hides the property from the Properties window. Use for runtime-only state. It almost always also needs `[DesignerSerializationVisibility(Hidden)]` — hiding from the grid does *not* stop serialization.
+- **`[EditorBrowsable(EditorBrowsableState.Never | Advanced)]`** — controls IntelliSense visibility, independent of the grid. `Never` hides from completion; `Advanced` shows only when "Hide advanced members" is off.
 
 To fully suppress an inherited property that's meaningless on your control (e.g. shadowing `Text`), combine all three on the `new`/`override` member:
 
@@ -216,9 +216,9 @@ A normal, visible property reads like this:
 public Color FaceColor { get; set; } = DefaultFaceColor;
 ```
 
-## 8. Construction order ─ `ISupportInitialize`
+## 8. Construction order — `ISupportInitialize`
 
-During `InitializeComponent`, the Designer sets your properties one at a time in an order *you don't control*. If two properties are interdependent ─ or a setter does expensive work (re-layout, allocation, a Win32 round-trip) ─ the control repeats that work against a half-configured state, and may even throw because property B isn't set yet when property A's setter runs.
+During `InitializeComponent`, the Designer sets your properties one at a time in an order *you don't control*. If two properties are interdependent — or a setter does expensive work (re-layout, allocation, a Win32 round-trip) — the control repeats that work against a half-configured state, and may even throw because property B isn't set yet when property A's setter runs.
 
 Implement **`ISupportInitialize`** to defer it. The Designer emits `BeginInit()` before the property block and `EndInit()` after; do nothing expensive in between:
 
@@ -254,15 +254,15 @@ public class GaugeControl : Control, ISupportInitialize
 }
 ```
 
-Every interdependent setter checks `_initializing` and skips the expensive path while it's `true`. `EndInit` runs that path exactly once. At runtime (no Designer), code that sets properties directly without calling `BeginInit`/`EndInit` still works ─ `_initializing` is just `false`, so each setter does its work immediately.
+Every interdependent setter checks `_initializing` and skips the expensive path while it's `true`. `EndInit` runs that path exactly once. At runtime (no Designer), code that sets properties directly without calling `BeginInit`/`EndInit` still works — `_initializing` is just `false`, so each setter does its work immediately.
 
 ## 9. Designer support code (.NET 6+)
 
 Designer functionality in .NET 6+ requires the **WinForms Designer SDK** NuGet package.
 
-- Use the current preview: **`Microsoft.WinForms.Designer.SDK 1.13.0-preview.2.24575.3`**. The latest stable (`1.6.0`) is missing features you'll likely need ─ prefer the preview.
+- Use the current preview: **`Microsoft.WinForms.Designer.SDK 1.13.0-preview.2.24575.3`**. The latest stable (`1.6.0`) is missing features you'll likely need — prefer the preview.
 - Without shipping a separate Designer NuGet package, you **can** put the following in the *same .NET assembly as the control*: custom `CodeDomSerializer`s, custom `TypeConverter`s, and custom `DesignerActionList` (smart-tag) actions.
-- **Out of scope for this skill:** Designers with a *custom design-time UI*. Those can't live in the control assembly ─ they need a dedicated multi-assembly NuGet package (client side on .NET Framework 4.7.2, server-side process on .NET, and a multi-targeted communication layer). If the user needs that, say so and stop.
+- **Out of scope for this skill:** Designers with a *custom design-time UI*. Those can't live in the control assembly — they need a dedicated multi-assembly NuGet package (client side on .NET Framework 4.7.2, server-side process on .NET, and a multi-targeted communication layer). If the user needs that, say so and stop.
 
 ## Quick checklist
 

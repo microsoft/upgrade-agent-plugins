@@ -40,47 +40,23 @@ Modernize WinForms applications with framework features introduced in .NET 8+ �
 
 ## Workflow Stages
 
-```
-┌──────────────────────────────────────────────────┐
-│ 0. PRE-INITIALIZATION                            │
-│    Validate TFM, detect WinForms projects        │
-│    → Uses: scenario-initialization system skill  │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 1. FEATURE SELECTION                             │
-│    Determine which features to adopt             │
-│    → Creates: feature-selection.md               │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 2. PLANNING                                      │
-│    Identify forms/controls to modernize          │
-│    → Creates: plan.md, scenario-instructions.md  │
-└───────────────────────┬──────────────────────────┘
-                        │
-                        ▼
-┌──────────────────────────────────────────────────┐
-│ 3. EXECUTION                                     │
-│    Apply feature adoption to codebase            │
-│    → Uses: WinForms lazy skills                  │
-└──────────────────────────────────────────────────┘
-```
+0. **Pre-Initialization** — validate TFM, detect WinForms projects. Consumed during pre-initialization by the scenario-initializer worker.
+1. **Feature Selection** — determine which features to adopt. Creates `feature-selection.md`.
+2. **Planning** — identify forms/controls to modernize. Creates `plan.md`, `scenario-instructions.md`.
+3. **Execution** — apply feature adoption to the codebase. Uses the WinForms lazy skills.
 
 ## Pre-Initialization
 
 ### Tools to Call
 
-⛔ **Step 1**: Validate environment:
+**Step 1**: Validate environment:
 - Call `get_solution_path()` to identify solution
 - Scan all WinForms projects (`.csproj` files with `<UseWindowsForms>true</UseWindowsForms>`)
 - Check each project's `<TargetFramework>`:
   - Must be `net8.0` or higher
   - If below net8.0, inform user and suggest dotnet-version-upgrade first
 
-⛔ **Step 2**: Present feature availability based on detected TFMs:
+**Step 2**: Present feature availability based on detected TFMs:
 
 **If all WinForms projects are net9.0+:**
 ```
@@ -106,7 +82,7 @@ Available Features (varies by project):
 - ✅ MVVM Pattern: available for all .NET 8+ projects
 ```
 
-⛔ **Step 3**: Ask user which features to adopt:
+**Step 3**: Ask user which features to adopt:
 - Present checkboxes for available features
 - Get scope preference: "Application-wide" or "Selected forms only"
 - If "Selected forms only", list detected forms and get user selection

@@ -1,7 +1,7 @@
 # Execution Stage Instructions
 
 Scenario-specific execution guidance for .NET version upgrade tasks.
-Supplements the system `task-execution` skill — does not replace it.
+Supplements the executor's core task-execution steps — does not replace them.
 
 > **This file covers 7 sections.**
 >
@@ -19,7 +19,7 @@ Supplements the system `task-execution` skill — does not replace it.
 
 ## Section 0: Assessment Consultation
 
-During the **Research** step (system task-execution skill, Section 3 Step 2),
+During the **Research** step (research and enrich task.md, before making code changes),
 query the assessment for each project in the task's scope. The task description
 contains a summary, but it does not contain the full per-project issue and
 feature data. You must retrieve this yourself.
@@ -190,14 +190,13 @@ The source code is the source of truth.
 
 ## Section 3: Decomposition Rules
 
-The system task-execution skill checks for `## Decomposition Rules` during its
-Extended Assessment (Section 1). These rules supplement the core decomposition
+The decomposition assessment checks for `## Decomposition Rules` in loaded skills.
+These rules supplement the core decomposition
 triggers — they fire in addition to, not instead of, the system triggers.
 
 ### Stub Discovery at Task Start
 
-**When**: During the "Research and enrich task.md" step (system task-execution
-Section 3, Step 3), before making any code changes.
+**When**: During the "Research and enrich task.md" step, before making any code changes.
 
 **Action**: For each project in the current task's scope, grep for `// STUB:`:
 
@@ -222,9 +221,9 @@ or group of related stubs becomes its own subtask chain:
 
 ```
 {parentTaskId}/
-├── {id}.01-research-{stub-name}     (discover replacement: alternative package, API pattern, or rewrite approach)
-├── {id}.02-implement-{stub-name}    (replace stub with real code, update all consuming files)
-└── {id}.03-validate-{stub-name}     (build + test, confirm no regressions)
+  {id}.01-research-{stub-name}     (discover replacement: alternative package, API pattern, or rewrite approach)
+  {id}.02-implement-{stub-name}    (replace stub with real code, update all consuming files)
+  {id}.03-validate-{stub-name}     (build + test, confirm no regressions)
 ```
 
 **Research subtask** scope:
@@ -309,7 +308,7 @@ replacement is *complex* (requires research or architectural changes).
 
 Breakdown hints are evaluated at **execution time** when assessing whether a
 task needs decomposition. They provide scenario-specific decomposition signals
-and recommendations that supplement the core triggers in the task-execution skill.
+and recommendations that supplement the core decomposition triggers.
 
 **Progressive disclosure**: Hints are organized by project flavor. Only load
 the hint file(s) relevant to the current task's scope.
@@ -325,7 +324,7 @@ the hint file(s) relevant to the current task's scope.
 
 ### How to Use
 
-1. During scope inventory (task-execution skill Section 1), identify which
+1. During scope inventory (the decomposition-assessment step), identify which
    project flavors are in the current task's scope
 2. Load only the matching hint files from the table above
 3. Evaluate each hint's detection conditions

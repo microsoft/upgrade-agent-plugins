@@ -16,7 +16,7 @@ Analyze target projects to assess the impact of upgrading to .NET Framework 4.8.
 
 ## Entry Criteria
 
-- Pre-initialization complete (handled by `scenario-initialization` skill)
+- Pre-initialization complete (handled during pre-initialization)
 - If git repo: on the correct working branch
 - `initialize_scenario` already called — working folder exists at `.github/upgrades/{scenarioId}/`
 - Target framework confirmed as net481 in `scenario-instructions.md`

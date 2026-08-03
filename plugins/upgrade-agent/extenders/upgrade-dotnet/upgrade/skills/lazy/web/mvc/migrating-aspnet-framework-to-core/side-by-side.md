@@ -71,7 +71,7 @@ The migrate task is broken into subtasks. The ordering is critical for testabili
   xx.NN-{auth-feature}-controllers  ← ONLY after auth is working
 ```
 
-⛔ **Auth-protected controllers MUST come AFTER the auth subtask, not before.**
+**Auth-protected controllers MUST come AFTER the auth subtask, not before.**
 Controllers with `[Authorize]` will fail on every request until auth middleware
 is configured. The sequence is: non-auth controllers → middleware → auth →
 auth controllers.

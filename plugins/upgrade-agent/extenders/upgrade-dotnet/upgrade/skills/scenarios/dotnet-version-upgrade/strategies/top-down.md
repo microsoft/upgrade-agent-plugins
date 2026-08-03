@@ -64,7 +64,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 
 **Don't duplicate into plan.md:** per-library multi-targeting specs (current → intermediate → final), conditional compilation details, package updates. These are execution-time concerns for task.md.
 
-*⚡ Continue reading — Sections 3-5 cover task boundaries, execution rules, and anti-patterns.*
+*Continue reading — Sections 3-5 cover task boundaries, execution rules, and anti-patterns.*
 
 ---
 

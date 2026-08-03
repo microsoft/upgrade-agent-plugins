@@ -80,7 +80,7 @@ Tier 1: [Domain] [Utilities] [Contracts]
 
 **Don't duplicate into plan.md:** per-tier package updates, per-project breaking changes. Assessment.md already has this; task.md captures execution details.
 
-*⚡ Continue reading — Sections 3-5 cover task boundaries, execution rules, and anti-patterns.*
+*Continue reading — Sections 3-5 cover task boundaries, execution rules, and anti-patterns.*
 
 ---
 
@@ -111,7 +111,7 @@ Tier 1: [Domain] [Utilities] [Contracts]
    - Each tier task includes build validation + test execution
    - Between-tier validation: confirm higher tiers still build on old framework
 
-   *── If side-by-side web migration: scaffold + migrate tasks insert here ──*
+   *(If side-by-side web migration: scaffold + migrate tasks insert here.)*
 
 4. **Remaining projects** (if applicable)
    - Projects not covered by tier tasks (standalone apps, test projects

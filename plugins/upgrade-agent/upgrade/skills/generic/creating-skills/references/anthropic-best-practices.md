@@ -81,14 +81,12 @@ Three-level loading:
 Keep references one level deep from SKILL.md. No A → B → C chains. Reference files >100 lines should have a table of contents.
 
 Organize by domain when supporting multiple areas:
-```
-bigquery-skill/
-├── SKILL.md (overview + navigation)
-└── reference/
-    ├── finance.md
-    ├── sales.md
-    └── product.md
-```
+- `bigquery-skill/`
+  - `SKILL.md` (overview + navigation)
+  - `reference/`
+    - `finance.md`
+    - `sales.md`
+    - `product.md`
 
 ---
 

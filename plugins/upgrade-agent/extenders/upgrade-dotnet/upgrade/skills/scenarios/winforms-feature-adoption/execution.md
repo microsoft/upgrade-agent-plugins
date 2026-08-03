@@ -178,13 +178,9 @@ End Sub
    dotnet add package CommunityToolkit.Mvvm
    ```
 2. Create folder structure:
-   ```
-   MyProject/
-   ├── ViewModels/
-   │   └── (ViewModels will go here)
-   ├── Views/
-   │   └── (existing forms)
-   ```
+   - `MyProject/`
+     - `ViewModels/` — (ViewModels will go here)
+     - `Views/` — (existing forms)
 3. If not using CommunityToolkit, create base ViewModel:
    ```csharp
    public abstract class ViewModelBase : INotifyPropertyChanged
