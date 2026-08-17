@@ -225,7 +225,7 @@ Wait for answer before proceeding.
 
 ## Phase 4: Planning
 
-Uses the system **plan-generation** skill for file format.
+Follow the canonical plan.md format from your planning instructions.
 
 ### 4.1: Plan Shapes
 

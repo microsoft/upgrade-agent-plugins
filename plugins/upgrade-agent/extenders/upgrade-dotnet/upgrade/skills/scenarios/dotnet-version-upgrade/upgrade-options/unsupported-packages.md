@@ -1,6 +1,7 @@
 # Unsupported Packages
 
 **Category**: Compatibility
+**Plan impact**: Yes — `What is NOT configurable`
 
 **Applicable when**:
 - Any NuGet package has no compatible version for the target TFM
@@ -8,7 +9,7 @@
 **Not applicable when**:
 - All packages have compatible versions available for the target TFM
 
-## What is NOT configurable (always happens)
+## What is NOT configurable
 
 - **Multi-targeted projects**: Old TFM keeps old package reference via MSBuild
   `Condition`; the resolution choice below applies only to the new-TFM side.

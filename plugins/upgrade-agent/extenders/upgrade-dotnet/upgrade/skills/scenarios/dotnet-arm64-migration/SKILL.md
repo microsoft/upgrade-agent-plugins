@@ -63,9 +63,9 @@ Run these stages in order:
 1. **Assessment** — Detect the four ARM64 surfaces (project / NuGet / code / infra) into
    `assessment.md` (+ JSON). Tool: `generate_arm64_migration_assessment`.
 2. **Planning** — Triage findings into auto-fixable / guided / flag-only; order the
-   `0001`↔`0012` fixes; decide package bump-vs-replace. Uses the `plan-generation` system skill.
+   `0001`↔`0012` fixes; decide package bump-vs-replace. Produces the planning artifacts.
 3. **Execution** — Apply the project-file, RID, package, and intrinsic-guard fixes; leave
-   review/flag findings as annotated tasks. Uses the `task-execution` system skill.
+   review/flag findings as annotated tasks. Uses the executor's core task-execution steps.
 4. **Validation** — Host-adaptive ladder: cross-compile Gate always; native build/run/test
    when the host matches the target RID.
 
@@ -147,15 +147,15 @@ writing `assessment.md` (+ JSON).
 
 Triages each finding into auto-fixable / guided / flag-only, correlates `Arm64.0001` with
 `Arm64.0012` to decide the ordered platform-target fix, and chooses bump-vs-replace for
-native packages. Uses the `plan-generation` system skill to produce `plan.md`, `tasks.md`,
-and `scenario-instructions.md`.
+native packages. Produces `plan.md` and `scenario-instructions.md` in the
+canonical format.
 
 ### Stage 3: Execution
 **When entering this stage, load**: [execution.md](execution.md)
 
 Applies the mechanical fixes (project-file, RID, safe package bumps, intrinsic guards) and
-leaves review/flag findings as annotated tasks, validating with builds. Uses the
-`task-execution` system skill.
+leaves review/flag findings as annotated tasks, validating with builds. Uses the executor's core
+task-execution steps.
 
 ### Stage 4: Validation
 **When entering this stage, load**: [validation.md](validation.md)

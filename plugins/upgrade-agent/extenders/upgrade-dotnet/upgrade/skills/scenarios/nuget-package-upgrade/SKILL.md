@@ -39,8 +39,8 @@ Run these stages in order:
 
 0. **Pre-Initialization** — Confirm scope + packages + version policy. Consumed during pre-initialization by the scenario-initializer worker.
 1. **Assessment** (quick by default) — Resolve/reconcile versions and diff the API into `apidiff/*.md` + `assessment.md`; full scan is opt-in. Tool: `generate_package_upgrade_assessment`.
-2. **Planning** — Triage breaking changes + version divergence. Uses the `plan-generation` system skill to create `plan.md`, `tasks.md`, and `scenario-instructions.md`.
-3. **Execution** — Apply version changes (CPM-aware) and fix usages. Uses the system task-execution skill.
+2. **Planning** — Triage breaking changes + version divergence. Produces `plan.md` and `scenario-instructions.md`.
+3. **Execution** — Apply version changes (CPM-aware) and fix usages. Uses the executor's core task-execution steps.
 
 ## Pre-Initialization
 
@@ -113,8 +113,8 @@ locations is **opt-in** (`fullScan=true`) — always offer it to the user. Findi
 **When entering this stage, load**: [planning.md](planning.md)
 
 Triages the assessment: resolves version divergence across projects (if any) and decides how to
-handle each breaking change. Uses the `plan-generation` system skill for file format to produce
-`plan.md` and `tasks.md`, and persists execution constraints in `scenario-instructions.md`.
+handle each breaking change. Produces `plan.md` in the canonical format, and
+persists execution constraints in `scenario-instructions.md`.
 
 ### Stage 3: Execution
 **When entering this stage, load**: [execution.md](execution.md)

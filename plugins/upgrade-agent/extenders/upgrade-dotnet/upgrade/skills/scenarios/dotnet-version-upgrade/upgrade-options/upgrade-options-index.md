@@ -3,7 +3,9 @@
 Configurable upgrade decisions, loaded selectively during planning based on
 what signals have surfaced about the solution.
 
-> **Used by planning.md Step 1.5 only.**
+> **Used by planning.md Step 1.5 and Step 2 only.**
+> Step 1.5 loads them to evaluate options. After confirmation, Step 2 reopens only
+> the sections named by a **Plan impact: Yes** row below.
 > Do not load these files during assessment or execution.
 
 ---
@@ -13,22 +15,40 @@ what signals have surfaced about the solution.
 Each option is a self-contained file with applicability conditions, default logic,
 and recognized values. Only load the files whose trigger condition is met.
 
-| Option | Category | File |
-|--------|----------|------|
-| Upgrade Strategy | Strategy | [strategy.md](strategy.md) |
-| Project Approach | Project Structure | [project-approach.md](project-approach.md) |
-| Package Management | Project Structure | [package-management.md](package-management.md) |
-| Unsupported Packages | Compatibility | [unsupported-packages.md](unsupported-packages.md) |
-| Unsupported API Handling | Compatibility | [unsupported-api-handling.md](unsupported-api-handling.md) |
-| Windows Native APIs | Compatibility | [windows-native-apis.md](windows-native-apis.md) |
-| System.Web Adapters | Compatibility | [system-web-adapters.md](system-web-adapters.md) |
-| Configuration Migration | Modernization | [configuration-migration.md](configuration-migration.md) |
-| Logging Framework | Modernization | [logging-framework.md](logging-framework.md) |
-| Dependency Injection | Modernization | [dependency-injection.md](dependency-injection.md) |
-| Assembly Binding Redirects | Modernization | [binding-redirects.md](binding-redirects.md) |
-| Nullable Reference Types | Modernization | [nullable-reference-types.md](nullable-reference-types.md) |
-| Entity Framework | Modernization | [entity-framework.md](entity-framework.md) |
-| Test Coverage | Reliability | [test-coverage.md](test-coverage.md) |
+| Option | Category | File | Plan impact |
+|--------|----------|------|-------------|
+| Upgrade Strategy | Strategy | [strategy.md](strategy.md) | Yes — `Strategy Interaction`, `What is NOT configurable` |
+| Project Approach | Project Structure | [project-approach.md](project-approach.md) | Yes — `Strategy Interaction` |
+| Package Management | Project Structure | [package-management.md](package-management.md) | Yes — `What is NOT configurable` |
+| Unsupported Packages | Compatibility | [unsupported-packages.md](unsupported-packages.md) | Yes — `What is NOT configurable` |
+| Unsupported API Handling | Compatibility | [unsupported-api-handling.md](unsupported-api-handling.md) | Yes — `What is NOT configurable` |
+| Windows Native APIs | Compatibility | [windows-native-apis.md](windows-native-apis.md) | No |
+| System.Web Adapters | Compatibility | [system-web-adapters.md](system-web-adapters.md) | No |
+| Configuration Migration | Modernization | [configuration-migration.md](configuration-migration.md) | No |
+| Logging Framework | Modernization | [logging-framework.md](logging-framework.md) | No |
+| Dependency Injection | Modernization | [dependency-injection.md](dependency-injection.md) | No |
+| Assembly Binding Redirects | Modernization | [binding-redirects.md](binding-redirects.md) | No |
+| Nullable Reference Types | Modernization | [nullable-reference-types.md](nullable-reference-types.md) | No |
+| Entity Framework | Modernization | [entity-framework.md](entity-framework.md) | No |
+| Test Coverage | Reliability | [test-coverage.md](test-coverage.md) | Yes — `Generate flow`, `Test Baseline`, `Generation failure` |
+
+**Plan impact** says whether the file still matters after its value is confirmed.
+**No** means the confirmed value is the whole story — the rest of the file is
+applicability conditions, default logic, and alternatives, all of which are spent
+once the user has chosen. **Yes** means the file also carries behavior the plan must
+honor that the confirmed value alone does not convey — non-configurable rules,
+cross-option interactions, or a named procedural flow. That behavior may itself be
+conditional on the selected value (`test-coverage.md`'s `Generate flow` runs only for
+**Generate**); what makes it **Yes** is that knowing the value is not enough to act.
+The listed sections are the only parts worth reopening.
+
+The index row is authoritative at runtime. Each option file also mirrors its marker on
+a `**Plan impact**:` line in its header, next to `**Category**:`, as an authoring aid;
+if the two ever disagree, the row above wins and the header is the bug.
+
+Choice mechanics are **not** plan impact. When a selected value implies follow-up work
+— deferred stubs, resolution subtasks — the task structure is owned by `execution.md`
+Decomposition Rules and the `breakdown-hints/` files, not by reopening the option file.
 
 ---
 
@@ -71,138 +91,175 @@ surfaced.
 For each loaded option file:
 
 1. **Evaluate the Applicability Condition** against available evidence
-2. **If not applicable** — skip entirely (do not mention in the file)
+2. **If not applicable** — skip entirely (do not mention it anywhere)
 3. **If applicable** — evaluate the Default Logic to determine recommendation
-4. **Write to options file** using the format below
+4. **Add it to the confirmation payload** using the schema below
 
 Keep evaluation reasoning internal — do not write reasoning to any file or to the chat.
 
----
-
-## File Format
-
-When generating `upgrade-options.md`, use the card-style structure below.
-One heading per applicable option. Include only applicable options — omit
-non-applicable ones entirely. Do not list or mention non-applicable options
-anywhere in the file.
+There is **no options file**. Options are carried as a structured payload until the
+user confirms them, then recorded in `scenario-instructions.md` (live source of
+truth) and `plan.md` (durable record). Never write an `upgrade-options.md`.
 
 ---
 
-### File header
+## Confirmation Payload
 
-```markdown
-# Upgrade Options — {solution name}
+Applicable options are carried as a **structured payload**, not a file. This one
+payload feeds every confirmation path — the interactive form, the chat-rendered
+text, and the re-dispatch that follows confirmation.
 
-Assessment: {one line: project count, frameworks, key signals}
-```
+Include only applicable options. Never mention non-applicable options anywhere.
 
----
-
-### Option format
-
-Each applicable option gets a heading (### under its category ## heading),
-a one-line rationale, and a values table. The agent parses the `(selected)`
-marker to determine the selected value.
-
-```markdown
-### {Option Name}
-{One sentence: why this option is relevant, citing a specific assessment finding}
-
-| Value | Description |
-|-------|-------------|
-| **{Selected Value}** (selected) | {What happens when this is selected} |
-| {Alternative Value} | {What happens when this is selected} |
+```json
+{
+  "solutionName": "{solution name}",
+  "assessmentSummary": "{one line: project count, frameworks, key signals}",
+  "sections": [
+    {
+      "id": "strategy",
+      "name": "Strategy",
+      "options": [
+        {
+          "id": "upgrade-strategy",
+          "name": "Upgrade Strategy",
+          "rationale": "{one sentence citing a specific assessment finding}",
+          "selected": "{selected value}",
+          "choices": [
+            { "value": "{selected value}", "description": "{what happens when selected}" },
+            { "value": "{alternative}", "description": "{what happens when selected}" }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
 Rules:
-- `**{value}** (selected)` marks the selected value (bold, with marker after)
-- Alternative values have no marker and are not bold
-- Each value has a short description explaining what it does
-- The user moves `(selected)` to a different row to change selection
-- Descriptions come from the option file's **Options** section — use a
-  concise single-sentence form, not the full paragraph
+- `selected` must exactly match one of the `choices[].value` entries
+- `rationale` is **required** on every option, no exceptions — in text-based hosts
+  it is the only explanation the user sees. One sentence citing a specific
+  assessment finding. Never omit it, never leave it empty, and never fold it into
+  the `selected` value
+- Every choice needs a short single-sentence `description`, taken from the option
+  file's **Options** section (not the full paragraph)
+- Sections appear in this order, omitting any with no applicable options:
+  Strategy, Project Structure, Compatibility, Modernization, Reliability
+- Strategy is always present and always first
 
 ---
 
-### Full file structure
+### Rendering the payload as text
+
+Hosts without an interactive options form present the payload in chat. Render it as
+**one compact block**, then ask a **single** combined question — never one question
+per option.
+
+Every option sits under its section heading, and every alternative is indented one
+level below its option and prefixed `Alternative — `:
 
 ```markdown
-# Upgrade Options — {solution name}
+**Upgrade Options** — {solutionName}
 
-Assessment: {one line summary}
-
-## Strategy
-
-### Upgrade Strategy
-{rationale citing assessment signals}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
-
-## Project Structure
-
-### Project Approach
-{rationale}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
-
-### Package Management
-{rationale}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
-
-## Compatibility
-[omit this section entirely if no compatibility options are applicable]
-
-### {Option Name}
-{rationale}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
-
-## Modernization
-[omit this section entirely if no modernization options are applicable]
-
-### {Option Name}
-{rationale}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
-
-## Reliability
-[omit this section entirely if the Test Coverage option is not applicable]
-
-### Test Coverage
-{rationale}
-
-| Value | Description |
-|-------|-------------|
-| **{value}** (selected) | {description} |
-| {alternative} | {description} |
+**{Section Name}**
+- **{Option Name}**: {selected value} — {rationale}
+  - Alternative — {other value}: {description}
 ```
+
+Worked example — follow this layout exactly:
+
+```markdown
+**Upgrade Options** — Contoso.sln
+
+**Strategy**
+- **Upgrade Strategy**: Bottom-Up — Multiple Framework projects require dependency-ordered migration.
+  - Alternative — Top-Down: Start at entry-point projects and migrate their dependencies as needed.
+
+**Project Structure**
+- **Web Projects**: Side-by-side — Keeps the high-risk web app available during incremental migration.
+  - Alternative — In-place rewrite: Replace the Framework web project entirely in one pass.
+- **Class Libraries**: Multi-targeting — Supports Framework and Core consumers during transition.
+  - Alternative — In-place: Replace the TFM directly, requiring consumers to migrate first.
+  - Alternative — Duplicate project: Keep a parallel Core project beside the Framework one.
+
+**Modernization**
+- **Logging**: Microsoft.Extensions.Logging — log4net has no supported .NET 10 package in this solution.
+  - Alternative — Keep the existing framework: Retain log4net behind an adapter package.
+```
+
+Rules:
+- **Always group by section.** Print the section name in bold on its own line, then
+  its options beneath it. Never flatten everything into one undifferentiated list,
+  even when a section holds a single option.
+- One line per option: bold option name, then the selected value, then ` — ` and the
+  rationale. **The rationale is mandatory on every line** — never print an option
+  that stops at its value, and never pass off a restatement of the value as a
+  reason. This holds even when the value looks self-explanatory: a selection like
+  `Microsoft.Extensions.Logging` still needs a reason tied to the assessment,
+  because the user is judging the choice, not decoding the name.
+- Print no preamble between the title and the first section heading — in particular
+  do not render `assessmentSummary` here. It belongs to the interactive form only.
+- **Print every non-selected choice as an alternative — never omit them.** The
+  alternatives are how the user learns what they can switch to; an option whose
+  alternatives are hidden is an option they cannot meaningfully change. An option
+  with N `choices` prints N-1 sub-bullets.
+- **Every alternative is an indented sub-bullet prefixed `Alternative — `.** Without
+  that prefix and indent the reader cannot tell an alternative apart from the next
+  option — the single most common rendering mistake.
+- Use each alternative's `description` **verbatim** — never invent or embellish.
+- Do not list the selected value among the alternatives. Only an option whose
+  `choices` holds exactly one entry prints no sub-bullets.
+- Plain text only — no HTML entities or tags; indent with real spaces or `-` bullets
+  so it renders in a terminal.
+- Follow with one combined question: confirm everything, or say what to change.
+
+Before sending, check every option line: it sits under a bold section heading, it
+ends with ` — ` plus a rationale, and it is followed by one `Alternative — ` bullet
+for every remaining entry in its `choices`. Fix any line that fails before printing.
+
+**Put the block in your chat message — never inside the question tool.** Interactive
+question UI is dismissed the moment the user answers, so anything rendered inside it
+is gone: a user who picks "change something" is left with nothing to refer to. Print
+the full block as your visible response **first**, then call the question tool with
+only a short prompt (e.g. "Confirm these upgrade options?") and its choices. Never
+put option names, values, rationales, or alternatives into the question text or the
+choice labels.
+
+**Re-print the whole block every round.** If the user changes something, print the
+complete updated block again — with their change applied — before asking the next
+question. Never ask a follow-up about options the user can no longer see.
+
+---
+
+### plan.md `## Upgrade Options` section
+
+`plan.md` is written only after every option is confirmed, so this section records the
+final confirmed set. It is **written once and never mutated** — later changes go to
+`scenario-instructions.md`, which is the live source of truth.
+
+```markdown
+## Upgrade Options
+
+| Option | Selected | Why |
+|--------|----------|-----|
+| {Option Name} | {confirmed value} | {rationale} |
+```
+
+One row per confirmed option, in payload order. Omit the section entirely if no
+options were applicable.
 
 ---
 
 ### scenario-instructions.md compact block
 
-After user confirms, read all `**{value}** (selected)` markers from the option tables
-and write this compact block to `scenario-instructions.md`:
+After the user confirms, write the confirmed selections as this compact block in
+`scenario-instructions.md`. This is the **live source of truth** — it is always in
+context while the workflow is active, and the execution stage reads options only
+from here.
 
 ```markdown
 ## Upgrade Options
-**Source**: .github/upgrades/{scenarioId}/upgrade-options.md
 
 ### Strategy
 - Upgrade Strategy: {selected value}
@@ -217,7 +274,7 @@ and write this compact block to `scenario-instructions.md`:
 - Unsupported API Handling: {selected value}
 - Windows Native APIs: {selected value}
 - System.Web Adapters: {selected value}
-  Skill: aspnet-system-web-adapters [only when "Use System.Web Adapters" selected]
+  Skill: migrating-mvc-system-web-adapters [only when "Use System.Web Adapters" selected]
 
 ### Modernization
 [one line per applicable option only]
@@ -238,7 +295,6 @@ Rules for writing this block:
 - Never write a placeholder — use actual confirmed values
 - When System.Web Adapters selected value is "Use System.Web Adapters",
   always include the `Skill:` line beneath it
-- The `**Source**:` line links execution stage back to the full file
 - Custom options (from user-provided skills) go under their declared category heading
 
 ---
@@ -256,6 +312,7 @@ A matching skill must contain an `## Upgrade Option` section:
 
 **Option Name**: {unique name}
 **Category**: {Project Structure | Compatibility | Modernization | Reliability}
+**Plan impact**: {No | Yes — `Section Name`, `Other Section`}
 
 **Applicable when**:
 - {assessment signal condition}
@@ -273,6 +330,12 @@ A matching skill must contain an `## Upgrade Option` section:
 **Stored as**: `Upgrade Options > {Category} > {Option Name}`
 ```
 
-Custom options go under their declared category heading in the options file and compact block.
-The category determines which section of the options file the option appears in.
+Custom options go under their declared category section in the confirmation payload
+and the compact block. The category determines which section the option appears in.
 If a custom option duplicates a built-in option name, the custom option wins.
+
+A custom option has no row in the table above, so its `**Plan impact**:` line is the
+only signal available and Step 2 reads it directly from the skill. Declare it — a
+precise `No`, or a `Yes` naming the sections, keeps the reopen narrow. An omitted
+marker is treated as **Yes**, so Step 2 falls back to reading the whole
+`## Upgrade Option` section: safe, but wasteful.

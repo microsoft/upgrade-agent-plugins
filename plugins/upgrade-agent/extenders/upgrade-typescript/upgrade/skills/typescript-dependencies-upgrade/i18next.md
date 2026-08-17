@@ -96,7 +96,7 @@ i18next's redesigned types (v23+) are the dominant reason this cluster introduce
 ## Validation
 
 - The standard Phase 3 `typescript_compile_package` call still applies — do not skip it.
-- If `validateRuntime` is true, call `typescript_validate_runtime` — REQUIRED. i18next failures (missing translations after a v3→v4 format mismatch, wrong resolved language after the v25 change, a broken Formatter migration) often surface only at runtime, not at compile time. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and [runtime-validation.md](./runtime-validation.md).
+- Call `typescript_validate_runtime` — REQUIRED. i18next failures (missing translations after a v3→v4 format mismatch, wrong resolved language after the v25 change, a broken Formatter migration) often surface only at runtime, not at compile time. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and [runtime-validation.md](./runtime-validation.md).
 
 ## Telemetry
 

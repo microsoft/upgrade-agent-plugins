@@ -1,6 +1,7 @@
 # Nullable Reference Types
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - Target TFM supports nullable reference types (`net5.0`+), AND

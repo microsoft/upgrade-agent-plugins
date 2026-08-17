@@ -1,6 +1,7 @@
 # Entity Framework
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - Entity Framework 6.x is in use, AND

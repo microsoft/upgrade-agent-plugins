@@ -1,6 +1,7 @@
 # Dependency Injection
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - A third-party IoC container is in use:

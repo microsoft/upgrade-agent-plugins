@@ -1,6 +1,7 @@
 # Unsupported API Handling
 
 **Category**: Compatibility
+**Plan impact**: Yes — `What is NOT configurable`
 
 **Applicable when**:
 - Any BCL or framework API is flagged as removed or changed in the target TFM
@@ -13,7 +14,7 @@
 - Modern-to-modern upgrade (e.g., net8.0 → net10.0) with no flagged API changes —
   these upgrades rarely have breaking API changes
 
-## What is NOT configurable (always happens)
+## What is NOT configurable
 
 - **Simple replacements**: When a known replacement API exists and the change is
   mechanical (rename, namespace move, signature change), it is applied directly —

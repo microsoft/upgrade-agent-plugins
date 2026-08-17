@@ -1,6 +1,7 @@
 # Configuration Migration
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - `app.config` or `web.config` exists in any project, AND

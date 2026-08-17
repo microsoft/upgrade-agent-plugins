@@ -27,8 +27,7 @@ Read these files from the scenario folder. Skip any that don't exist.
 |------|-----------------|
 | `plan.md` | Original plan structure, task IDs, scope |
 | `tasks.md` | Final task states (✅ / ❌ / ⏳), hierarchy |
-| `scenario-instructions.md` | User preferences, decisions, recorded choices |
-| `upgrade-options.md` | Selected options (target TFM, package choices, etc.) |
+| `scenario-instructions.md` | User preferences, decisions, recorded choices, confirmed upgrade options |
 | `tasks/{taskId}/progress-details.md` | Per-task: files changed, build/test results, issues resolved |
 | `tasks/{taskId}/task.md` | Per-task: task spec, scope, acceptance criteria |
 

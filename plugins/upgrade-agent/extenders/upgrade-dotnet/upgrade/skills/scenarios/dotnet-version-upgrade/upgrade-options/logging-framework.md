@@ -1,6 +1,7 @@
 # Logging Framework
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - A third-party logging framework is in use:

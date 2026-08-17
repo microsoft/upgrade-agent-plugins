@@ -1,6 +1,7 @@
 # Assembly Binding Redirects
 
 **Category**: Modernization
+**Plan impact**: No
 
 **Applicable when**:
 - `<assemblyBinding>` / `<dependentAssembly>` entries found in

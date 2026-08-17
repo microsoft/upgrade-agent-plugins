@@ -65,9 +65,11 @@ For each dependency group from the upgrade plan, call the `typescript_upgrade_pa
 
 ## NPM Audit (if enabled)
 
+`typescript_npm_audit_fix_tool` is a **post-upgrade** step. Only call it **after** `typescript_scan_dependencies` and a **successful group upgrade** in the same workflow — it operates on the package graph the scan built for this repo. Never call it before scanning or as a standalone step; a cold call has no scanned graph and is skipped.
+
 If the scan results indicate `runNpmAudit: true` and the package manager is npm, call the `typescript_npm_audit_fix_tool` MCP tool after each successful group upgrade:
-- `rootDirectory` — the repository root
-- `packageDirectory` — the package directory
+- `rootDirectory` — the repository root (same as the scan/upgrade calls)
+- `packageDirectory` — the package directory (same as the scan/upgrade calls)
 - `upgradedPackages` — the list of packages just upgraded
 
 This automatically fixes security vulnerabilities without introducing new build errors. If the audit fix introduces errors, the tool rolls back automatically.

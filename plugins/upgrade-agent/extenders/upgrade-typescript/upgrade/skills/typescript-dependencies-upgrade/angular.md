@@ -6,7 +6,7 @@ Angular projects have specific upgrade requirements due to the framework's tight
 
 ## TypeScript Compatibility
 
-Angular does **not** yet support TypeScript 7 (`@typescript/native-preview`). If the scan reports `typeScriptMigrationNeeded: true`, **cap the TypeScript upgrade at TypeScript 6**. Do NOT proceed to TypeScript 7. Upgrade Angular first, then TypeScript — `ng update` manages the TypeScript version at each hop. When the TypeScript migration phase runs, follow the TypeScript 6 guide ([5to6.md](../typescript-compiler-upgrade/5to6.md)); its `moduleResolution: "bundler"` / `exports`-map fixes are especially common with Angular's package `exports`.
+Angular does **not** yet support TypeScript 7. If the scan reports `typeScriptMigrationNeeded: true`, **cap the TypeScript upgrade at TypeScript 6**. Do NOT proceed to TypeScript 7. Upgrade Angular first, then TypeScript — `ng update` manages the TypeScript version at each hop. When the TypeScript migration phase runs, follow the TypeScript 6 guide ([5to6.md](../typescript-compiler-upgrade/5to6.md)); its `moduleResolution: "bundler"` / `exports`-map fixes are especially common with Angular's package `exports`.
 
 ## Nx workspaces (`nx.json` present)
 
@@ -83,13 +83,13 @@ npx ng build
 
 ### 4. After all Angular hops complete
 
-1. ⛔ **Runtime validation** — If `validateRuntime` is true, run runtime validation now (read [runtime-validation.md](./runtime-validation.md)). Do NOT return to the main workflow until runtime validation passes. Fix any errors before proceeding.
+1. ⛔ **Runtime validation — REQUIRED.** Run runtime validation now (read [runtime-validation.md](./runtime-validation.md)). Do NOT return to the main workflow until runtime validation passes. Fix any errors before proceeding.
 
 2. **Return to the calling workflow** (SKILL.md) to continue with the remaining upgrade phases (TypeScript migration, non-Angular packages, etc.). When upgrading non-Angular dependency groups, **exclude** any groups that contain `@angular/*` or `@angular-devkit/*` packages — those are already upgraded.
 
 ## Validating an Angular build (`compile_package` / `write_upgrade_summary`)
 
-For Angular projects the **authoritative compile signal is `ng build` / ng-packagr** (and, when `validateRuntime` is true, the `validate_runtime` `app-builds` assertion) — not raw `tsc`. `typescript_compile_package` and the `write_upgrade_summary` rebuild type-check the tree with raw `tsc`, which is **not** representative of a multi-project or library Angular workspace and will surface false errors. Two things to do:
+For Angular projects the **authoritative compile signal is `ng build` / ng-packagr** (and the `validate_runtime` `app-builds` assertion) — not raw `tsc`. `typescript_compile_package` and the `write_upgrade_summary` rebuild type-check the tree with raw `tsc`, which is **not** representative of a multi-project or library Angular workspace and will surface false errors. Two things to do:
 
 - **Before** calling `typescript_compile_package` or `typescript_write_upgrade_summary` on a multi-project/library workspace, normalize the base `tsconfig.json` so the raw-`tsc` pass doesn't choke on files outside the build graph: **exclude test files** (`**/*.spec.ts`, `cypress/**`, `e2e/**`) and ensure the base config lists the ambient `types` the project relies on (e.g. `"types": ["jasmine", "node"]`). Without this, raw `tsc` reports hundreds of false `Cannot find name 'describe'/'cy'` errors.
 - **Treat as known false positives** (note them in the summary, do NOT chase or "fix" them) any residual raw-`tsc` errors that are confined to: spec/test files, Angular **library source** (decorator errors like `TS1206`/`TS1240`, which raw `tsc` cannot compile — only `ngc`/ng-packagr can), or `exports`-map resolution under a library's legacy `moduleResolution: node` (e.g. `Cannot find module '@angular/common/http'`). If `ng build` / ng-packagr is clean for the upgraded targets, the build is good regardless of these.

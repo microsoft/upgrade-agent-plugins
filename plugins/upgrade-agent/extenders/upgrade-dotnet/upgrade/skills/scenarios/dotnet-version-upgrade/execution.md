@@ -337,8 +337,9 @@ This is especially useful when breaking down web migration tasks — it reveals
 what each controller depends on (DI services, views, packages, project references)
 so subtasks can be scoped accurately.
 
-Custom skills can contribute additional hints using the protocol defined
-in the task-execution system skill (see `provides: task-breakdown-hints`).
+Custom skills can contribute additional hints using the `provides: task-breakdown-hints`
+protocol — evaluated by the `TaskBreaker` worker, or by the `task-execution` skill on
+single-agent hosts that ship it instead.
 
 ---
 

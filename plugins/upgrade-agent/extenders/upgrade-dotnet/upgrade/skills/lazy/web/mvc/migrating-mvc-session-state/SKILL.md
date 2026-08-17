@@ -19,7 +19,7 @@ metadata:
 
 Migrate session state, TempData, and application-level state from ASP.NET Framework to ASP.NET Core. ASP.NET Core has no in-process session by default — session requires explicit opt-in via `AddSession()` plus a distributed cache provider. Getting this wrong causes silent data loss at scale or on app restart.
 
-> **Adapter overlay:** If the `aspnet-system-web-adapters` skill is loaded, its guidance takes precedence for `HttpSessionState` replacement during scaffold and migrate phases — the adapter provides a session shim that defers full migration. TempData and Application State are **not** covered by adapters; migrate them directly using this skill.
+> **Adapter overlay:** If the `migrating-mvc-system-web-adapters` skill is loaded, its guidance takes precedence for `HttpSessionState` replacement during scaffold and migrate phases — the adapter provides a session shim that defers full migration. TempData and Application State are **not** covered by adapters; migrate them directly using this skill.
 
 > **Related skill:** `migrating-global-asax` covers `Session_Start`/`Session_End` event migration to session middleware registration.
 

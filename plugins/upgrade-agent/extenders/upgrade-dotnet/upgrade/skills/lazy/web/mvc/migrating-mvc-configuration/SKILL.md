@@ -270,8 +270,13 @@ User Secrets are stored outside the project directory and override `appsettings.
 ```csharp
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(@"\\server\share\keys"))
+    .ProtectKeysWithCertificate(keyEncryptionCertificate)
     .SetApplicationName("SharedAppName");
 ```
+
+Use a certificate, Key Vault, or a shared DPAPI-NG descriptor for at-rest protection. Default per-machine/per-user DPAPI cannot protect a ring consumed by different hosts.
+
+This is only the ASP.NET Core half of shared-cookie setup. When a Katana/OWIN Framework host and an ASP.NET Core host must read the same cookie during a side-by-side migration, use `sharing-authentication-cookies-katana-interop` for the matching Framework-side ticket format, purpose strings, chunking, and legacy-cookie transition. A shared key ring alone is insufficient.
 
 **Encrypted config sections**: If `Web.config` contains `<EncryptedData>` blocks (from `aspnet_regiis -pe`), decrypt the values first, then migrate them to User Secrets or a vault. There is no equivalent to `aspnet_regiis` in ASP.NET Core.
 
@@ -293,6 +298,21 @@ Verify the project builds and all configuration values load correctly at runtime
 The config source priority is opposite to `Web.config` intuition. In ASP.NET Framework, `Web.config` is the final authority. In ASP.NET Core, environment variables and command-line arguments override JSON files. Account for this when migrating code that assumes `Web.config` values cannot be overridden.
 
 > **Related skill:** For migrating `Global.asax` startup code that initializes configuration, see `migrating-global-asax`.
+
+> **Forwarded-headers guard (TFM-dependent):** When a config migration touches
+> proxy/forwarded-headers settings (e.g. a side-by-side YARP proxy that recovers the
+> client's scheme/host/IP), pick the API that matches the **target framework** — the two
+> are not interchangeable, and the "obsolete" pair is only obsolete on net10.0+:
+>
+> | Target | Use | Notes |
+> |--------|-----|-------|
+> | `net10.0`+ | `ForwardedHeadersOptions.KnownIPNetworks` + `System.Net.IPNetwork` | `KnownNetworks` / `Microsoft.AspNetCore.HttpOverrides.IPNetwork` are deprecated here (ASPDEPR005 / BC000660) — do not use them. |
+> | `net8.0` / `net9.0` | `ForwardedHeadersOptions.KnownNetworks` + `Microsoft.AspNetCore.HttpOverrides.IPNetwork` | Correct and **not** obsolete on these versions. `KnownIPNetworks` does not exist yet — emitting it is a CS1061 build error. |
+>
+> Whichever API you use, the trust list must be **fail-closed**: leaving both `KnownProxies`
+> and the known-networks list empty makes the middleware honor `X-Forwarded-*` from any
+> sender. The `scaffolding-yarp-proxy-project` skill documents the full hardened pattern,
+> including the net8/net9 variant under **Targeting below net10.0**.
 
 ## Success Criteria
 

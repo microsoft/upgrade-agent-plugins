@@ -1,7 +1,7 @@
 # Stage 3: Execution
 
-Execute the plan task by task using the system task-execution skill. Each task applies the version
-change for its project(s) and fixes the flagged source-breaking usages, then validates with a
+Execute the plan task by task using the executor's core task-execution steps. Each task applies the
+version change for its project(s) and fixes the flagged source-breaking usages, then validates with a
 build.
 
 ## Entry Criteria
@@ -70,7 +70,7 @@ After applying changes for a task:
 
 ## 4. Decomposition hints
 
-Supplement the system task-execution skill with these scenario-specific breakdown rules:
+Supplement the core decomposition triggers with these scenario-specific breakdown rules:
 - Split per project (or per dependency layer) so a failed upgrade has a small blast radius.
 - When a single breaking change has many usages across files, a research subtask to settle the
   replacement pattern once (then apply it broadly) is usually worth it.

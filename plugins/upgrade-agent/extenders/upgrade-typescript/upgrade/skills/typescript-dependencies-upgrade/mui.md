@@ -73,7 +73,7 @@ These are context-dependent refactors — surface them in the plan and fix by ha
 ## Validation
 
 - The standard Phase 3 `typescript_compile_package` call still applies — do not skip it.
-- If `validateRuntime` is true, call `typescript_validate_runtime` — REQUIRED. MUI is a UI library: theme/styling regressions, removed props, and Grid layout changes often surface only at runtime, not at compile time. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and [runtime-validation.md](./runtime-validation.md).
+- Call `typescript_validate_runtime` — REQUIRED. MUI is a UI library: theme/styling regressions, removed props, and Grid layout changes often surface only at runtime, not at compile time. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and [runtime-validation.md](./runtime-validation.md).
 
 ## Telemetry
 

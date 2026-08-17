@@ -1,6 +1,6 @@
 ---
 name: typescript-compiler-upgrade
-description: Upgrade the typescript npm package (the TypeScript compiler) to a newer version through incremental major-version migrations. Use this when asked to upgrade, update, or migrate typescript itself — especially to TypeScript 7 or @typescript/native-preview. Do NOT use this for upgrading other npm packages (use typescript-dependencies-upgrade instead).
+description: Upgrade the typescript npm package (the TypeScript compiler) to a newer version through incremental major-version migrations. Use this when asked to upgrade, update, or migrate typescript itself — especially to TypeScript 7. Do NOT use this for upgrading other npm packages (use typescript-dependencies-upgrade instead).
 ---
 
 You are a skilled TypeScript developer specializing in migrating projects across major TypeScript versions. Your role is to upgrade TypeScript itself through each major version incrementally, fixing compilation errors at each step.
@@ -20,7 +20,7 @@ You are a skilled TypeScript developer specializing in migrating projects across
 
 1. **Call `typescript_install_dependencies`** with `rootDirectory` and `sessionId` to ensure dependencies are installed.
 2. **Call `typescript_compile_package`** with `rootDirectory`, `packageDirectory` (use the repository root unless upgrading a specific package in a monorepo), and `sessionId` to verify the project builds before making changes.
-3. If `validateRuntime` is true, run baseline runtime validation per [runtime-validation.md](../typescript-dependencies-upgrade/runtime-validation.md).
+3. Run baseline runtime validation per [runtime-validation.md](../typescript-dependencies-upgrade/runtime-validation.md) — REQUIRED, do not skip.
 4. If the baseline build fails, inform the user of pre-existing errors before proceeding.
 
 ## Phase 2 — Migrate
@@ -31,8 +31,8 @@ Read [compiler-upgrade.md](./compiler-upgrade.md) and follow its instructions to
 
 After all version hops are complete, run validation to ensure the migration didn't introduce runtime regressions:
 
-1. **Post-upgrade compile — REQUIRED, do not skip.** Always call `typescript_compile_package` with `rootDirectory`, `packageDirectory`, and `sessionId`. This is what locks in the post-upgrade compile-error count and lets the workflow be measured. **Even if `typescript_verify_upgrade` already reported "complete" during the version hops, you must still call `typescript_compile_package` here** — the verify-loop only updates per-package state; the workflow-level post-upgrade snapshot is recorded only by this tool. Skipping this step forces the workflow into the `inconclusive` bucket on dashboards.
-2. **Runtime validation** — If `validateRuntime` is true in the scan results: read [runtime-validation.md](../typescript-dependencies-upgrade/runtime-validation.md). This catches issues that compilation alone misses — runtime type errors, module resolution failures, or changed emit behavior.
+1. **Post-upgrade compile — REQUIRED, do not skip.** Always call `typescript_compile_package` with `rootDirectory`, `packageDirectory`, and `sessionId` — this records the post-upgrade compile-error count and lets the workflow be measured. **Even if `typescript_verify_upgrade` already reported "complete" during the version hops, you must still call `typescript_compile_package` here**: the verify-loop only updates per-package state, and the workflow-level post-upgrade snapshot is recorded only by this tool. Skipping this step forces the workflow into the `inconclusive` bucket on dashboards.
+2. **Runtime validation — REQUIRED, do not skip.** Read [runtime-validation.md](../typescript-dependencies-upgrade/runtime-validation.md). This catches issues that compilation alone misses — runtime type errors, module resolution failures, or changed emit behavior.
 
 ## Phase 4 — Summary
 

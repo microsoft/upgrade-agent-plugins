@@ -100,7 +100,7 @@ initializeDescription: <one-line description, e.g. "Upgrade <solution> to .NET 1
 confirmFields:
   # One entry per user-confirmable parameter, in display order. The Orchestrator turns these into
   # a confirm_options form (MCP Apps hosts) OR a plain-text confirmation (CLI). Target framework
-  # first, then flowMode, then git fields (workingBranch, commitStrategy) ONLY in a git repo.
+  # first, then flowMode, then git fields (workingBranch, commitStrategy, branchSync) ONLY in a git repo.
   - id: tfm
     label: Target Framework
     value: net10.0
@@ -117,13 +117,19 @@ confirmFields:
     label: Commit Strategy
     value: after-each-task
     choices: [{id: after-each-task, label: After Each Task, hint: default}, {id: after-each-phase, label: After Each Phase}, {id: single, label: Single Commit at End}, {id: manual, label: Manual}]
+  - id: branchSync           # git repos only; omit when detachedHead is true
+    label: Branch Sync
+    value: auto-merge
+    choices: [{id: auto-merge, label: "Auto (Merge)", hint: default}, {id: auto-rebase, label: "Auto (Rebase)", hint: "Rewrites history — avoid if the branch is shared"}, {id: manual, label: Manual, hint: "Tell me when the source branch moves; sync on request"}, {id: disabled, label: Disabled, hint: "Never sync"}]
 ```
 
 Guidance for `confirmFields`:
 - `choices` present → a select; omit `choices` (or set `kind: text`) → a free-text field.
 - Include the **actual** available frameworks from `get_dotnet_upgrade_options` in the `tfm`
   choices, suggested value first.
-- Include `workingBranch` and `commitStrategy` **only** when `gitRepo: true`.
+- Include `workingBranch`, `commitStrategy`, and `branchSync` **only** when `gitRepo: true`.
+- Omit `branchSync` when `detachedHead: true` — a fixed ref never moves, so there is nothing to
+  sync and the Orchestrator writes `Branch Sync: Disabled` itself.
 - Never include machine-local absolute paths as confirmable values (keep the full `solutionPath`
   in the header field, not in `confirmFields`).
 

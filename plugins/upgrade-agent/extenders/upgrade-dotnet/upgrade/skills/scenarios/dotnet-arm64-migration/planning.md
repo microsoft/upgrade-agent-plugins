@@ -17,11 +17,11 @@ finding (auto-fixable / guided / flag-only), **order** the interdependent fixes 
 - [Transition to Execution](#transition-to-execution)
 
 
-> **File format is enforced by the system `plan-generation` skill.** Load and follow it for the
-> exact templates for `plan.md`, `tasks.md`, and `scenario-instructions.md`. This scenario file
-> defines **what** to plan; the `plan-generation` skill defines **how** to write the artifacts.
-> Do not invent your own document shapes (e.g. a `## {task-id}` heading with `**Status**` /
-> `**Description**` fields is **wrong** — `tasks.md` is a flat emoji checklist).
+> **File format comes from your own planning instructions**, not from this file. Follow the
+> `plan.md` / `tasks.md` / `scenario-instructions.md` formats your prompt or workflow skill
+> defines. This scenario file defines **what** to plan; those define **how** to write the
+> artifacts. Do not invent your own document shapes (e.g. a `## {task-id}` heading with
+> `**Status**` / `**Description**` fields is **wrong** — `tasks.md` is a flat emoji checklist).
 
 ## Entry Criteria
 
@@ -30,9 +30,9 @@ finding (auto-fixable / guided / flag-only), **order** the interdependent fixes 
 
 ## Exit Criteria
 
-- `plan.md` created with ordered tasks (per the `plan-generation` plan.md template).
-- `tasks.md` created (per the `plan-generation` tasks.md template — flat emoji checklist, not
-  per-task headings).
+- `plan.md` created with ordered tasks (per the canonical plan.md template).
+- `tasks.md` is **not** yours to create — the workflow tools bootstrap it from `plan.md`. No
+  `tasks.md` on disk when you finish is a valid outcome.
 - Execution constraints (finding classification, `0001`/`0012` ordering, package decisions, CPM
   decision) persisted in `scenario-instructions.md`.
 
@@ -80,10 +80,10 @@ CPM mechanics to the `converting-to-cpm` skill.
 
 ### Step 4 — Build the plan
 
-Create the planning artifacts using the **`plan-generation` system skill's templates** — load that
-skill and follow its `plan.md` and `tasks.md` specifications exactly.
+Create the planning artifacts using the canonical templates your planning instructions define —
+follow their `plan.md` specification exactly.
 
-**`plan.md`** — one task per ordered unit of work, using the plan-generation task template:
+**`plan.md`** — one task per ordered unit of work, using the canonical task template:
 
 ```
 ### {NN}-{slug}: {task name}
@@ -104,15 +104,15 @@ Order tasks so mechanical, low-risk edits land first and dependent edits follow:
    (`scaffold_arm64_ci_leg`); annotate win-arm64 (CI-only) and non-GitHub CI providers as guided tasks.
 
 Use canonical `NN-slug` task IDs (two-digit zero-padded sequence + kebab slug, e.g.
-`01-clear-com-interop`) as required by the `plan-generation` system skill — never `T-01` or other
+`01-clear-com-interop`) — never `T-01` or other
 letter-prefixed ids, or task tracking will break. For each task record the project(s) covered, the
 specific rule findings addressed, and the chosen handling.
 
-**`tasks.md`** — the visual progress checklist. Use the plan-generation `tasks.md` template
-verbatim: a `# {Scenario} Progress` title, a short `## Overview`, a `**Progress**` line, and a
-`## Tasks` section that is a **flat list of `- {emoji} {task-id}: {task name}` bullets** (one per
-plan.md task, all `🔲` at creation). Do **not** emit a `##` heading per task and do **not** add
-`**Status**` / `**Description**` fields — that shape is wrong and breaks progress tracking.
+**`tasks.md`** — do **not** author it here; the workflow tools bootstrap it from `plan.md`. If
+your own instructions put it in your hands, it is a **flat list of `- {emoji} {task-id}: {task
+name}` bullets** (one per plan.md task, all `🔲` at creation) under a `## Tasks` section — never
+a `##` heading per task with `**Status**` / `**Description**` fields, which breaks progress
+tracking.
 
 ### Step 5 — Persist constraints
 
@@ -122,7 +122,7 @@ confirmed target RID(s). Execution and Validation read this.
 
 ## Transition to Execution
 
-After `plan.md` and `tasks.md` are created and presented (via the `plan-generation` skill):
+After the plan is created and presented:
 
 - **Guided mode**: Wait for user approval before proceeding. Do not load `execution.md` yet.
 - **Automatic mode**: **Immediately** load this scenario's [execution.md](execution.md) and begin

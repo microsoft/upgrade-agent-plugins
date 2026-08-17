@@ -1,7 +1,7 @@
 // extension.ts
 import { existsSync as existsSync2 } from "node:fs";
 import { appendFile, mkdir } from "node:fs/promises";
-import path5 from "node:path";
+import path8 from "node:path";
 import { CanvasError, createCanvas, joinSession } from "@github/copilot-sdk/extension";
 
 // lib/snapshot.ts
@@ -72,19 +72,34 @@ var ACTIVITY_EVENT_LABELS = {
   file_renamed: { label: "File renamed", kind: "file" },
   commit_created: { label: "Commit", kind: "commit" },
   commit_amended: { label: "Commit amended", kind: "commit" },
+  build_started: { label: "Build started", kind: "build" },
   build_completed: { label: "Build completed", kind: "build" },
   build_session_completed: { label: "Build session completed", kind: "build" },
   phase_entered: { label: "Phase entered", kind: "phase" },
-  branch_changed: { label: "Branch changed", kind: "branch" }
+  branch_changed: { label: "Branch changed", kind: "branch" },
+  head_detached: { label: "HEAD detached", kind: "branch" },
+  scenario_started: { label: "Scenario started", kind: "scenario" },
+  scenario_completed: { label: "Scenario completed", kind: "scenario" },
+  settings_changed: { label: "Settings changed", kind: "system" },
+  provider_started: { label: "Provider started", kind: "system" },
+  provider_stopped: { label: "Provider stopped", kind: "system" }
 };
+var SYSTEM_ACTIVITY_KIND = "system";
+function humanizeEventName(eventName) {
+  if (typeof eventName !== "string" || eventName.length === 0) return "Unknown";
+  const words = eventName.split(/[_\-.]+/).filter(Boolean);
+  if (words.length === 0) return eventName;
+  return words.join(" ").replace(/^./, (c) => c.toUpperCase());
+}
 function formatActivityEntry(raw) {
   const payload = raw && typeof raw.payload === "object" && raw.payload !== null ? raw.payload : null;
   const fields = payload ? { ...raw, ...payload } : raw;
   const ts = fields.timestamp ?? fields.ts ?? fields.time ?? null;
   const eventName = fields.event ?? fields.type ?? "unknown";
-  const meta = ACTIVITY_EVENT_LABELS[eventName] ?? { label: eventName, kind: "other" };
+  const meta = ACTIVITY_EVENT_LABELS[eventName] ?? { label: humanizeEventName(eventName), kind: "other" };
   const detail = buildActivityDetail(eventName, fields);
   const entry = {
+    seq: raw.seq ?? fields.seq ?? null,
     timestamp: ts,
     event: eventName,
     label: meta.label,
@@ -102,8 +117,46 @@ function formatActivityEntry(raw) {
     entry.commitHash = fields.commitHash ?? fields.hash ?? null;
     entry.commitMessage = fields.commitMessage ?? fields.message ?? null;
     entry.commitFiles = fields.files ?? null;
+    entry.insertions = fields.insertions ?? null;
+    entry.deletions = fields.deletions ?? null;
+  }
+  if (meta.kind === "build") {
+    entry.succeeded = fields.succeeded ?? null;
+    entry.durationMs = fields.durationMs ?? fields.duration ?? null;
+    entry.succeededProjects = fields.succeededProjects ?? null;
+    entry.projectResults = Array.isArray(fields.projectResults) ? fields.projectResults : null;
+    entry.command = fields.command ?? null;
+    entry.buildSucceeded = readBuildSucceeded(eventName, fields);
+    entry.errorCount = fields.errorCount ?? fields.errors ?? null;
+    entry.warningCount = fields.warningCount ?? fields.warnings ?? null;
+    entry.totalProjects = fields.totalProjects ?? fields.total ?? null;
+    entry.failedProjects = fields.failedProjects ?? null;
+  }
+  if (meta.kind === "phase") {
+    entry.phase = fields.phase ?? fields.name ?? null;
+  }
+  if (meta.kind === "branch") {
+    entry.oldBranch = fields.oldBranch ?? fields.from ?? null;
+    entry.newBranch = fields.newBranch ?? fields.to ?? null;
+  }
+  if (meta.kind === SYSTEM_ACTIVITY_KIND) {
+    entry.providerId = fields.providerId ?? fields.provider ?? null;
   }
   return entry;
+}
+function readBuildSucceeded(eventName, e) {
+  if (eventName === "build_started") return null;
+  if (typeof e.succeeded === "boolean") return e.succeeded;
+  if (eventName === "build_session_completed") {
+    return (e.failedProjects ?? 0) === 0;
+  }
+  return (e.errorCount ?? e.errors ?? 0) === 0;
+}
+function buildOutcomeLabel(eventName, e) {
+  const succeeded = readBuildSucceeded(eventName, e);
+  if (succeeded === true) return "succeeded";
+  if (succeeded === false) return "failed";
+  return "completed";
 }
 function buildActivityDetail(eventName, e) {
   switch (eventName) {
@@ -136,21 +189,35 @@ function buildActivityDetail(eventName, e) {
       const msg = e.commitMessage ?? e.message ?? "";
       return hash ? `${hash} ${msg}` : msg;
     }
-    case "build_completed": {
-      const errs = e.errorCount ?? e.errors ?? 0;
-      const warns = e.warningCount ?? e.warnings ?? 0;
+    case "build_started": {
+      const project = e.project ?? e.projectName ?? e.projectPath ?? e.path;
       const total = e.totalProjects ?? e.total ?? null;
-      const ok = errs === 0;
+      if (project) {
+        const config = e.configuration ?? e.config;
+        return config ? `${project} (${config})` : String(project);
+      }
+      if (total != null) {
+        return `${total} project${total === 1 ? "" : "s"}`;
+      }
+      return "";
+    }
+    case "build_completed": {
+      const errs = e.errorCount ?? e.errors ?? null;
+      const warns = e.warningCount ?? e.warnings ?? null;
+      const total = e.totalProjects ?? e.total ?? null;
       const tail = total != null ? ` across ${total} project${total === 1 ? "" : "s"}` : "";
-      return `${ok ? "succeeded" : "failed"} \u2014 ${errs} error${errs === 1 ? "" : "s"}, ${warns} warning${warns === 1 ? "" : "s"}${tail}`;
+      const counts = [];
+      if (errs != null) counts.push(`${errs} error${errs === 1 ? "" : "s"}`);
+      if (warns != null) counts.push(`${warns} warning${warns === 1 ? "" : "s"}`);
+      const tally = counts.length > 0 ? ` \u2014 ${counts.join(", ")}` : "";
+      return `${buildOutcomeLabel(eventName, e)}${tally}${tail}`;
     }
     case "build_session_completed": {
       const total = e.totalProjects ?? null;
       const succeeded = e.succeededProjects ?? null;
       const failed = e.failedProjects ?? 0;
-      const ok = failed === 0 && (total ?? 0) > 0;
       const tally = total != null ? ` (${succeeded ?? 0}/${total} ok${failed ? `, ${failed} failed` : ""})` : failed ? ` \u2014 ${failed} failed` : "";
-      return `${ok ? "succeeded" : "failed"}${tally}`;
+      return `${buildOutcomeLabel(eventName, e)}${tally}`;
     }
     case "phase_entered": {
       return e.phase ?? e.name ?? "";
@@ -160,14 +227,81 @@ function buildActivityDetail(eventName, e) {
       const to = e.newBranch ?? e.to ?? "?";
       return `${from} \u2192 ${to}`;
     }
+    case "head_detached": {
+      const at = (e.commitHash ?? e.hash ?? e.sha ?? "").slice(0, 7);
+      const from = e.oldBranch ?? e.previousBranch ?? e.from;
+      const parts = [];
+      if (from) parts.push(`${from} \u2192`);
+      parts.push(at ? `detached at ${at}` : "detached HEAD");
+      return parts.join(" ");
+    }
+    case "scenario_started": {
+      const parts = [];
+      if (e.scenarioId) parts.push(e.scenarioId);
+      const source = e.sourceFramework;
+      const target = e.targetFramework;
+      if (source || target) parts.push(`${source ?? "?"} \u2192 ${target ?? "?"}`);
+      const opts = [e.mode, e.strategy].filter(Boolean);
+      if (opts.length > 0) parts.push(`(${opts.join(", ")})`);
+      return parts.join(" ");
+    }
+    case "scenario_completed": {
+      const parts = [];
+      if (e.status) parts.push(String(e.status));
+      const total = e.totalTasks ?? null;
+      if (total != null) {
+        const done = e.completed ?? 0;
+        const tally = [`${done}/${total} tasks`];
+        if (e.failed) tally.push(`${e.failed} failed`);
+        if (e.skipped) tally.push(`${e.skipped} skipped`);
+        parts.push(`\u2014 ${tally.join(", ")}`);
+      }
+      const commits = e.totalCommits;
+      const files = e.totalFilesChanged;
+      if (commits != null || files != null) {
+        parts.push(`(${commits ?? 0} commit${commits === 1 ? "" : "s"}, ${files ?? 0} file${files === 1 ? "" : "s"})`);
+      }
+      return parts.join(" ");
+    }
+    case "settings_changed": {
+      const key = e.key ?? e.setting ?? e.name;
+      if (!key) {
+        const keys = e.keys ?? e.changed;
+        return Array.isArray(keys) ? keys.join(", ") : "";
+      }
+      const from = e.oldValue ?? e.previousValue;
+      const to = e.newValue ?? e.value;
+      if (from === void 0 && to === void 0) return String(key);
+      return `${key}: ${formatScalar(from)} \u2192 ${formatScalar(to)}`;
+    }
+    case "provider_started": {
+      const id = e.providerId ?? e.provider ?? e.id ?? "provider";
+      const pid = e.pid ?? e.processId;
+      return pid != null ? `${id} (pid ${pid})` : String(id);
+    }
+    case "provider_stopped": {
+      const id = e.providerId ?? e.provider ?? e.id ?? "provider";
+      const reason = e.reason ?? (e.exitCode != null ? `exit ${e.exitCode}` : null);
+      return reason ? `${id} \u2014 ${reason}` : String(id);
+    }
     default: {
-      const { timestamp, ts, time, event, type, taskId, task_id, ...rest } = e;
+      const {
+        timestamp,
+        ts,
+        time,
+        event,
+        type,
+        taskId,
+        task_id,
+        seq,
+        provider,
+        payload,
+        correlationId,
+        ...rest
+      } = e;
       const keys = Object.keys(rest);
       if (keys.length === 0) return "";
-      if (keys.length <= 3) {
-        return keys.map((k) => `${k}=${formatScalar(rest[k])}`).join(" ");
-      }
-      return JSON.stringify(rest);
+      return keys.map((k) => `${k}=${formatScalar(rest[k])}`).join(" ");
     }
   }
 }
@@ -176,6 +310,49 @@ function formatScalar(v) {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   return JSON.stringify(v);
+}
+
+// lib/time-format.ts
+var SECOND = 1e3;
+var MINUTE = 60 * SECOND;
+var HOUR = 60 * MINUTE;
+var DAY = 24 * HOUR;
+var WEEK = 7 * DAY;
+var YEAR = 365 * DAY;
+var MONTH = YEAR / 12;
+var MAX_TIME = 864e13;
+function parseTimestamp(timestamp) {
+  if (timestamp === null || timestamp === void 0 || timestamp === "") {
+    return NaN;
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.getTime();
+  }
+  if (typeof timestamp === "number") {
+    return Number.isFinite(timestamp) && Math.abs(timestamp) <= MAX_TIME ? timestamp : NaN;
+  }
+  return Date.parse(String(timestamp));
+}
+function toIsoTimestamp(timestamp) {
+  const parsed = parseTimestamp(timestamp);
+  return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
+}
+function compareInstants(left, right, sign) {
+  const a = parseTimestamp(left);
+  const b = parseTimestamp(right);
+  if (!Number.isNaN(a) && !Number.isNaN(b)) {
+    return a === b ? 0 : sign * (a - b);
+  }
+  if (!Number.isNaN(a)) {
+    return -1;
+  }
+  if (!Number.isNaN(b)) {
+    return 1;
+  }
+  return 0;
+}
+function compareNewestFirst(left, right) {
+  return compareInstants(left, right, -1);
 }
 
 // lib/tasks.ts
@@ -239,7 +416,7 @@ function parseTasksOverview(content) {
         continue;
       }
     } else if (inOverview) {
-      if (/\*\*Progress\*\*/i.test(line) || /<progress/i.test(line)) {
+      if (/\*\*Progress\*\*/i.test(line) || /<progress/i.test(line) || /\*\*Status\*\*/i.test(line)) {
         continue;
       }
       out.push(line);
@@ -305,8 +482,8 @@ function readProjectReferences(xml) {
   let m;
   PROJECT_REF_RE.lastIndex = 0;
   while ((m = PROJECT_REF_RE.exec(stripped)) !== null) {
-    const path6 = m[1].trim();
-    if (path6) out.push(path6);
+    const path9 = m[1].trim();
+    if (path9) out.push(path9);
   }
   return out;
 }
@@ -354,27 +531,49 @@ function countIncompatible(deps) {
 
 // lib/paths.ts
 function normalizePathSeparators(p) {
-  if (typeof p !== "string" || p === "") return "";
+  if (typeof p !== "string" || p === "") {
+    return "";
+  }
   const slashed = p.replace(/\\/g, "/");
   return slashed.length > 1 ? slashed.replace(/\/+$/, "") : slashed;
 }
 function projectNameFromPath(p) {
-  if (typeof p !== "string" || !p) return "(unknown project)";
+  if (typeof p !== "string" || !p) {
+    return "(unknown project)";
+  }
   const base = normalizePathSeparators(p).split("/").pop() ?? "";
   return base.replace(/\.[a-z]+proj$/i, "");
 }
+function isAgentArtifactPath(p) {
+  const normalized = normalizePathSeparators(p).toLowerCase();
+  if (normalized === "") {
+    return false;
+  }
+  return normalized.includes(".github/upgrades/") || normalized.endsWith(".github/upgrades");
+}
 
 // lib/assessment.ts
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
 function aggregateFeatures(projects) {
-  if (!Array.isArray(projects)) return [];
+  if (!Array.isArray(projects)) {
+    return [];
+  }
   const map = /* @__PURE__ */ new Map();
   for (const proj of projects) {
-    if (!proj || typeof proj !== "object") continue;
+    if (!isRecord(proj)) {
+      continue;
+    }
     const projFeatures = Array.isArray(proj.features) ? proj.features : [];
     const projPath = typeof proj.path === "string" ? proj.path : "";
-    const projName = proj.properties?.appName ?? proj.properties?.AppName ?? projectNameFromPath(projPath);
+    const properties = isRecord(proj.properties) ? proj.properties : {};
+    const appName = properties.appName ?? properties.AppName;
+    const projName = typeof appName === "string" && appName ? appName : projectNameFromPath(projPath);
     for (const f of projFeatures) {
-      if (!f || typeof f !== "object" || typeof f.featureId !== "string") continue;
+      if (!isRecord(f) || typeof f.featureId !== "string") {
+        continue;
+      }
       const incidents = Array.isArray(f.incidents) ? f.incidents.length : 0;
       const entry = map.get(f.featureId) ?? {
         featureId: f.featureId,
@@ -395,7 +594,8 @@ function aggregateFeatures(projects) {
 
 // lib/snapshot.ts
 var SCENARIOS_REL = path2.join(".github", "upgrades", "scenarios");
-async function readActivityTail(repoRoot, maxLines = 200) {
+var ACTIVITY_TAIL_LIMIT = 1e3;
+async function readActivityTail(repoRoot, maxLines = ACTIVITY_TAIL_LIMIT) {
   const sources = [];
   const activityFile = resolveActivityLog(repoRoot);
   if (existsSync(activityFile)) sources.push(activityFile);
@@ -415,15 +615,11 @@ async function readActivityTail(repoRoot, maxLines = 200) {
     } catch {
     }
   }
-  entries.sort((a, b) => {
-    const ta = a.timestamp ? Date.parse(a.timestamp) : NaN;
-    const tb = b.timestamp ? Date.parse(b.timestamp) : NaN;
-    if (!Number.isNaN(ta) && !Number.isNaN(tb)) return tb - ta;
-    if (!Number.isNaN(ta)) return -1;
-    if (!Number.isNaN(tb)) return 1;
-    return 0;
-  });
-  return entries.slice(0, maxLines);
+  entries.sort((a, b) => compareNewestFirst(a.timestamp, b.timestamp));
+  return {
+    entries: entries.slice(0, maxLines),
+    truncated: entries.length > maxLines
+  };
 }
 var SCENARIO_ARTIFACT_FILES = ["scenario.json", "assessment.json", "plan.md"];
 async function readScenarios(repoRoot) {
@@ -467,9 +663,14 @@ function getActiveScenario(scenarios) {
 }
 async function readProjects(repoRoot) {
   const projects = [];
+  const walkedDirs = /* @__PURE__ */ new Set();
+  const projectFiles = /* @__PURE__ */ new Set();
+  const preReadStats = /* @__PURE__ */ new Map();
   const MAX_PROJECTS = 500;
   async function walk(dir) {
     if (projects.length >= MAX_PROJECTS) return;
+    walkedDirs.add(dir);
+    preReadStats.set(dir, await _statToken(dir));
     let entries;
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
@@ -486,6 +687,8 @@ async function readProjects(repoRoot) {
       }
       if (!/\.(cs|fs)proj$/i.test(entry.name)) continue;
       const relativePath = path2.relative(repoRoot, full);
+      projectFiles.add(full);
+      preReadStats.set(full, await _statToken(full));
       let xml = "";
       try {
         xml = await fs.readFile(full, "utf8");
@@ -504,7 +707,7 @@ async function readProjects(repoRoot) {
   }
   await walk(repoRoot);
   projects.sort((a, b) => a.projectPath.localeCompare(b.projectPath));
-  return projects;
+  return { projects, walkedDirs: [...walkedDirs], projectFiles: [...projectFiles], preReadStats };
 }
 function findAssessmentJson(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
@@ -545,6 +748,12 @@ async function readAssessment(activeScenario) {
         frameworks: p.properties?.frameworks ?? [],
         projectKind: p.properties?.projectKind ?? null,
         isSdk: !!p.properties?.isSdkStyle,
+        // Sizing metrics surfaced by the Assessment "Highlevel metrics"
+        // block (camelCase in the canonical producer's assessment.json).
+        numberOfCodeFiles: p.properties?.numberOfCodeFiles ?? 0,
+        linesOfCode: p.properties?.linesOfCode ?? 0,
+        minLinesOfCodeToChange: p.properties?.minLinesOfCodeToChange ?? 0,
+        maxLinesOfCodeToChange: p.properties?.maxLinesOfCodeToChange ?? 0,
         ruleInstances: Array.isArray(p.ruleInstances) ? p.ruleInstances.filter((ri) => ri && typeof ri === "object") : []
       })),
       rules: data.rules && typeof data.rules === "object" ? data.rules : {},
@@ -564,10 +773,35 @@ async function readAssessmentMarkdown(activeScenario) {
     return null;
   }
 }
+async function readPlan(activeScenario) {
+  if (!activeScenario?.scenarioPath) return null;
+  const file = path2.join(activeScenario.scenarioPath, "plan.md");
+  if (!existsSync(file)) return null;
+  try {
+    return { path: file, content: await fs.readFile(file, "utf8") };
+  } catch {
+    return null;
+  }
+}
 function findDependencyHealthJson(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
   const file = path2.join(activeScenario.scenarioPath, "dependencies-health.json");
   return existsSync(file) ? file : null;
+}
+function _depRefPath(x) {
+  let raw = null;
+  if (typeof x === "string") {
+    raw = x;
+  } else if (x && typeof x === "object") {
+    const n = pick(x, "path", "Path", "projectPath", "ProjectPath", "name", "Name", "projectName", "ProjectName");
+    if (typeof n === "string") raw = n;
+  }
+  if (!raw) return "";
+  return raw.replace(/\\/g, "/");
+}
+function _depRefDisplay(fullPath) {
+  const base = fullPath.split("/").pop() ?? fullPath;
+  return base.replace(/\.[a-z]+proj$/i, "");
 }
 async function readDependencyHealth(activeScenario) {
   const file = findDependencyHealthJson(activeScenario);
@@ -585,19 +819,33 @@ async function readDependencyHealth(activeScenario) {
         versionDrift: pick(gov, "totalVersionDriftInstances", "TotalVersionDriftInstances") ?? 0,
         projects: projects.length
       },
-      packages: packages.map((p) => ({
-        name: pick(p, "name", "Name") ?? "",
-        totalProjectCount: pick(p, "totalProjectCount", "TotalProjectCount") ?? 0,
-        distinctVersionCount: pick(p, "distinctVersionCount", "DistinctVersionCount") ?? 0,
-        recommendedVersion: pick(p, "recommendedVersion", "RecommendedVersion") ?? null,
-        isCompatible: pick(p, "isCompatible", "IsCompatible") ?? null,
-        versions: (pick(p, "versions", "Versions") ?? []).map((v) => ({
-          version: pick(v, "version", "Version") ?? "",
-          projectCount: (pick(v, "projects", "Projects") ?? []).length,
-          isRecommended: !!pick(v, "isRecommended", "IsRecommended")
-        })),
-        upgrade: pick(p, "upgrade", "Upgrade") ?? null
-      })),
+      packages: packages.map((p) => {
+        const versionsRaw = pick(p, "versions", "Versions") ?? [];
+        const seen = /* @__PURE__ */ new Set();
+        const projectRefs = [];
+        for (const v of versionsRaw) {
+          for (const pr of pick(v, "projects", "Projects") ?? []) {
+            const full = _depRefPath(pr);
+            if (!full || seen.has(full)) continue;
+            seen.add(full);
+            projectRefs.push({ path: full, name: _depRefDisplay(full) });
+          }
+        }
+        return {
+          name: pick(p, "name", "Name") ?? "",
+          totalProjectCount: pick(p, "totalProjectCount", "TotalProjectCount") ?? 0,
+          distinctVersionCount: pick(p, "distinctVersionCount", "DistinctVersionCount") ?? 0,
+          recommendedVersion: pick(p, "recommendedVersion", "RecommendedVersion") ?? null,
+          isCompatible: pick(p, "isCompatible", "IsCompatible") ?? null,
+          projects: [...projectRefs],
+          versions: versionsRaw.map((v) => ({
+            version: pick(v, "version", "Version") ?? "",
+            projectCount: (pick(v, "projects", "Projects") ?? []).length,
+            isRecommended: !!pick(v, "isRecommended", "IsRecommended")
+          })),
+          upgrade: pick(p, "upgrade", "Upgrade") ?? null
+        };
+      }),
       projects: projects.map((proj) => {
         const deps = pick(proj, "dependencies", "Dependencies");
         const imports = pick(proj, "imports", "Imports");
@@ -642,12 +890,20 @@ async function readTasks(repoRoot, activeScenario) {
         }
         try {
           task.taskBlurb = (await fs.readFile(taskMdPath, "utf8")).trim();
+          task.taskBlurbPath = taskMdPath;
         } catch {
           task.taskBlurb = null;
+          task.taskBlurbPath = null;
         }
       })
     );
-    return { path: tasksPath, scenarioId: activeScenario.id, overview, tasks };
+    let updatedAt = null;
+    try {
+      updatedAt = new Date(statSync2(tasksPath).mtimeMs).toISOString();
+    } catch {
+      updatedAt = null;
+    }
+    return { path: tasksPath, scenarioId: activeScenario.id, overview, tasks, updatedAt };
   } catch {
     return null;
   }
@@ -696,33 +952,139 @@ async function buildDiagnostics(repoRoot, resolution, activeScenario) {
     generatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
 }
-async function snapshot(repoRoot, resolution) {
+var _snapshotCache = /* @__PURE__ */ new Map();
+var _snapshotInflight = /* @__PURE__ */ new Map();
+var _projectsCache = /* @__PURE__ */ new Map();
+var SNAPSHOT_MAX_AGE_MS = 3e4;
+async function _statToken(p) {
+  try {
+    const st = await fs.stat(p);
+    return `${st.mtimeMs}:${st.size}:${st.isDirectory() ? "d" : "f"}`;
+  } catch {
+    return "\u2205";
+  }
+}
+async function computeChangeToken(targets, statFn = _statToken) {
+  if (!Array.isArray(targets) || targets.length === 0) return "";
+  const sorted = [...targets].sort();
+  const parts = await Promise.all(sorted.map(async (p) => `${p}=${await statFn(p)}`));
+  return parts.join("\n");
+}
+async function listScenarioChildDirs(repoRoot) {
+  const dir = path2.join(repoRoot, SCENARIOS_REL);
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    return entries.filter((e) => e.isDirectory()).map((e) => path2.join(dir, e.name));
+  } catch {
+    return [];
+  }
+}
+function buildTokenTargets(repoRoot, scenarios, activeScenario, tasks, walkedDirs, projectFiles, scenarioChildDirs) {
+  const targets = [path2.join(repoRoot, SCENARIOS_REL)];
+  for (const s of scenarios ?? []) {
+    if (!s?.scenarioPath) {
+      continue;
+    }
+    targets.push(s.scenarioPath, path2.join(s.scenarioPath, "scenario.json"));
+  }
+  targets.push(...scenarioChildDirs ?? []);
+  if (activeScenario?.scenarioPath) {
+    const sp = activeScenario.scenarioPath;
+    for (const file of ["assessment.json", "assessment.md", "dependencies-health.json", "plan.md", "scenario-instructions.md", "tasks.md"]) {
+      targets.push(path2.join(sp, file));
+    }
+    const tasksDir = path2.join(sp, "tasks");
+    targets.push(tasksDir);
+    for (const task of tasks?.tasks ?? []) {
+      const taskDir = path2.join(tasksDir, task.id);
+      targets.push(taskDir, path2.join(taskDir, "progress-details.md"), path2.join(taskDir, "task.md"));
+    }
+  }
+  targets.push(activityLogDir(repoRoot), resolveActivityLog(repoRoot), ...resolveActivityArchives(repoRoot));
+  targets.push(repoRoot, ...walkedDirs, ...projectFiles ?? []);
+  return [...new Set(targets)];
+}
+async function snapshot(repoRoot, resolution, { force = false } = {}) {
+  if (!force) {
+    const cached = _snapshotCache.get(repoRoot);
+    if (cached && Date.now() - cached.computedAt < SNAPSHOT_MAX_AGE_MS && await computeChangeToken(cached.tokenTargets) === cached.token) {
+      return cached.state;
+    }
+    const inflight = _snapshotInflight.get(repoRoot);
+    if (inflight) {
+      return inflight;
+    }
+  }
+  const computePromise = (async () => {
+    const { state, tokenTargets } = await computeSnapshot(repoRoot, resolution, force);
+    _snapshotCache.set(repoRoot, {
+      state,
+      tokenTargets,
+      token: await computeChangeToken(tokenTargets),
+      computedAt: Date.now()
+    });
+    return state;
+  })();
+  if (!force) {
+    _snapshotInflight.set(repoRoot, computePromise);
+    computePromise.finally(() => {
+      if (_snapshotInflight.get(repoRoot) === computePromise) {
+        _snapshotInflight.delete(repoRoot);
+      }
+    }).catch(() => {
+    });
+  }
+  return computePromise;
+}
+async function readProjectsCached(repoRoot, force = false) {
+  if (!force) {
+    const cached = _projectsCache.get(repoRoot);
+    if (cached && await computeChangeToken(cached.tokenTargets) === cached.token) {
+      return cached.result;
+    }
+  }
+  const result = await readProjects(repoRoot);
+  const tokenTargets = [.../* @__PURE__ */ new Set([repoRoot, ...result.walkedDirs, ...result.projectFiles])];
+  _projectsCache.set(repoRoot, {
+    result,
+    tokenTargets,
+    token: await computeChangeToken(tokenTargets, (p) => result.preReadStats.get(p) ?? _statToken(p))
+  });
+  return result;
+}
+async function computeSnapshot(repoRoot, resolution, force = false) {
   const scenarios = await readScenarios(repoRoot);
   const activeScenario = getActiveScenario(scenarios);
-  const [activity, projects, assessment, dependencies, tasks, diagnostics, scenarioInstructions] = await Promise.all([
+  const [activityTail, projectsResult, assessment, dependencies, tasks, plan, diagnostics, scenarioInstructions, scenarioChildDirs] = await Promise.all([
     readActivityTail(repoRoot),
-    readProjects(repoRoot),
+    readProjectsCached(repoRoot, force),
     readAssessment(activeScenario),
     readDependencyHealth(activeScenario),
     readTasks(repoRoot, activeScenario),
+    readPlan(activeScenario),
     buildDiagnostics(repoRoot, resolution, activeScenario),
-    readScenarioInstructions(activeScenario)
+    readScenarioInstructions(activeScenario),
+    listScenarioChildDirs(repoRoot)
   ]);
   const activityLog = resolveActivityLog(repoRoot);
-  return {
+  const state = {
     repoRoot,
     activitySources: existsSync(activityLog) ? [activityLog] : [],
     activeScenarioId: activeScenario?.id ?? null,
-    activity,
+    activity: activityTail.entries,
+    activityTruncated: activityTail.truncated,
     scenarios,
-    projects,
+    projects: projectsResult.projects,
     assessment,
     dependencies,
     tasks,
+    plan,
     diagnostics,
     scenarioInstructions,
     generatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
+  const tokenTargets = buildTokenTargets(repoRoot, scenarios, activeScenario, tasks, projectsResult.walkedDirs, projectsResult.projectFiles, scenarioChildDirs);
+  return { state, tokenTargets };
 }
 async function readScenarioInstructions(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
@@ -837,6 +1199,58 @@ var COMMIT_HASH_RE = /^[a-f0-9]{4,64}$/i;
 function isValidCommitHash(value) {
   return COMMIT_HASH_RE.test(value);
 }
+var MAX_ACTION_BODY_BYTES = 1024 * 1024;
+var MAX_TELEMETRY_BODY_BYTES = 10 * 1024;
+var LOOPBACK_HOSTNAMES = /* @__PURE__ */ new Set(["127.0.0.1", "localhost", "::1"]);
+function hostnameFromAuthority(authority) {
+  if (typeof authority !== "string" || authority.length === 0) {
+    return null;
+  }
+  const value = authority.trim();
+  if (value.startsWith("[")) {
+    const end = value.indexOf("]");
+    if (end === -1) {
+      return null;
+    }
+    return value.slice(1, end).toLowerCase();
+  }
+  const colon = value.indexOf(":");
+  return (colon === -1 ? value : value.slice(0, colon)).toLowerCase();
+}
+function isLoopbackHost(hostHeader) {
+  const hostname = hostnameFromAuthority(hostHeader);
+  return hostname !== null && LOOPBACK_HOSTNAMES.has(hostname);
+}
+function isLoopbackOrigin(origin) {
+  let parsed;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return false;
+  }
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return LOOPBACK_HOSTNAMES.has(hostname);
+}
+function isCrossSiteRequest(req) {
+  const secFetchSite = req.headers["sec-fetch-site"];
+  if (typeof secFetchSite === "string" && secFetchSite.length > 0) {
+    return secFetchSite === "cross-site" || secFetchSite === "cross-origin";
+  }
+  const origin = req.headers.origin;
+  if (typeof origin === "string" && origin.length > 0) {
+    return !isLoopbackOrigin(origin);
+  }
+  return false;
+}
+function isCrossSiteProtectedRoute(method, pathname) {
+  if (method !== "GET") {
+    return true;
+  }
+  return pathname === "/events" || pathname.startsWith("/api/");
+}
 function getCommitFiles(repoRoot, commitHash) {
   return new Promise((resolve, reject) => {
     if (!isValidCommitHash(commitHash)) {
@@ -909,7 +1323,8 @@ function createDashboardServer(options) {
     snapshot: snapshot2,
     getActionHandler,
     onTelemetry,
-    pollIntervalMs = 5e3
+    pollIntervalMs = 5e3,
+    keepaliveMs = 2e4
   } = options;
   if (!indexHtmlPath) throw new Error("createDashboardServer: indexHtmlPath is required");
   if (typeof getResolution !== "function") throw new Error("createDashboardServer: getResolution is required");
@@ -941,7 +1356,7 @@ function createDashboardServer(options) {
     const resolution = meta.resolution ?? await getResolution(instanceId);
     if (!resolution) return;
     meta.resolution = resolution;
-    const state = await snapshot2(resolution.path, resolution);
+    const state = await snapshot2(resolution.path, resolution, { force });
     const hash = hashState(state);
     if (!force && hash === meta.lastStateHash) return;
     meta.lastStateHash = hash;
@@ -1011,6 +1426,16 @@ data: ${JSON.stringify(data)}
   async function handleRequest(req, res) {
     const url = new URL(req.url ?? "/", `http://${host}`);
     const instanceId = url.searchParams.get("instanceId") ?? "default";
+    if (!isLoopbackHost(req.headers.host)) {
+      res.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
+      res.end("forbidden: host not allowed");
+      return;
+    }
+    if (isCrossSiteProtectedRoute(req.method, url.pathname) && isCrossSiteRequest(req)) {
+      res.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
+      res.end("forbidden: cross-site request rejected");
+      return;
+    }
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
       const html = await fs2.readFile(indexHtmlPath);
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
@@ -1168,7 +1593,7 @@ data: ${JSON.stringify(data)}
           res.write(": ping\n\n");
         } catch {
         }
-      }, 2e4);
+      }, keepaliveMs);
       const cleanup = () => {
         clearInterval(keepalive);
         subs.delete(res);
@@ -1192,12 +1617,24 @@ data: ${JSON.stringify(data)}
       return;
     }
     if (req.method === "POST" && url.pathname === "/action") {
-      let body = "";
+      const chunks = [];
+      let received = 0;
+      let overflow = false;
       req.on("data", (chunk) => {
-        body += chunk;
+        if (overflow) return;
+        received += chunk.length;
+        if (received > MAX_ACTION_BODY_BYTES) {
+          overflow = true;
+          res.writeHead(413, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "request body too large" }));
+          return;
+        }
+        chunks.push(chunk);
       });
       req.on("end", async () => {
+        if (overflow) return;
         try {
+          const body = Buffer.concat(chunks).toString("utf8");
           const payload = JSON.parse(body || "{}");
           const actionName = typeof payload.actionName === "string" ? payload.actionName : "";
           const handler = getActionHandler(actionName);
@@ -1216,18 +1653,22 @@ data: ${JSON.stringify(data)}
             broadcastToInstance
           };
           const result = await handler(ctx);
-          const meta = getInstanceMeta(ctx.instanceId);
-          const resolution = meta.resolution ?? await getResolution(ctx.instanceId);
-          if (resolution) {
-            meta.resolution = resolution;
-            const state = await snapshot2(resolution.path, resolution);
-            meta.lastStateHash = hashState(state);
-            res.writeHead(200, { "content-type": "application/json" });
-            res.end(JSON.stringify({ result, state }));
-          } else {
-            res.writeHead(200, { "content-type": "application/json" });
-            res.end(JSON.stringify({ result, state: null }));
+          let state = null;
+          try {
+            const meta = getInstanceMeta(ctx.instanceId);
+            const resolution = meta.resolution ?? await getResolution(ctx.instanceId);
+            if (resolution) {
+              meta.resolution = resolution;
+              state = await snapshot2(resolution.path, resolution);
+              meta.lastStateHash = hashState(state);
+            }
+          } catch (refreshError) {
+            const detail = refreshError instanceof Error ? refreshError.message : String(refreshError);
+            console.warn(`[upgrade-agent-dashboard] post-action state refresh failed for "${actionName}": ${detail}`);
+            state = null;
           }
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ result, state }));
         } catch (err) {
           res.writeHead(400, { "content-type": "application/json" });
           res.end(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }));
@@ -1236,21 +1677,24 @@ data: ${JSON.stringify(data)}
       return;
     }
     if (req.method === "POST" && url.pathname === "/telemetry") {
-      let body = "";
+      const chunks = [];
+      let received = 0;
       let overflow = false;
       req.on("data", (chunk) => {
         if (overflow) return;
-        body += chunk;
-        if (body.length > 10240) {
+        received += chunk.length;
+        if (received > MAX_TELEMETRY_BODY_BYTES) {
           overflow = true;
           res.writeHead(413);
           res.end();
+          return;
         }
+        chunks.push(chunk);
       });
       req.on("end", () => {
         if (overflow) return;
         try {
-          const payload = JSON.parse(body || "{}");
+          const payload = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
           if (typeof onTelemetry === "function") onTelemetry(payload);
         } catch {
         }
@@ -1314,6 +1758,25 @@ function getGitDiff(repoRoot, filePath) {
             resolve(stdout2);
           }
         });
+      } else if (!stdout.trim()) {
+        execFile("git", ["ls-files", "--error-unmatch", "--", filePath], { cwd: repoRoot }, (lsErr) => {
+          if (!lsErr) {
+            resolve("");
+            return;
+          }
+          execFile(
+            "git",
+            ["diff", "--no-index", "--", "/dev/null", filePath],
+            { cwd: repoRoot, maxBuffer: 1024 * 1024 },
+            (diffErr, diffOut) => {
+              if (diffOut) {
+                resolve(diffOut);
+              } else {
+                resolve("");
+              }
+            }
+          );
+        });
       } else {
         resolve(stdout);
       }
@@ -1331,19 +1794,447 @@ function resolveCanvasIndexHtml(moduleUrl) {
   return path4.join(extensionRoot, "canvas", "app", "index.html");
 }
 
+// lib/panels.ts
+var TAB_PANELS = [
+  "overview",
+  "assessment",
+  "plan",
+  "execution",
+  "activity",
+  "options"
+];
+var ASSESSMENT_SUB_TABS = [
+  "summary",
+  "issues",
+  "projects",
+  "dependencies",
+  "features"
+];
+var EXECUTION_DEEP_LINKS = ["tasks", "builds", "repository"];
+var DEEP_LINK_PANELS = [
+  ...EXECUTION_DEEP_LINKS,
+  ...ASSESSMENT_SUB_TABS.map((sub) => `assessment:${sub}`)
+];
+var OVERLAY_PANELS = ["diagnostics"];
+var PANEL_NAMES = [
+  ...TAB_PANELS,
+  ...DEEP_LINK_PANELS,
+  ...OVERLAY_PANELS
+];
+var PANEL_SET = new Set(PANEL_NAMES);
+function isValidPanel(panel) {
+  return typeof panel === "string" && PANEL_SET.has(panel);
+}
+var TELEMETRY_PANELS = [...TAB_PANELS, ...OVERLAY_PANELS];
+var TELEMETRY_EVENTS = ["dashboard/tab_click", "dashboard/tab_navigation"];
+var TELEMETRY_PANEL_SET = new Set(TELEMETRY_PANELS);
+var TELEMETRY_EVENT_SET = new Set(TELEMETRY_EVENTS);
+function isTelemetryPanel(panel) {
+  return typeof panel === "string" && TELEMETRY_PANEL_SET.has(panel);
+}
+function isTelemetryEvent(event) {
+  return typeof event === "string" && TELEMETRY_EVENT_SET.has(event);
+}
+
+// lib/telemetry-sink.ts
+function resolveTelemetryRecord(payload, now = /* @__PURE__ */ new Date()) {
+  if (typeof payload !== "object" || payload === null) {
+    return null;
+  }
+  const { event, properties } = payload;
+  if (!isTelemetryEvent(event)) {
+    return null;
+  }
+  const panel = properties?.panel;
+  if (!isTelemetryPanel(panel)) {
+    return null;
+  }
+  return { event, properties: { panel }, timestamp: now.toISOString() };
+}
+
+// lib/markdown-editor.ts
+import path5 from "node:path";
+import { createHash } from "node:crypto";
+import { realpathSync, statSync as statSync3 } from "node:fs";
+var nodeFileSystem = {
+  realpathSync: (target) => realpathSync(target),
+  statSync: (target) => ({ isFile: () => statSync3(target).isFile() })
+};
+function isContained(root, candidate) {
+  const relative = path5.relative(root, candidate);
+  return relative !== "" && !relative.startsWith("..") && !path5.isAbsolute(relative);
+}
+function resolveEditableMarkdownPath(candidate, repoRoot, fs3 = nodeFileSystem) {
+  if (typeof candidate !== "string" || candidate.trim() === "") {
+    return { ok: false, code: "invalid_path", message: "path is required." };
+  }
+  const trimmed = candidate.trim();
+  if (trimmed.includes("\0")) {
+    return { ok: false, code: "invalid_path", message: "path contains an invalid character." };
+  }
+  if (!/\.md$/i.test(trimmed)) {
+    return { ok: false, code: "not_markdown", message: `Only markdown files can be opened in the editor: ${trimmed}` };
+  }
+  if (typeof repoRoot !== "string" || repoRoot.trim() === "") {
+    return { ok: false, code: "repo_unresolved", message: "The repository root has not been resolved yet." };
+  }
+  const root = path5.resolve(repoRoot);
+  const resolved = path5.resolve(root, trimmed);
+  if (!isContained(root, resolved)) {
+    return { ok: false, code: "outside_repo", message: `Refusing to open a file outside the repository: ${trimmed}` };
+  }
+  let realRoot;
+  try {
+    realRoot = path5.resolve(fs3.realpathSync(root));
+  } catch {
+    return { ok: false, code: "repo_unresolved", message: "The repository root is no longer accessible." };
+  }
+  let realPath;
+  try {
+    realPath = path5.resolve(fs3.realpathSync(resolved));
+    if (!fs3.statSync(realPath).isFile()) {
+      return { ok: false, code: "markdown_missing_on_disk", message: `${trimmed} is not a file.` };
+    }
+  } catch {
+    return { ok: false, code: "markdown_missing_on_disk", message: `${trimmed} is no longer on disk.` };
+  }
+  if (!isContained(realRoot, realPath)) {
+    return { ok: false, code: "outside_repo", message: `Refusing to open a file outside the repository: ${trimmed}` };
+  }
+  if (!/\.md$/i.test(realPath)) {
+    return { ok: false, code: "not_markdown", message: `Only markdown files can be opened in the editor: ${trimmed}` };
+  }
+  const relativePath = path5.relative(realRoot, realPath);
+  return { ok: true, path: realPath, relativePath: relativePath.split(path5.sep).join("/") };
+}
+function markdownEditorInstanceId(relativePath) {
+  const digest = createHash("sha256").update(relativePath).digest("hex").slice(0, 8);
+  const slug = relativePath.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-+|-+$/g, "");
+  return slug === "" ? `markdown-${digest}` : `markdown-${slug}-${digest}`;
+}
+function markdownEditorTitle(relativePath) {
+  const segments = relativePath.split("/").filter((segment) => segment !== "");
+  return segments.slice(-2).join("/");
+}
+
+// lib/feedback.ts
+var FEEDBACK_REPO_URL = "https://github.com/microsoft/upgrade-agent-plugins";
+var FEEDBACK_ISSUE_URL = `${FEEDBACK_REPO_URL}/issues/new`;
+var MAX_FIELD_LENGTH = 100;
+var UNKNOWN = "unknown";
+function sanitizeField(value) {
+  let text;
+  if (typeof value === "string") {
+    text = value;
+  } else if (typeof value === "number" && Number.isFinite(value)) {
+    text = String(value);
+  } else {
+    return "";
+  }
+  const collapsed = text.replace(/\s+/g, " ").trim().replace(/[|`<>\\]/g, "");
+  if (collapsed.length <= MAX_FIELD_LENGTH) {
+    return collapsed;
+  }
+  return `${collapsed.slice(0, MAX_FIELD_LENGTH - 1)}\u2026`;
+}
+function fieldOrUnknown(value) {
+  const sanitized = sanitizeField(value);
+  return sanitized === "" ? UNKNOWN : `\`${sanitized}\``;
+}
+function buildFeedbackEnvironmentRows(context = {}) {
+  const targetFramework = sanitizeField(context.targetFramework);
+  return [
+    ["Plugin version", fieldOrUnknown(context.pluginVersion)],
+    ["Host", fieldOrUnknown(context.host)],
+    ["Host version", fieldOrUnknown(context.hostVersion)],
+    ["Scenario", fieldOrUnknown(context.scenarioId)],
+    ...targetFramework === "" ? [] : [["Target framework", `\`${targetFramework}\``]],
+    ["Phase", fieldOrUnknown(context.phase)]
+  ];
+}
+function buildFeedbackIssueBody(context = {}) {
+  const rows = buildFeedbackEnvironmentRows(context);
+  return [
+    "",
+    "",
+    "---",
+    "<details><summary>Environment (auto-filled)</summary>",
+    "",
+    "| | |",
+    "|---|---|",
+    ...rows.map(([name, value]) => `| ${name} | ${value} |`),
+    "",
+    "</details>",
+    ""
+  ].join("\n");
+}
+function buildFeedbackIssueUrl(context = {}) {
+  const params = new URLSearchParams({ body: buildFeedbackIssueBody(context) });
+  return `${FEEDBACK_ISSUE_URL}?${params.toString()}`;
+}
+
+// lib/feedback-context.ts
+import { readFileSync as readFileSync2 } from "node:fs";
+import path6 from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+var MAX_MANIFEST_LOOKUP_DEPTH = 6;
+function detectHost(env, fallback) {
+  if (env.AI_AGENT === "github_copilot_app_agent") {
+    return "GitHub Copilot app";
+  }
+  if (env.GITHUB_ACTIONS === "true") {
+    return "Copilot coding agent";
+  }
+  if (typeof env.COPILOT_CLI_BINARY_VERSION === "string" && env.COPILOT_CLI_BINARY_VERSION.trim() !== "") {
+    return "Copilot CLI";
+  }
+  return fallback;
+}
+function readHostVersion(env) {
+  const version = env.COPILOT_CLI_BINARY_VERSION;
+  return typeof version === "string" && version.trim() !== "" ? version.trim() : void 0;
+}
+function isRecord2(value) {
+  return typeof value === "object" && value !== null;
+}
+function readPluginVersion(startDir, readFile = (p) => readFileSync2(p, "utf8")) {
+  let dir = startDir;
+  for (let depth = 0; depth < MAX_MANIFEST_LOOKUP_DEPTH; depth += 1) {
+    try {
+      const parsed = JSON.parse(readFile(path6.join(dir, "plugin.json")));
+      if (isRecord2(parsed) && typeof parsed.version === "string" && parsed.version.trim() !== "") {
+        return parsed.version.trim();
+      }
+    } catch {
+    }
+    const parent = path6.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+function activeScenarioOf(state) {
+  if (!Array.isArray(state.scenarios)) {
+    return null;
+  }
+  return state.scenarios.find((candidate) => candidate?.id === state.activeScenarioId) ?? null;
+}
+function buildFeedbackContext(state, options) {
+  const snapshot2 = state ?? {};
+  const scenario = activeScenarioOf(snapshot2);
+  const targetFramework = scenario?.properties?.UpgradeTargetFramework ?? scenario?.properties?.upgradeTargetFramework ?? snapshot2.dependencies?.targetFramework ?? null;
+  const moduleDir = options.moduleDir ?? path6.dirname(fileURLToPath2(import.meta.url));
+  const env = options.env ?? {
+    AI_AGENT: process.env.AI_AGENT,
+    GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
+    COPILOT_CLI_BINARY_VERSION: process.env.COPILOT_CLI_BINARY_VERSION
+  };
+  return {
+    pluginVersion: readPluginVersion(moduleDir) ?? void 0,
+    host: detectHost(env, options.surface),
+    hostVersion: readHostVersion(env),
+    scenarioId: snapshot2.activeScenarioId ?? void 0,
+    targetFramework: targetFramework ?? void 0,
+    phase: options.phaseLabel ?? void 0
+  };
+}
+
+// lib/open-external.ts
+import { spawn as nodeSpawn } from "node:child_process";
+import path7 from "node:path";
+function windowsProtocolHandler(env = process.env) {
+  const systemRoot = typeof env.SystemRoot === "string" && env.SystemRoot !== "" ? env.SystemRoot : "C:\\Windows";
+  return path7.join(systemRoot, "System32", "rundll32.exe");
+}
+function externalOpenCommand(url, platform, env) {
+  if (platform === "win32") {
+    return { command: windowsProtocolHandler(env), args: ["url.dll,FileProtocolHandler", url] };
+  }
+  if (platform === "darwin") {
+    return { command: "open", args: [url] };
+  }
+  return { command: "xdg-open", args: [url] };
+}
+var ExternalOpenError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.name = "ExternalOpenError";
+    this.code = code;
+  }
+};
+function assertAllowed(url, allowedPrefixes) {
+  if (typeof url !== "string" || url === "") {
+    throw new ExternalOpenError("invalid_url", "A URL is required.");
+  }
+  if (!allowedPrefixes.some((prefix) => prefix !== "" && url.startsWith(prefix))) {
+    throw new ExternalOpenError("url_not_allowed", "Refusing to open a URL outside the allowed list.");
+  }
+}
+async function openExternalUrl(url, options) {
+  assertAllowed(url, options.allowedPrefixes);
+  const platform = options.platform ?? process.platform;
+  const spawnFn = options.spawn ?? nodeSpawn;
+  const { command, args } = externalOpenCommand(url, platform);
+  return await new Promise((resolve, reject) => {
+    let child;
+    try {
+      child = spawnFn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
+    } catch (error) {
+      reject(new ExternalOpenError("spawn_failed", `Could not launch ${command}: ${error?.message ?? error}`));
+      return;
+    }
+    let settled = false;
+    child.once("error", (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(new ExternalOpenError("spawn_failed", `Could not launch ${command}: ${error?.message ?? error}`));
+    });
+    child.once("spawn", () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      child.unref();
+      resolve({ command, args });
+    });
+  });
+}
+
+// lib/task-state.ts
+var TERMINAL_TASK_STATES = /* @__PURE__ */ new Set(["Complete"]);
+function isTerminalTaskState(state) {
+  return typeof state === "string" && TERMINAL_TASK_STATES.has(state);
+}
+var ATTENTION_TASK_STATES = /* @__PURE__ */ new Set(["Failed", "Skipped"]);
+function isAttentionTaskState(state) {
+  return typeof state === "string" && ATTENTION_TASK_STATES.has(state);
+}
+
+// lib/phase.ts
+var PHASE_META = {
+  setup: {
+    label: "Getting set up",
+    description: "Reading the repository and preparing the upgrade scenario."
+  },
+  assess: {
+    label: "Assessing",
+    description: "Scanning projects and dependencies for compatibility issues."
+  },
+  plan: {
+    label: "Planning",
+    description: "Choosing an upgrade strategy and breaking it into tasks."
+  },
+  execute: {
+    label: "Upgrading",
+    description: "Applying changes to your code."
+  },
+  validate: {
+    label: "Validating",
+    description: "Building and testing the upgraded solution."
+  }
+};
+var PHASE_ALIASES = /* @__PURE__ */ new Map([
+  ["setup", "setup"],
+  ["initialize", "setup"],
+  ["initialization", "setup"],
+  ["assess", "assess"],
+  ["assessment", "assess"],
+  ["analyze", "assess"],
+  ["analysis", "assess"],
+  ["plan", "plan"],
+  ["planning", "plan"],
+  ["execute", "execute"],
+  ["execution", "execute"],
+  ["upgrade", "execute"],
+  ["remediate", "execute"],
+  ["validate", "validate"],
+  ["validation", "validate"],
+  ["verify", "validate"],
+  ["test", "validate"]
+]);
+var ARTIFACT_PHASES = [
+  [/\/tasks\/[^/]+\/progress-details\.md$/, "execute"],
+  [/\/tasks\/[^/]+\/task\.md$/, "plan"],
+  [/\/tasks\.md$/, "plan"],
+  [/\/plan\.md$/, "plan"],
+  [/\/upgrade-options\.md$/, "plan"],
+  [/\/assessment[^/]*$/, "assess"],
+  [/\/dependencies-health\.json$/, "assess"],
+  [/\/scenario-instructions\.md$/, "setup"],
+  [/\/scenario\.json$/, "setup"]
+];
+function isRecord3(value) {
+  return typeof value === "object" && value !== null;
+}
+function normalizePhaseName(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  return PHASE_ALIASES.get(value.trim().toLowerCase()) ?? null;
+}
+function phaseForArtifact(filePath) {
+  const normalized = normalizePathSeparators(filePath).toLowerCase();
+  for (const [pattern, phase] of ARTIFACT_PHASES) {
+    if (pattern.test(normalized)) {
+      return phase;
+    }
+  }
+  return null;
+}
+function build(id, inferred, evidence, at) {
+  return { id, ...PHASE_META[id], inferred, evidence, at };
+}
+function derivePhase(state) {
+  const currentState = isRecord3(state) ? state : {};
+  const activity = Array.isArray(currentState.activity) ? currentState.activity : [];
+  const tasks = isRecord3(currentState.tasks) && Array.isArray(currentState.tasks.tasks) ? currentState.tasks.tasks : [];
+  const hasLiveTask = tasks.some((task) => isRecord3(task) && task.state === "InProgress");
+  const allTasksDone = tasks.length > 0 && tasks.every((task) => isRecord3(task) && isTerminalTaskState(task.state));
+  const needsAttention = tasks.some((task) => isRecord3(task) && isAttentionTaskState(task.state));
+  const scenarios = Array.isArray(currentState.scenarios) ? currentState.scenarios : [];
+  const hasScenario = typeof currentState.activeScenarioId === "string" && currentState.activeScenarioId !== "" || scenarios.length > 0;
+  const hasAgentArtifact = activity.some(
+    (entry) => isRecord3(entry) && entry.kind === "file" && isAgentArtifactPath(entry.filePath)
+  );
+  const upgradeUnderway = hasScenario || hasAgentArtifact || tasks.length > 0;
+  for (const entry of activity) {
+    if (!isRecord3(entry)) {
+      continue;
+    }
+    const at = toIsoTimestamp(entry.timestamp);
+    const explicit = entry.event === "phase_entered" ? normalizePhaseName(entry.phase) : null;
+    if (explicit) {
+      return build(explicit, false, null, at);
+    }
+    if (entry.kind !== "file" || typeof entry.filePath !== "string") {
+      continue;
+    }
+    if (!isAgentArtifactPath(entry.filePath)) {
+      if (!upgradeUnderway) {
+        continue;
+      }
+      return build(allTasksDone ? "validate" : "execute", true, entry.filePath, at);
+    }
+    const inferred = phaseForArtifact(entry.filePath);
+    if (inferred) {
+      const started = hasLiveTask || needsAttention;
+      const resolved = allTasksDone ? "validate" : started && inferred !== "validate" ? "execute" : inferred;
+      return build(resolved, true, entry.filePath, at);
+    }
+  }
+  if (hasLiveTask || needsAttention) {
+    return build("execute", true, null, null);
+  }
+  return null;
+}
+
 // extension.ts
 var INDEX_HTML_PATH = resolveCanvasIndexHtml(import.meta.url);
-var VALID_PANELS = /* @__PURE__ */ new Set([
-  "overview",
-  "activity",
-  "scenario",
-  "projects",
-  "assessment",
-  "dependencies",
-  "tasks",
-  "options",
-  "diagnostics"
-]);
 function resolveRepo(workingDirectory) {
   if (process.env.UPGRADE_AGENT_DASHBOARD_REPO) {
     return { path: process.env.UPGRADE_AGENT_DASHBOARD_REPO, source: "UPGRADE_AGENT_DASHBOARD_REPO env var", confident: true };
@@ -1395,7 +2286,7 @@ actionHandlers.set("refresh", async ({ instanceId }) => {
 });
 actionHandlers.set("set_panel", async ({ instanceId, input }) => {
   const panel = input?.panel;
-  if (typeof panel !== "string" || !VALID_PANELS.has(panel)) {
+  if (!isValidPanel(panel)) {
     throw new CanvasError("canvas_invalid_panel", `Unknown panel: ${panel}`);
   }
   const delivered = dashboardServer.sendEventToInstance(instanceId, "panel", { panel });
@@ -1418,27 +2309,6 @@ actionHandlers.set("switch_mode", async ({ input }) => {
   );
   return { ok: true, status: `Asked the agent to switch to ${mode} mode.` };
 });
-actionHandlers.set("share_assessment_as_gist", async (context) => {
-  const currentSession = requireSendSession();
-  const state = await getSnapshotForResolution(context);
-  const assessment = state.assessment;
-  if (!assessment?.path) {
-    throw new CanvasError(
-      "no_assessment",
-      "No assessment.json detected for the current scenario \u2014 nothing to share."
-    );
-  }
-  if (!existsSync2(assessment.path)) {
-    throw new CanvasError(
-      "assessment_missing_on_disk",
-      `assessment.json was indexed at ${assessment.path} but is no longer on disk.`
-    );
-  }
-  await currentSession.send(
-    `Create a *private* GitHub gist from the upgrade assessment at \`${assessment.path}\`. Use the gh CLI: \`gh gist create --private --filename assessment.json '${assessment.path}'\`. Report the resulting gist URL back when done. (Requested from the Upgrade Agent Dashboard canvas.)`
-  );
-  return { ok: true, assessmentPath: assessment.path };
-});
 actionHandlers.set("explain_dependency", async (context) => {
   const currentSession = requireSendSession();
   const packageName = (context.input?.packageName ?? "").toString().trim();
@@ -1454,6 +2324,31 @@ actionHandlers.set("explain_dependency", async (context) => {
     `Explain why the NuGet package \`${packageName}\` is reported as ${compatibility} for target framework \`${targetFramework}\` in the upgrade dependency report.${recommendation} Suggest concrete steps to upgrade or replace it. (Requested from the Upgrade Agent Dashboard canvas.)`
   );
   return { ok: true, status: `Asked the agent to explain ${packageName}.` };
+});
+actionHandlers.set("open_markdown_editor", async (context) => {
+  const currentSession = requireSession();
+  const openCanvas = currentSession.rpc?.canvas?.open;
+  if (typeof openCanvas !== "function") {
+    throw new CanvasError(
+      "unsupported_runtime",
+      "This Copilot CLI build does not expose session.rpc.canvas.open; update the CLI to open markdown files in the editor."
+    );
+  }
+  const resolution = await ensureResolvedRepo(context.session?.workingDirectory);
+  const resolved = resolveEditableMarkdownPath(context.input?.path, resolution.path);
+  if (!resolved.ok) {
+    throw new CanvasError(resolved.code, resolved.message);
+  }
+  await openCanvas.call(currentSession.rpc?.canvas, {
+    canvasId: "editor",
+    instanceId: markdownEditorInstanceId(resolved.relativePath),
+    input: {
+      path: resolved.relativePath,
+      scope: "repo",
+      title: markdownEditorTitle(resolved.relativePath)
+    }
+  });
+  return { ok: true, path: resolved.path, status: `Opened ${resolved.relativePath} in the editor.` };
 });
 actionHandlers.set("push_context", async (context) => {
   const currentSession = requireSession();
@@ -1505,19 +2400,38 @@ actionHandlers.set("push_context", async (context) => {
   });
   return { ok: true, status: "Pushed the current upgrade dashboard context to the chat." };
 });
+async function feedbackContextForCanvas(context) {
+  let state = null;
+  try {
+    state = await getSnapshotForResolution(context);
+  } catch {
+    state = null;
+  }
+  return buildFeedbackContext(state, {
+    surface: "Copilot App canvas",
+    phaseLabel: derivePhase(state)?.label ?? null
+  });
+}
+actionHandlers.set("open_feedback_issue", async (context) => {
+  const url = buildFeedbackIssueUrl(await feedbackContextForCanvas(context));
+  try {
+    await openExternalUrl(url, { allowedPrefixes: [FEEDBACK_ISSUE_URL] });
+    return { ok: true, status: "Opened the feedback form in your browser." };
+  } catch {
+    return { ok: false, url };
+  }
+});
 var dashboardServer = createDashboardServer({
   indexHtmlPath: INDEX_HTML_PATH,
   getResolution: async () => ensureResolvedRepo(),
   snapshot,
   getActionHandler: (name) => actionHandlers.get(name) ?? null,
   onTelemetry: (payload) => {
-    if (payload?.event !== "dashboard/tab_click") return;
-    const panel = payload?.properties?.panel;
-    if (typeof panel !== "string" || !VALID_PANELS.has(panel)) return;
+    const record = resolveTelemetryRecord(payload);
+    if (record === null) return;
     if (!resolvedRepo?.path) return;
     const directory = activityLogDir(resolvedRepo.path);
-    const file = path5.join(directory, "canvas-telemetry.jsonl");
-    const record = { event: "dashboard/tab_click", properties: { panel }, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+    const file = path8.join(directory, "canvas-telemetry.jsonl");
     mkdir(directory, { recursive: true }).then(() => appendFile(file, `${JSON.stringify(record)}
 `)).catch(() => {
     });
@@ -1527,7 +2441,7 @@ var { url: baseUrl } = await dashboardServer.listen();
 var canvas = createCanvas({
   id: "dashboard",
   displayName: "Upgrade Agent Dashboard",
-  description: "Read-only view of the .NET upgrade artifacts for the current workspace: an Overview landing, plus Activity log, Tasks, Scenario, Projects (table + dependency graph), Dependency health, and Assessment (with incident grouping). Also exposes actions to switch execution mode, share the assessment, and explain dependency issues.",
+  description: "Read-only view of the .NET upgrade artifacts for the current workspace: an Overview landing, plus Assessment (with Summary metrics, Issues explorer, Projects, Dependencies, and Features sub-tabs), Plan (rendered plan.md and per-task task.md), Tasks, Options, Execution, and Activity log. Also exposes actions to switch execution mode, explain dependency issues, open a markdown artifact in the editor canvas, and file feedback on GitHub.",
   actions: [
     {
       name: "refresh",
@@ -1540,7 +2454,7 @@ var canvas = createCanvas({
       description: "Switch the visible panel inside the canvas.",
       inputSchema: {
         type: "object",
-        properties: { panel: { type: "string", enum: [...VALID_PANELS] } },
+        properties: { panel: { type: "string", enum: [...PANEL_NAMES] } },
         required: ["panel"],
         additionalProperties: false
       },
@@ -1558,12 +2472,6 @@ var canvas = createCanvas({
       handler: (context) => actionHandlers.get("switch_mode")(context)
     },
     {
-      name: "share_assessment_as_gist",
-      description: "Ask the agent to create a private GitHub gist from the current scenario's assessment.json.",
-      inputSchema: { type: "object", additionalProperties: false },
-      handler: (context) => actionHandlers.get("share_assessment_as_gist")(context)
-    },
-    {
       name: "explain_dependency",
       description: "Ask the agent to explain why a NuGet package is flagged in the dependency report and suggest an upgrade path.",
       inputSchema: {
@@ -1575,16 +2483,33 @@ var canvas = createCanvas({
       handler: (context) => actionHandlers.get("explain_dependency")(context)
     },
     {
+      name: "open_markdown_editor",
+      description: "Open one of the scenario's markdown artifacts (plan.md, a task's task.md, \u2026) in the editor canvas. The path must be a markdown file inside the repository.",
+      inputSchema: {
+        type: "object",
+        properties: { path: { type: "string" } },
+        required: ["path"],
+        additionalProperties: false
+      },
+      handler: (context) => actionHandlers.get("open_markdown_editor")(context)
+    },
+    {
       name: "push_context",
       description: "Push a structured snapshot of the current upgrade dashboard state (scenario, assessment, dependency, and task summary) into the chat as context for the next message.",
       inputSchema: { type: "object", additionalProperties: false },
       handler: (context) => actionHandlers.get("push_context")(context)
+    },
+    {
+      name: "open_feedback_issue",
+      description: "Open a prefilled feedback issue for the Upgrade Agent on GitHub in the user's default browser. The prefill is the environment block only \u2014 the user writes the report on GitHub, and nothing is submitted until they press Create.",
+      inputSchema: { type: "object", additionalProperties: false },
+      handler: (context) => actionHandlers.get("open_feedback_issue")(context)
     }
   ],
   async open(context) {
     const { instanceId, input } = context;
     await ensureResolvedRepo(context.session?.workingDirectory);
-    const initialPanel = typeof input?.panel === "string" && VALID_PANELS.has(input.panel) ? input.panel : "overview";
+    const initialPanel = isValidPanel(input?.panel) ? input.panel : "overview";
     const url = `${baseUrl}/?instanceId=${encodeURIComponent(instanceId)}&panel=${encodeURIComponent(initialPanel)}`;
     return { url, title: "Upgrade Agent Dashboard", status: "open" };
   },

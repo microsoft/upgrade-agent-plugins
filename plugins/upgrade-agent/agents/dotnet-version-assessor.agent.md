@@ -61,6 +61,11 @@ On success — `STATUS: ready` (**hard cap: under ~15 lines**):
 - The full path to the `assessment.md` the tool wrote.
 - Do not paste large tool output or file dumps — the Orchestrator reads `assessment.md`
   on-demand for the full inventory.
+- **Exception to the line cap:** if the tool output contains a `### Pre-execution token budget`
+  block, append it **verbatim** after the summary and do not count it against the cap. That
+  block is opt-in (off unless the host enables it), already carries its own presentation
+  guidance, and is the Orchestrator's only copy — truncating or paraphrasing it loses it. Do
+  not reformat it, and never compute a budget yourself.
 
 On failure — `STATUS: blocked`:
 - `STATUS: blocked: dotnet assessment tool failed — dispatch generic Assessor` followed by the

@@ -3,11 +3,11 @@
 Turn the assessment into an ordered, executable plan. Two decisions drive the plan: how to
 **reconcile versions** across projects, and how to **handle each breaking change**.
 
-> **File format is enforced by the system `plan-generation` skill.** Load and follow it for the
-> exact templates for `plan.md`, `tasks.md`, and `scenario-instructions.md`. This scenario file
-> defines **what** to plan; the `plan-generation` skill defines **how** to write the artifacts.
-> Do not invent your own document shapes (e.g. a `## {task-id}` heading with `**Status**` /
-> `**Description**` fields is **wrong** — tasks.md is a flat emoji checklist).
+> **File format comes from your own planning instructions**, not from this file. Follow the
+> `plan.md` / `tasks.md` / `scenario-instructions.md` formats your prompt or workflow skill
+> defines. This scenario file defines **what** to plan; those define **how** to write the
+> artifacts. Do not invent your own document shapes (e.g. a `## {task-id}` heading with
+> `**Status**` / `**Description**` fields is **wrong** — tasks.md is a flat emoji checklist).
 
 ## Entry Criteria
 
@@ -15,9 +15,9 @@ Turn the assessment into an ordered, executable plan. Two decisions drive the pl
 
 ## Exit Criteria
 
-- `plan.md` created with ordered tasks (per the `plan-generation` plan.md template).
-- `tasks.md` created (per the `plan-generation` tasks.md template — flat emoji checklist, not
-  per-task headings).
+- `plan.md` created with ordered tasks (per the canonical plan.md template).
+- `tasks.md` is **not** yours to create — the workflow tools bootstrap it from `plan.md`. No
+  `tasks.md` on disk when you finish is a valid outcome.
 - Execution constraints (chosen version per package, reconciliation option, CPM decision)
   persisted in `scenario-instructions.md`.
 
@@ -60,10 +60,10 @@ change (or group of related changes), choose:
 
 ### Step 4 — Build the plan
 
-Create the planning artifacts using the **`plan-generation` system skill's templates** — load that
-skill and follow its `plan.md` and `tasks.md` specifications exactly.
+Create the planning artifacts using the canonical templates your planning instructions define —
+follow their `plan.md` specification exactly.
 
-**`plan.md`** — one task per ordered unit of work, using the plan-generation task template:
+**`plan.md`** — one task per ordered unit of work, using the canonical task template:
 
 ```
 ### {NN}-{slug}: {task name}
@@ -75,18 +75,18 @@ skill and follow its `plan.md` and `tasks.md` specifications exactly.
 
 Order tasks so that projects exposing the package's types in their own public API are upgraded
 before their consumers (bottom-up). Use canonical `NN-slug` task IDs (two-digit zero-padded sequence
-+ kebab slug, e.g. `01-upgrade-htmlsanitizer`) as required by the `plan-generation` system skill —
-never `T-01` or other letter-prefixed ids, or task tracking will break. For each task record:
++ kebab slug, e.g. `01-upgrade-htmlsanitizer`) — never `T-01` or other letter-prefixed ids, or
+task tracking will break. For each task record:
 - The project(s) covered.
 - The version change to apply (and where: `Directory.Packages.props` or the project file).
 - The specific breaking-change findings to fix and the chosen handling. Reference the relevant
   `apidiff/{packageId}.apidiff.md` file so execution has the change list at hand.
 
-**`tasks.md`** — the visual progress checklist. Use the plan-generation `tasks.md` template
-verbatim: a `# {Scenario} Progress` title, a short `## Overview`, a `**Progress**` line, and a
-`## Tasks` section that is a **flat list of `- {emoji} {task-id}: {task name}` bullets** (one per
-plan.md task, all `🔲` at creation). Do **not** emit a `##` heading per task and do **not** add
-`**Status**` / `**Description**` fields — that shape is wrong and breaks progress tracking.
+**`tasks.md`** — do **not** author it here; the workflow tools bootstrap it from `plan.md`. If
+your own instructions put it in your hands, it is a **flat list of `- {emoji} {task-id}: {task
+name}` bullets** (one per plan.md task, all `🔲` at creation) under a `## Tasks` section — never
+a `##` heading per task with `**Status**` / `**Description**` fields, which breaks progress
+tracking.
 
 ### Step 5 — Persist constraints
 
@@ -95,7 +95,7 @@ option, CPM vs per-project decision, and any excluded projects. Execution reads 
 
 ## Transition to Execution
 
-After `plan.md` and `tasks.md` are created and presented (via the `plan-generation` skill):
+After the plan is created and presented:
 
 - **Guided mode**: Wait for user approval before proceeding. Do not load `execution.md` yet.
 - **Automatic mode**: **Immediately** load this scenario's [execution.md](execution.md) and begin

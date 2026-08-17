@@ -66,11 +66,11 @@ Output: [expected output]
 
 - `[skill-name]/`
   - `SKILL.md` — Main instructions (<500 lines)
-  - `references/` — Detailed docs (loaded on demand)
+  - `references/` — Detailed docs (loaded on demand). .NET published skills use `ref/`.
     - `[domain].md` — One file per domain or feature
   - `scripts/` — Executable utilities
     - `[helper].py` — Pre-made scripts for deterministic tasks
-  - `templates/` — Output format templates (if needed)
+  - `templates/` — Output format templates (if needed). .NET published skills use `tmpl/`.
 
 ## Frontmatter rules reminder
 

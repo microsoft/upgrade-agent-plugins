@@ -124,6 +124,12 @@ The frontmatter includes `name`, `description`, and an optional `metadata` block
   - `templates/` — Optional. Output templates.
   - `assets/` — Optional. Fonts, icons, images.
 
+> **.NET published skills** (under `src/extensions/dotnet/`) author these two
+> inner folders in their shortened form — `ref/` (references) and `tmpl/`
+> (templates) — to stay within the ≤150-char published-path budget. The
+> generator validates total published path length rather than renaming folders,
+> so author them short from the start.
+
 ### Naming rules
 
 **Format:** lowercase letters, numbers, hyphens only. Max 64 chars. No reserved words ("anthropic", "claude").

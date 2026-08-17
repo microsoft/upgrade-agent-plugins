@@ -19,7 +19,7 @@ metadata:
 
 Migrate the ASP.NET Framework HTTP pipeline (HttpModules, HttpHandlers, Global.asax) to ASP.NET Core middleware and endpoints. Pipeline ordering is the critical concern — module execution order directly affects authentication, logging, and error handling behavior, and must be reconstructed exactly in the Core middleware pipeline.
 
-> **Adapter precedence**: If the `aspnet-system-web-adapters` skill is loaded, its guidance takes precedence over HttpModule and HttpHandler sections during scaffold and migrate task phases. Global.asax migration is NOT covered by adapters — always migrate directly using this skill.
+> **Adapter precedence**: If the `migrating-mvc-system-web-adapters` skill is loaded, its guidance takes precedence over HttpModule and HttpHandler sections during scaffold and migrate task phases. Global.asax migration is NOT covered by adapters — always migrate directly using this skill.
 
 ## Workflow
 

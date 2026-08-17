@@ -19,7 +19,7 @@ metadata:
 
 Migrate authentication and authorization from ASP.NET MVC/Web API to ASP.NET Core. This is the highest-risk area of any ASP.NET migration because wrong decisions produce security vulnerabilities, not compiler errors. Multiple migration paths exist depending on the authentication mechanism used — assess first, then apply the correct path.
 
-> **Related skills:** For ASP.NET Identity (UserManager, SignInManager, IdentityDbContext), see `migrating-aspnet-identity`. For OWIN cookie auth, see `migrating-owin-cookie-auth`. For OWIN OAuth/JWT, see `migrating-owin-oauth-to-jwt`. For OWIN OpenID Connect, see `migrating-owin-openid-connect`. For ADAL to MSAL, see `migrating-adal-to-msal`.
+> **Related skills:** For side-by-side Katana/ASP.NET Core shared cookies, see `sharing-authentication-cookies-katana-interop`. For ASP.NET Identity (UserManager, SignInManager, IdentityDbContext), see `migrating-aspnet-identity`. For OWIN cookie auth, see `migrating-owin-cookie-auth`. For OWIN OAuth/JWT, see `migrating-owin-oauth-to-jwt`. For OWIN OpenID Connect, see `migrating-owin-openid-connect`. For ADAL to MSAL, see `migrating-adal-to-msal`.
 
 ## Workflow
 
@@ -43,6 +43,11 @@ Scan the project to determine which authentication mechanisms are in use. Check 
 - `Global.asax` / `Startup.cs` / `Startup.Auth.cs`: OWIN middleware registration
 - Controllers and views: `FormsAuthentication.*`, `Membership.*`, `Roles.*`, `User.Identity.*`
 - Custom classes: `IPrincipal`, `IIdentity`, `MembershipProvider`, `RoleProvider` implementations
+
+Determine the deployment model before choosing a migration path:
+
+- **Full cutover:** the Framework host stops serving requests when the Core host starts. Continue with the replacement paths below.
+- **Side-by-side:** both hosts serve the same users during an incremental migration. Establish cross-app identity before migrating authenticated routes. Use `migrating-mvc-system-web-adapters` for Remote Authentication, or `sharing-authentication-cookies-katana-interop` when both hosts must read the same cookie directly. The interop skill takes precedence over the full-cutover cookie replacement guidance below.
 
 Categorize findings into one or more paths:
 
@@ -89,15 +94,18 @@ app.UseAuthentication();
 app.UseAuthorization();
 ```
 
-**⚠️ Security note:** Old Forms Authentication cookie tickets are not compatible with ASP.NET Core cookies. Users will be logged out after migration. Plan a session reset.
+**Security note:** In a full cutover, old Forms Authentication cookie tickets are not compatible with ASP.NET Core cookies, so users are logged out unless a separate transition is implemented. Do not apply that session-reset assumption to a side-by-side Katana migration; use `sharing-authentication-cookies-katana-interop` instead.
 
 **⚠️ machineKey migration:** `<machineKey>` in web.config is replaced by the Data Protection API. Key management is completely different. If the old app shared machine keys across servers for cookie decryption, configure Data Protection with a shared key ring:
 
 ```csharp
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(@"\\server\share\keys"))
+    .ProtectKeysWithCertificate(keyEncryptionCertificate)
     .SetApplicationName("SharedAppName");
 ```
+
+Use a certificate, Key Vault, or a shared DPAPI-NG descriptor for at-rest protection. Default per-machine/per-user DPAPI cannot protect a ring consumed by different hosts.
 
 #### Step 2B: Windows Authentication → Negotiate Authentication
 
@@ -330,7 +338,7 @@ builder.Services.AddHttpContextAccessor();
 
 ### Step 6: Migrate Anti-Forgery Tokens
 
-ASP.NET Core uses a different anti-forgery token format. Old tokens are invalid after migration.
+ASP.NET Core uses a different anti-forgery token format. In a full cutover, old tokens are invalid after migration. In a side-by-side migration, shared authentication cookies do not make Framework and Core anti-forgery tokens interchangeable; keep each form's GET and POST on the same host.
 
 **Razor views:**
 
@@ -392,7 +400,8 @@ Remove all legacy authentication references:
 2. **Security-critical verifications:**
    - Unauthenticated requests to protected endpoints return 401/redirect to login
    - Authentication succeeds with valid credentials
-   - Old session cookies are rejected (not silently accepted)
+   - For a full cutover, old session cookies are rejected rather than trusted accidentally
+   - For side-by-side interop, legacy cookies are accepted only by the transition reader and rewritten in the shared format
    - Role-based and policy-based authorization enforces correctly
    - Anti-forgery validation rejects cross-site requests
    - `[AllowAnonymous]` endpoints remain accessible
@@ -406,7 +415,7 @@ Ensure `AddAuthentication(scheme)` is called with a default scheme. If multiple 
 
 ### Users Logged Out After Deployment
 
-Expected behavior. ASP.NET Core cookie tickets are incompatible with Forms Authentication tickets. Communicate the session reset to users before deployment.
+For a full cutover without a transition reader, this is expected because ASP.NET Core cookie tickets are incompatible with Forms Authentication tickets. For a side-by-side Katana migration, do not accept the logout as expected behavior; use `sharing-authentication-cookies-katana-interop` and validate that legacy cookies are rewritten.
 
 ### Legacy Passwords All Fail
 

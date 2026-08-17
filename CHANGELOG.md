@@ -4,6 +4,33 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.404] - 2026-08-17
+
+### Added
+
+- Update .NET 11 breaking-change API compatibility.
+- New Katana shared-cookie interoperability guidance for ASP.NET MVC migrations.
+- Upgrade Dashboard now opens automatically in Copilot CLI and VS Code with a live overview, activity timeline, builds, Git details, rendered plan/task markdown, and durations.
+
+### Changed
+
+- The agent workflow now uses dedicated workers for scenario discovery, task breakdown, branch sync, and task reconciliation.
+- YARP proxy scaffolding now enables forwarded headers, TLS-aware settings, and request limits by default.
+
+### Fixed
+
+- Canvas dashboard over-rendering, repeated filesystem rescans, ignored app theme, scenario metadata parsing, and journal ordering.
+- MVC/Razor modernization missing application-relative views, splitting Razor tokens incorrectly, or misclassifying controllers in dependency graphs.
+- Project and package conversion dropping assembly identity metadata or package version pins, and corrupting source during SDK-style conversion.
+- Package and target-framework assessment losing package insights, suggesting downgrades for mixed-TFM solutions, or labeling unsupported packages as Unified.
+- API and code dependency analysis missing moved/generic/multi-target API changes, mishandling Visual Basic dependencies, or reporting breaking changes from inactive `#if` regions.
+- Windows and test migrations emitting invalid WinForms DPI settings, WinUI ContentDialog/CsWinRT changes, or non-atomic xUnit/MTP package replacements.
+- Orchestrator state and MCP tool issues with stale repo facts, numeric task IDs, and lost ProjectUpgraded telemetry.
+
+### Removed
+
+- System skills superseded by dedicated agents: `branch-sync`, `plan-generation`, `scenario-discovery`, `state-management`, `task-execution`, `tasks-consistency`, and `token-usage-prediction`.
+
 ## [1.1.290] - 2026-08-03
 
 ### Added

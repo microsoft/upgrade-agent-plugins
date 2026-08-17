@@ -2,7 +2,7 @@
 
 Validates that the project still runs correctly after the upgrade by replaying a project-specific eval plan via `typescript_validate_runtime`. Covers every project type (webapp, server, CLI, Electron, library, framework, plugin).
 
-> **Runtime validation is mandatory** whenever `featureFlags.validateRuntime` is true: call `typescript_validate_runtime` once in Phase 1 (baseline) and once in Phase 3 (post-upgrade) — same plan, two endpoints. The baseline is enforced: `typescript_upgrade_package_dependency_group` returns `runtime_baseline_missing` until it has run.
+> **Runtime validation is mandatory** on every workflow: call `typescript_validate_runtime` once in Phase 1 (baseline) and once in Phase 3 (post-upgrade) — same plan, two endpoints. The baseline is enforced by the tool layer: `typescript_upgrade_package_dependency_group` does no work until it has run (error `runtime_baseline_missing`), and returns the call to make first.
 
 ## Eval plan basics
 
@@ -41,7 +41,7 @@ Do not pass `resetBaseline` on the first call — it's only for discarding an ex
 - **Plan defect** (the assertion is wrong, not the project): a `tests-pass` assertion using the wrong runner/flags, an `http-probe` whose URL the dev server doesn't actually serve or that fires during dev-server warmup, too short a timeout. **Fix the plan** so the baseline is green — otherwise the comparison is meaningless.
 - **Genuine pre-existing failure** (the project itself is broken before any upgrade — it doesn't build, or its tests already fail): don't upgrade on top of a broken baseline. Stop and report via `typescript_write_upgrade_summary`, recommending the user fix the failing build/tests first; regression signal measured against an already-broken baseline is unreliable. Never fabricate a fix to force it green.
 
-**Capture this baseline before any package is upgraded.** The baseline is the *pre-upgrade* state — if you've already bumped a version or run an install for the upgrade, the baseline is contaminated and every "pre-existing failure" it records is suspect. Run it every workflow where `validateRuntime` is true (it's not optional), and run it before Phase 2, not after. If you realize you upgraded first, reset to the pre-upgrade state and re-baseline; if you can't, say so in the summary rather than presenting a post-upgrade run as the baseline.
+**Capture this baseline before any package is upgraded.** The baseline is the *pre-upgrade* state — if you've already bumped a version or run an install for the upgrade, the baseline is contaminated and every "pre-existing failure" it records is suspect. Run it on every workflow (it's not optional), and run it before Phase 2, not after. If you realize you upgraded first, reset to the pre-upgrade state and re-baseline; if you can't, say so in the summary rather than presenting a post-upgrade run as the baseline.
 
 ## Post-upgrade (Phase 3)
 

@@ -2,13 +2,13 @@
 
 Upgrade TypeScript itself through each major version incrementally before upgrading other packages.
 
-`@typescript/native-preview` IS TypeScript 7 — same compiler, rewritten as a native binary. The end goal is always `@typescript/native-preview` (7.x).
+TypeScript 7.0 ships as the `typescript` package (compiler binary `tsc`), the same as earlier majors — a native (Go) port that is behavior-compatible with 6.0. The end goal is always the latest `typescript` (7.x).
 
 ## Important Warnings
 
 ⛔ **DO NOT call `typescript_upgrade_package_dependency_group` for TypeScript.** Upgrade TypeScript manually.
 
-✅ **You ARE authorized to install pre-release/experimental TypeScript versions** — including `@typescript/native-preview`.
+✅ **You ARE authorized to install pre-release/experimental TypeScript versions** — including 7.x builds and nightlies (`typescript@next`).
 
 🚫 **ONLY fix actual compilation errors. Do NOT change `tsconfig.json` settings unless fixing a specific compiler error.**
 
@@ -22,7 +22,7 @@ Upgrade through this sequence, starting at whatever version is higher than where
 4.9 → 5.0 → 5.5 → 5.9 → 6.0 → 7.0
 ```
 
-Do NOT skip major versions. If `currentTypeScriptVersion` is already 7.x, the project has `@typescript/native-preview` — upgrade it directly to `targetTypeScriptVersion`.
+Do NOT skip major versions. If `currentTypeScriptVersion` is already 7.x, upgrade it directly to `targetTypeScriptVersion`.
 
 Don't proceed to the next version until the build is clean at the current one. Repeat until you've reached the latest version, which may be a `.minor` version (e.g. `7.1`) — use `targetTypeScriptVersion` from the scan results as the final target.
 

@@ -75,7 +75,7 @@ Do not edit files under `node_modules`, and do not downgrade `@types/react` to d
 
 If `react`/`react-dom` appear only under `peerDependencies` — typical for libraries that render React but don't own the version — the upgrade tools won't "bump" anything, because a peer range isn't a pinned dependency. To support the new major, **widen the peer range** instead of pinning: e.g. `"react": "^17.0.0 || ^18.0.0 || ^19.0.0"`. Keep the already-supported majors in the range unless the user asked to drop them. Then bump the matching `devDependencies` pin (libraries usually pin a concrete `react`/`@types/react` in devDeps for their own build and tests) to the target major so the code is actually compiled and tested against it.
 
-**Validate the compatibility claim — don't just assert it.** Widening the peer range to add a new major is a public statement that the library *works* with that React version, so it must be backed by actually building and testing against it. Be aware: because this path edits `package.json` by hand and does **not** call `typescript_upgrade_package_dependency_group`, the runtime-validation gate that normally blocks an unvalidated upgrade will **not** fire here — nothing forces the check, so it is on you to run it. Concretely, when `validateRuntime` is true:
+**Validate the compatibility claim — don't just assert it.** Widening the peer range to add a new major is a public statement that the library *works* with that React version, so it must be backed by actually building and testing against it. Be aware: because this path edits `package.json` by hand and does **not** call `typescript_upgrade_package_dependency_group`, the runtime-validation gate that normally blocks an unvalidated upgrade will **not** fire here — nothing forces the check, so it is on you to run it. Concretely:
 - **Baseline first (Phase 1):** before changing anything, run `typescript_validate_runtime` to record the library building/testing against its current React. (If no eval plan exists, invoke `create-eval-plan` — for a library the plan is typically a build + test assertion, not an http-probe.)
 - **Install the target React in devDependencies** (add a pin if the library doesn't already have one) so the library is genuinely compiled and tested against the new major — a widened range with nothing installed at that major proves nothing.
 - **Post-upgrade (Phase 3):** after widening + installing, run `typescript_validate_runtime` again and confirm no regressions vs. the baseline.
@@ -97,7 +97,7 @@ When `typescript_install_dependencies` fails with peer-dependency errors:
 ## Validation
 
 - The standard Phase 3 `typescript_compile_package` call still applies — do not skip it.
-- If `validateRuntime` is true, call `typescript_validate_runtime` — REQUIRED, do not skip. React breakages (strict-mode behavior, removed APIs, hydration) often surface only at runtime. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and the flow in [runtime-validation.md](./runtime-validation.md).
+- Call `typescript_validate_runtime` — REQUIRED. React breakages (strict-mode behavior, removed APIs, hydration) often surface only at runtime. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and the flow in [runtime-validation.md](./runtime-validation.md).
 
 ## Telemetry
 

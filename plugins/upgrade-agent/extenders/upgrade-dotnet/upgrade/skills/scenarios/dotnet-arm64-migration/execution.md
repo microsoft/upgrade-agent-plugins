@@ -1,8 +1,8 @@
 # Stage 3: Execution
 
-Execute the plan task by task using the system `task-execution` skill. Each task applies its ARM64
-fix (project-file, RID, package, or intrinsic guard), then validates with a host build. Supplements
-the `task-execution` skill — does not replace it.
+Execute the plan task by task using the executor's core task-execution steps. Each task applies its
+ARM64 fix (project-file, RID, package, or intrinsic guard), then validates with a host build.
+Supplements those steps — does not replace them.
 
 ## Contents
 
@@ -180,7 +180,7 @@ compilation. That is the cross-compile Gate's job in [validation.md](validation.
 
 ## 8. Decomposition hints
 
-Supplement the system `task-execution` skill with these scenario-specific breakdown rules:
+Supplement the core decomposition triggers with these scenario-specific breakdown rules:
 - Keep the `0012` interop cleanup and the dependent `0001` platform-target removal **in order** —
   never apply `0001` before the interop it depends on is gone.
 - Split per project (or per dependency layer) so a failed fix has a small blast radius.

@@ -152,7 +152,7 @@ Wait for user approval before proceeding.
 
 ## Phase 3: Planning — Generate plan.md
 
-Uses the system **plan-generation** skill for file format. Generate tasks based on the version gap identified in assessment:
+Follow the canonical plan.md format from your planning instructions. Generate tasks based on the version gap identified in assessment:
 
 ### 3.1 Always-Include Tasks
 

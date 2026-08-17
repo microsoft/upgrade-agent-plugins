@@ -102,7 +102,7 @@ initializeDescription: <one-line description for initialize_scenario>
 confirmFields:
   # One entry per user-confirmable parameter, in display order. The Orchestrator turns these into
   # a confirm_options form (MCP Apps hosts) OR a plain-text confirmation (CLI). Scenario-specific
-  # fields first, then flowMode, then git fields (workingBranch, commitStrategy) ONLY in a git repo.
+  # fields first, then flowMode, then git fields (workingBranch, commitStrategy, branchSync) ONLY in a git repo.
   - id: flowMode
     label: Flow Mode
     value: automatic
@@ -115,11 +115,17 @@ confirmFields:
     label: Commit Strategy
     value: after-each-task
     choices: [{id: after-each-task, label: After Each Task, hint: default}, {id: after-each-phase, label: After Each Phase}, {id: single, label: Single Commit at End}, {id: manual, label: Manual}]
+  - id: branchSync           # git repos only; omit when detachedHead is true
+    label: Branch Sync
+    value: auto-merge
+    choices: [{id: auto-merge, label: "Auto (Merge)", hint: default}, {id: auto-rebase, label: "Auto (Rebase)", hint: "Rewrites history — avoid if the branch is shared"}, {id: manual, label: Manual, hint: "Tell me when the source branch moves; sync on request"}, {id: disabled, label: Disabled, hint: "Never sync"}]
 ```
 
 Guidance for `confirmFields`:
 - `choices` present → a select; omit `choices` (or set `kind: text`) → a free-text field.
-- Include `workingBranch` and `commitStrategy` **only** when `gitRepo: true`.
+- Include `workingBranch`, `commitStrategy`, and `branchSync` **only** when `gitRepo: true`.
+- Omit `branchSync` when `detachedHead: true` — a fixed ref never moves, so there is nothing to
+  sync and the Orchestrator writes `Branch Sync: Disabled` itself.
 - Never include machine-local absolute paths as confirmable values.
 
 ### `STATUS: needs_input` — a genuine blocking ambiguity during gather

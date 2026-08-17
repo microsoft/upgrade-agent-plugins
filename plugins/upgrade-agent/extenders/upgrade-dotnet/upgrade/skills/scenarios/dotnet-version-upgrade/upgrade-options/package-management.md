@@ -1,6 +1,7 @@
 # Package Management
 
 **Category**: Project Structure
+**Plan impact**: Yes — `What is NOT configurable`
 
 **Applicable when**:
 - Solution has >= 2 projects, AND
@@ -50,7 +51,7 @@ the .NET Framework → modern .NET boundary.
   cleanup phase. The assessment already surfaces version divergence data for
   visibility — CPM enforcement is deferred until the divergence resolves naturally.
 
-**What is NOT configurable**:
+## What is NOT configurable
 - When "Per-Project (defer CPM)" is selected, the plan MUST include a deferred
   CPM recommendation in the final solution validation / cleanup phase with the
   rationale: "All projects are now SDK-style and on a single TFM — CPM can be

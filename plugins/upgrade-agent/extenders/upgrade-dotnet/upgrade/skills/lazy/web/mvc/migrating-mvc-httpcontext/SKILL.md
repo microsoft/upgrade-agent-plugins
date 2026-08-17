@@ -19,7 +19,7 @@ metadata:
 
 Migrate `HttpContext.Current`, `HttpRequest`, `HttpResponse`, and `HttpServerUtility` usage from ASP.NET Framework to ASP.NET Core. The static `HttpContext.Current` accessor is removed in Core — all context access flows through dependency injection or controller base class properties. Response writing is async-only in Kestrel, and request reading APIs have changed types and behavior.
 
-> **Adapter precedence**: If the `aspnet-system-web-adapters` skill is loaded, its guidance takes precedence over HttpContext.Current, Request Access, Response Access, and ClaimsPrincipal.Current sections during scaffold and migrate task phases.
+> **Adapter precedence**: If the `migrating-mvc-system-web-adapters` skill is loaded, its guidance takes precedence over HttpContext.Current, Request Access, Response Access, and ClaimsPrincipal.Current sections during scaffold and migrate task phases.
 
 ## Workflow
 

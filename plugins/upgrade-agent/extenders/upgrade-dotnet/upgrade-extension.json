@@ -11,5 +11,9 @@
     ],
     "initializationTimeoutSeconds": 300
   },
+  "devOverrideEnv": {
+    "pathEnv": "APPMOD_DOTNET_SERVER_PATH",
+    "argsEnv": "APPMOD_DOTNET_SERVER_ARGS"
+  },
   "traits": ".NET|CSharp|VisualBasic|DotNetCore"
 }

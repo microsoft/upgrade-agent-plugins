@@ -1,6 +1,7 @@
 # Windows Native APIs
 
 **Category**: Compatibility
+**Plan impact**: No
 
 **Applicable when**:
 - Windows-specific API usage detected, such as:

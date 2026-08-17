@@ -46,7 +46,8 @@ You have only two tools: `execute` (to run commands) and `read` (to inspect file
   delete, `rm -rf`, mass overwrite) unless it was **explicitly requested** — otherwise
   report that it would be needed and stop.
 - For git staging, **never `git add -A`.** Stage only the explicit paths you are given —
-  the repo emits build-generated `*.rules.json` churn that must not be committed.
+  the working tree may hold unrelated edits, build output, and generated files that are
+  not part of this task, and staging them commits work nobody asked for.
 
 ## Inputs you receive (in the dispatched turn)
 

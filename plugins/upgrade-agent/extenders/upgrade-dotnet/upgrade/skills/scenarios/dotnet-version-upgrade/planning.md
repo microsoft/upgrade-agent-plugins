@@ -8,7 +8,7 @@ Create an upgrade plan: confirm options (including strategy), then generate orde
 > |---|------|------------|
 > | 1 | Extract from Assessment | Read assessment signals |
 > | 1.5 | Confirm Upgrade Options | Classify complexity → evaluate triggered options (including strategy) → confirm with user |
-> | 2 | Load Strategy & Generate Plan | Follow chosen strategy's Planning Instructions |
+> | 2 | Load Strategy & Generate Plan | Follow chosen strategy's Planning Instructions; record confirmed options in `plan.md` |
 > | 3 | Save Strategy & Constraints | Persist strategy + execution constraints in scenario-instructions.md |
 > | 4 | Edge Cases | Circular deps, single project |
 
@@ -58,7 +58,7 @@ the class silently and act on it.
 
 | Class | Criteria | Behavior |
 |-------|----------|----------|
-| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Evaluate Upgrade Strategy and, when the assessment recommends Test Coverage, the Test Coverage option. Skip every other option. Write `upgrade-options.md`, then return the gate to the Orchestrator (see **Return the gate to the Orchestrator**). |
+| **Simple** | ALL of: every project targets modern .NET (`net5.0`+), all SDK-style, no incompatible packages, no .NET Framework projects, and no other signals from the trigger index have surfaced | Evaluate Upgrade Strategy and, when the assessment recommends Test Coverage, the Test Coverage option. Skip every other option. Then take the gate to confirmation (see **Confirming the options**). |
 | **Complex** | Any .NET Framework project, incompatible packages, or other signals from the trigger index have surfaced | Proceed with Step 1.5 evaluation below |
 
 
@@ -66,19 +66,32 @@ the class silently and act on it.
 
 ### Re-entry Check
 
-This scenario has a **planning gate**: upgrade options must be confirmed by the user before
-the plan is generated. You are a one-shot worker and never pause for the user — the
-Orchestrator runs the confirmation and re-dispatches you. So this step runs across **two
-dispatches**. Before evaluating, determine which dispatch you are on:
+This scenario has a **planning gate**: upgrade options must be confirmed by the user
+before the plan is generated. Before evaluating, determine where you are:
 
 | State | Meaning | Action |
 |-------|---------|--------|
 | `plan.md` exists | Options confirmed and plan already generated | Skip Step 1.5, proceed to Step 2 |
-| The Orchestrator's dispatch includes **confirmed upgrade-option selections** (and no `plan.md` yet) | Gate already resolved — this is the re-dispatch | Skip evaluation. Write the confirmed selections to `scenario-instructions.md` (the compact `## Upgrade Options` block), then proceed to Step 2 to generate the plan |
-| `upgrade-options.md` exists but no `plan.md` and no confirmed selections were passed | Options written on a prior dispatch but not yet confirmed | Do not regenerate — return `STATUS: needs_confirmation` with the options payload (see **Return the gate to the Orchestrator**) |
-| Neither exists | Fresh run | Proceed with evaluation below |
+| `scenario-instructions.md` has a `## Upgrade Options` block, or you were dispatched with **confirmed selections** (and no `plan.md` yet) | Gate already resolved | **Treat the confirmed selections as final** — do not re-derive any value, and do not reload option files to re-check applicability, default logic, or alternatives; that work is spent. Write the confirmed selections to `scenario-instructions.md` (the compact `## Upgrade Options` block) and proceed to Step 2, observing the reopening rule below |
+| Neither | Fresh run | Proceed with evaluation below |
 
-**CI / headless session**: If `upgrade-options.md` does not exist, fail immediately:
+**Reopening option files after the gate.** Consider only options that appear in the
+confirmed `## Upgrade Options` block — an option absent from that block was not
+applicable, and its file must never be opened. Among those:
+
+- **Built-in options** — reopen the file **if and only if** the
+  [index](upgrade-options/upgrade-options-index.md) marks it **Plan impact: Yes**, and
+  read only the sections that row names. Reopening a **Plan impact: No** file is a
+  mistake; skipping a **Yes** one silently drops behavior from the plan.
+- **Custom options** (from `upgrade-option:` skills) — these have no index row, so the
+  marker lives in the skill's own `## Upgrade Option` section. Reopen the skill, read
+  its `**Plan impact**:` line, and apply the same rule. If the line is absent, treat it
+  as **Yes** and read the whole `## Upgrade Option` section. Reading the marker already
+  requires opening the skill, so this fail-safe costs nothing beyond the extra prose,
+  and it cannot be linted the way the built-in table can.
+
+**CI / headless session**: if `scenario-instructions.md` has no `## Upgrade Options`
+block **and** you were not dispatched with confirmed selections, fail immediately:
 ```
 ERROR: Upgrade Options not confirmed.
 Run in interactive mode first to confirm options, then re-run in CI mode.
@@ -93,11 +106,12 @@ default logic — is internal. Nothing from this step should appear in chat:
 
 1. Do NOT show the complexity classification checklist or reasoning
 2. Do NOT stream evaluation reasoning, applicability checks, or default logic analysis
-3. Do NOT list options, triggers, or conditions in chat
+3. Do NOT narrate which options you loaded, or list triggers or conditions
 4. If no options are applicable, write the "Not applicable" block to
    `scenario-instructions.md` and proceed to Step 2 without comment
-5. If options ARE applicable, generate the file silently and present
-   only the file for review — the file is the only presentation mechanism
+
+The **only** thing that may surface is the finished confirmation itself — the
+options and their selected values, presented for the user to confirm.
 
 ---
 
@@ -142,54 +156,65 @@ other:
 
 ---
 
-### Generate Options File
+### Build the Confirmation Payload
 
-Upgrade Strategy is always applicable, so at minimum the file contains the
-strategy selection. Write `upgrade-options.md` to the working folder using the
-format defined in [`upgrade-options/upgrade-options-index.md`](upgrade-options/upgrade-options-index.md).
-The Strategy section always appears first.
+Upgrade Strategy is always applicable, so at minimum the payload contains the
+strategy selection. Build the payload **in memory** using the schema in
+[`upgrade-options/upgrade-options-index.md`](upgrade-options/upgrade-options-index.md).
+Strategy always comes first.
 
 Rules:
 - Include only applicable options — omit non-applicable ones entirely
-- Mark the selected value with `**{value}** (selected)` in each option's table: user preference when available, recommended default otherwise
-- Include a short description for every value (selected and alternatives)
-- Do not present options in chat — the file is the presentation
+- `selected` is the user's stated preference when available, the recommended default otherwise
+- Every option needs a `rationale`; every choice needs a `description`
+- **Do not write an options file.** There is no `upgrade-options.md`. The payload is
+  the only carrier until the user confirms
 
 ---
 
-### Return the gate to the Orchestrator
+### Confirming the options
 
-**Do not call `show_upgrade_options` and do not pause here.** You are a one-shot worker; only
-the Orchestrator talks to the user. Upgrade options affect the entire upgrade approach and
-must be confirmed by the user, but that confirmation is the Orchestrator's job.
+Upgrade options affect the entire upgrade approach and **must** be confirmed by the
+user before the plan is generated. Who runs that confirmation depends on the host:
 
-After writing `upgrade-options.md`:
+| You are | Action |
+|---------|--------|
+| A **one-shot worker** (you were dispatched by an Orchestrator and have no user channel) | **Stop. Do not generate the plan or tasks.** Return `STATUS: needs_confirmation` with a one-line note, the confirmation payload inline, and nothing else. The Orchestrator owns the user conversation and will re-dispatch you with the confirmed selections. Never call an options-confirmation tool and never pause for the user yourself. |
+| The **single agent** that also talks to the user | Run the confirmation yourself using the ladder below, then continue to Step 2 with the confirmed selections. |
 
-1. Build the options JSON from your evaluation above (construct it in memory from the same
-   applicable options and selected values — do **not** rely on re-reading the file). This is
-   the payload the Orchestrator will pass to `show_upgrade_options`.
-2. **Stop. Do not generate the plan or tasks.** Return `STATUS: needs_confirmation` with:
-   - a one-line note that upgrade options need user confirmation,
-   - the options JSON inline,
-   - the `upgrade-options.md` path.
+**Confirmation ladder** (use the first tier available to you):
 
-The Orchestrator renders the interactive form (or a text confirmation), collects the user's
-selections, and re-dispatches you with the confirmed selections. On that re-dispatch the
-Re-entry Check routes you to write the confirmed `## Upgrade Options` block to
-`scenario-instructions.md` and continue to Step 2.
+1. **`show_upgrade_options`** — if it is in your tool list, call it with the payload.
+   It renders an interactive form and blocks until the user confirms or cancels.
+2. **Chat + interactive question** — render the payload as text using the
+   **Rendering the payload as text** spec in the trigger index, then ask a **single**
+   combined question with `ask_user` / `ask_question`. Offer confirming everything as
+   one choice and changing something as another. Never ask one question per option.
+3. **Plain text only** — same rendered block, then "reply `confirm`, or tell me what
+   to change."
 
----
+For tiers 2 and 3 the rendered block is **your chat response**, not question-tool
+content. Interactive question UI vanishes once answered, so options rendered inside
+it cannot be reviewed while the user decides what to change. Print the block first,
+then ask only "Confirm these upgrade options?" with its choices — never restate
+options, values, or alternatives inside the question or its choice labels. If the
+user changes something, re-print the full updated block before asking again.
 
-## Step 2: Select Upgrade Strategy
+The user may confirm as-is, override individual values, or describe changes in prose
+("use top-down and skip test coverage"). Resolve whatever they say into a final
+selection set — one value per applicable option — before continuing. If the user
+cancels, stop; do not generate a plan.
 
-### Assessment Signals
+Once confirmed, write the compact `## Upgrade Options` block to
+`scenario-instructions.md` and proceed to Step 2.
 
-Two categories of signals determine strategy:
-
-**Structural signals** (from dependency graph):
 ---
 
 ## Step 2: Load Strategy & Generate Plan
+
+Option **values** come from the confirmed `## Upgrade Options` block in
+`scenario-instructions.md` — never from re-reading an option file. Reopen a file only
+for its **Plan impact** sections, per the reopening rule in the Re-entry Check.
 
 Read the confirmed strategy from `scenario-instructions.md` (the confirmed `## Upgrade
 Options` block written when the gate was resolved — see the Re-entry Check).
@@ -262,7 +287,12 @@ Follow those instructions to generate plan.md.
 
 ### Common plan.md requirements (all strategies)
 
-- Use the plan-generation skill's template format exactly:
+- Include an `## Upgrade Options` section recording the confirmed selections, using the
+  format in [`upgrade-options/upgrade-options-index.md`](upgrade-options/upgrade-options-index.md).
+  `plan.md` is written only after every option is confirmed, so this section is a durable
+  record of the final set — write it once and never revise it. Omit the section entirely
+  when no options were applicable.
+- Use the canonical plan.md template format exactly:
   ```
   ### {NN}-{short-name}: {task short description}
 
@@ -278,7 +308,7 @@ Follow those instructions to generate plan.md.
 - Each task describes **what** to upgrade, not **how**
 - Task IDs: `{NN}-{short-name}` format where short-name describes the **content** being upgraded, not the strategy position (e.g., `02-foundation-libs`, `03-business-logic`, `04-web-apps`). Never use strategy jargon like `tier1`, `phase1`, `batch-a` as the short-name.
 - Include the strategy declaration block from the strategy file
-- The strategy template's numbered list is a CHECKLIST of what tasks to include — not a format to copy. Transform each applicable item into the plan-generation template format above.
+- The strategy template's numbered list is a CHECKLIST of what tasks to include — not a format to copy. Transform each applicable item into the plan.md template format above.
 
 ### Task description richness
 
@@ -388,7 +418,7 @@ Simplified plan with single task — no phasing needed.
 
 ## Transition to Execution
 
-After `plan.md` and `tasks.md` are created and presented (via the plan-generation skill):
+After the plan is created and presented:
 
 - **Guided mode**: Wait for user approval before proceeding. Do not load execution.md yet.
 - **Automatic mode**: **Immediately** load this scenario's [execution.md](execution.md) (read it completely) and begin executing the first task. Do not stop, do not wait for user input, do not yield the conversation. The plan has been surfaced — proceed.

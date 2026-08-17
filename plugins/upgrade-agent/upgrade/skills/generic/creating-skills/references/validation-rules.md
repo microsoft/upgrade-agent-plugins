@@ -36,8 +36,8 @@ Run every rule against the skill being validated. Report results as ✅ pass, �
 
 ### 1.3 Directory conventions (⚠️ if fail)
 - [ ] Scripts in `scripts/` directory
-- [ ] Reference docs in `references/` directory
-- [ ] Templates in `templates/` or `assets/` directory
+- [ ] Reference docs in `references/` (`ref/` for .NET published skills) directory
+- [ ] Templates in `templates/` (`tmpl/` for .NET published skills) or `assets/` directory
 - [ ] No unnecessary nesting of directories
 
 ## 2. Description Quality

@@ -35,14 +35,18 @@ The plugin includes an MCP server (Upgrade) that provides upgrade and analysis t
 upgrade-agent/
 ├── agents/
 │   ├── assessor.agent.md
+│   ├── branch-sync.agent.md
 │   ├── break-glass.agent.md
 │   ├── build-validator.agent.md
 │   ├── code-reviewer.agent.md
 │   ├── dotnet-version-assessor.agent.md
+│   ├── dotnet-version-estimator.agent.md
 │   ├── dotnet-version-scenario-initializer.agent.md
 │   ├── error-fixer.agent.md
 │   ├── planner.agent.md
+│   ├── scenario-discovery.agent.md
 │   ├── scenario-initializer.agent.md
+│   ├── task-breaker.agent.md
 │   ├── task-executor.agent.md
 │   ├── terminal-executor.agent.md
 │   └── upgrade.agent.md
@@ -259,23 +263,27 @@ upgrade-agent/
 │   │   │       │       │   │   └── SKILL.md
 │   │   │       │       │   ├── migrating-owin-to-aspnet-core/
 │   │   │       │       │   │   └── SKILL.md
-│   │   │       │       │   └── scaffolding-yarp-proxy-project/
-│   │   │       │       │       ├── tmpl/
-│   │   │       │       │       │   ├── mvc/
-│   │   │       │       │       │   │   ├── Properties/
-│   │   │       │       │       │   │   │   └── launchSettings.json
-│   │   │       │       │       │   │   ├── appsettings.Development.json
-│   │   │       │       │       │   │   ├── appsettings.json
-│   │   │       │       │       │   │   ├── Program.cs
-│   │   │       │       │       │   │   └── ProjectName.csproj
-│   │   │       │       │       │   └── webapi/
-│   │   │       │       │       │       ├── Properties/
-│   │   │       │       │       │       │   └── launchSettings.json
-│   │   │       │       │       │       ├── appsettings.Development.json
-│   │   │       │       │       │       ├── appsettings.json
-│   │   │       │       │       │       ├── Program.cs
-│   │   │       │       │       │       └── ProjectName.csproj
-│   │   │       │       │       ├── scaffold-project.ps1
+│   │   │       │       │   ├── scaffolding-yarp-proxy-project/
+│   │   │       │       │   │   ├── tmpl/
+│   │   │       │       │   │   │   ├── mvc/
+│   │   │       │       │   │   │   │   ├── Properties/
+│   │   │       │       │   │   │   │   │   └── launchSettings.json
+│   │   │       │       │   │   │   │   ├── appsettings.Development.json
+│   │   │       │       │   │   │   │   ├── appsettings.json
+│   │   │       │       │   │   │   │   ├── Program.cs
+│   │   │       │       │   │   │   │   └── ProjectName.csproj
+│   │   │       │       │   │   │   └── webapi/
+│   │   │       │       │   │   │       ├── Properties/
+│   │   │       │       │   │   │       │   └── launchSettings.json
+│   │   │       │       │   │   │       ├── appsettings.Development.json
+│   │   │       │       │   │   │       ├── appsettings.json
+│   │   │       │       │   │   │       ├── Program.cs
+│   │   │       │       │   │   │       └── ProjectName.csproj
+│   │   │       │       │   │   ├── scaffold-project.ps1
+│   │   │       │       │   │   └── SKILL.md
+│   │   │       │       │   └── sharing-authentication-cookies-katana-interop/
+│   │   │       │       │       ├── ref/
+│   │   │       │       │       │   └── legacy.cs
 │   │   │       │       │       └── SKILL.md
 │   │   │       │       ├── wcf/
 │   │   │       │       │   └── migrating-wcf-to-corewcf/
@@ -385,40 +393,41 @@ upgrade-agent/
 │   │   │               ├── planning.md
 │   │   │               └── SKILL.md
 │   │   └── upgrade-extension.json
-│   ├── upgrade-typescript/
-│   │   ├── upgrade/
-│   │   │   └── skills/
-│   │   │       ├── create-eval-plan/
-│   │   │       │   ├── output-contains.md
-│   │   │       │   ├── per-project-type.md
-│   │   │       │   ├── plan-schema.md
-│   │   │       │   ├── recording.md
-│   │   │       │   ├── SKILL.md
-│   │   │       │   └── tests-assertion.md
-│   │   │       ├── typescript-compiler-upgrade/
-│   │   │       │   ├── 4to5.md
-│   │   │       │   ├── 5to6.md
-│   │   │       │   ├── 6to7.md
-│   │   │       │   ├── compiler-upgrade.md
-│   │   │       │   └── SKILL.md
-│   │   │       └── typescript-dependencies-upgrade/
-│   │   │           ├── react/
-│   │   │           │   ├── 17.md
-│   │   │           │   ├── 18.md
-│   │   │           │   └── 19.md
-│   │   │           ├── angular.md
-│   │   │           ├── generate-plan.md
-│   │   │           ├── i18next.md
-│   │   │           ├── karma-jasmine.md
-│   │   │           ├── monorepo.md
-│   │   │           ├── mui.md
-│   │   │           ├── peer-dependencies.md
-│   │   │           ├── react.md
-│   │   │           ├── runtime-validation.md
-│   │   │           ├── SKILL.md
-│   │   │           └── upgrade-packages.md
-│   │   └── upgrade-extension.json
-│   └── provenance.json
+│   └── upgrade-typescript/
+│       ├── upgrade/
+│       │   └── skills/
+│       │       ├── create-eval-plan/
+│       │       │   ├── output-contains.md
+│       │       │   ├── per-project-type.md
+│       │       │   ├── plan-schema.md
+│       │       │   ├── recording.md
+│       │       │   ├── SKILL.md
+│       │       │   └── tests-assertion.md
+│       │       ├── typescript-compiler-upgrade/
+│       │       │   ├── 4to5.md
+│       │       │   ├── 5to6.md
+│       │       │   ├── 6to7.md
+│       │       │   ├── compiler-upgrade.md
+│       │       │   └── SKILL.md
+│       │       └── typescript-dependencies-upgrade/
+│       │           ├── react/
+│       │           │   ├── 17.md
+│       │           │   ├── 18.md
+│       │           │   └── 19.md
+│       │           ├── angular.md
+│       │           ├── generate-plan.md
+│       │           ├── i18next.md
+│       │           ├── karma-jasmine.md
+│       │           ├── monorepo.md
+│       │           ├── mui.md
+│       │           ├── peer-dependencies.md
+│       │           ├── radix.md
+│       │           ├── react.md
+│       │           ├── runtime-validation.md
+│       │           ├── SKILL.md
+│       │           ├── tanstack.md
+│       │           └── upgrade-packages.md
+│       └── upgrade-extension.json
 ├── extensions/
 │   └── upgrade-agent-dashboard/
 ├── hooks/
@@ -440,27 +449,11 @@ upgrade-agent/
 │       │       │   └── SKILL-TEMPLATE.md
 │       │       └── SKILL.md
 │       └── system/
-│           ├── branch-sync/
+│           ├── dashboard-canvas/
 │           │   └── SKILL.md
 │           ├── generate-report/
 │           │   └── SKILL.md
-│           ├── plan-generation/
-│           │   └── SKILL.md
-│           ├── post-scenario-completion/
-│           │   └── SKILL.md
-│           ├── scenario-discovery/
-│           │   └── SKILL.md
-│           ├── state-management/
-│           │   └── SKILL.md
-│           ├── task-execution/
-│           │   ├── references/
-│           │   │   ├── committing-and-syncing.md
-│           │   │   ├── decomposition.md
-│           │   │   └── execution-details.md
-│           │   └── SKILL.md
-│           ├── tasks-consistency/
-│           │   └── SKILL.md
-│           └── token-usage-prediction/
+│           └── post-scenario-completion/
 │               └── SKILL.md
 ├── hooks.json
 └── plugin.json
@@ -469,6 +462,19 @@ upgrade-agent/
 ## Requirements
 
 - .NET SDK 10.0 or later
+
+## Privacy
+
+GitHub Copilot upgrade uses GitHub Copilot to help modify code in your current
+workspace. It does not retain code snippets beyond the immediate session and
+does not collect, transmit, or store your custom tasks. See the
+[Microsoft Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839)
+for more information.
+
+### Telemetry
+
+The upgrade tools collect telemetry about usage. Telemetry collection is on by default.
+To opt out, set the environment variable `APPMOD_DISABLE_TELEMETRY` to `true` in the environment where you run the plugin.
 
 ## Links
 

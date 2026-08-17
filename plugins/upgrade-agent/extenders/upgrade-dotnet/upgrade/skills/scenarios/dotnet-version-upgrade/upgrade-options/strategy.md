@@ -1,6 +1,7 @@
 # Upgrade Strategy
 
 **Category**: Strategy
+**Plan impact**: Yes — `Strategy Interaction`, `What is NOT configurable`
 
 **Applicable when**:
 - Always — every upgrade needs a strategy
@@ -9,7 +10,7 @@
 - Never — this option is always evaluated
 
 This option determines how projects are ordered and grouped during the upgrade.
-It appears **first** in upgrade-options.md, before all other options.
+It appears **first** in the confirmation payload, before all other options.
 
 ## Options
 

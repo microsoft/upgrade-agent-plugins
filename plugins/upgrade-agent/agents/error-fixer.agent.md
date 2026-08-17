@@ -18,6 +18,10 @@ fix it, and re-validate** — then report a concise fix summary.
 
 ## Boundaries (hard)
 
+- **Never call the task lifecycle tools** — `start_task`, `complete_task`, or
+  `break_down_task`. Your `Upgrade/*` tool list exposes them, but they belong to the
+  Orchestrator alone; calling one double-starts or double-completes the task and corrupts
+  workflow state. Report your outcome and let the Orchestrator close the task.
 - Do NOT create task folders or `task.md` files.
 - Fix the reported failure and its direct causes — do not refactor unrelated code.
 - **Capability boundary — signal, don't improvise.** If the fix needs a tool or capability

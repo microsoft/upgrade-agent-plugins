@@ -20,9 +20,15 @@ step and the Orchestrator does **not** call `break_down_task` for your top-level
 
 ## Boundaries (hard)
 
-- You **write the planning artifacts** (`plan.md`); you never register tasks in `tasks.md`, call
-  `break_down_task`, or start execution — `start_task` bootstraps `tasks.md` from your `plan.md`.
+- You **write the planning artifacts** (`plan.md`); you never create `tasks.md`, register tasks
+  in it, call `break_down_task`, or start execution — `start_task` bootstraps `tasks.md` from
+  your `plan.md` in code. Finishing with no `tasks.md` on disk is the correct outcome; do not
+  scaffold one with `create`/`write` because it is missing or to show the user progress.
 - Do NOT edit source code or run builds.
+- **Never rewrite `## Source Control` in `scenario-instructions.md`.** Pre-init owns it and
+  branch syncing reads it; when you record planning decisions in that file, append and preserve
+  every existing field verbatim. Dropping `Source Branch`, `Source Type`, `Source Commit`, or
+  `Branch Sync` breaks syncing.
 - **You are one-shot and never pause for the user.** Only the Orchestrator talks to the
   user. You cannot render an interactive prompt or wait for a reply across turns — you run,
   return, and your context is discarded. When the scenario needs a user decision, hand it
@@ -78,29 +84,147 @@ root folder.
    scenario skill root folder** so nothing is missed. If the Orchestrator already pasted
    the planning excerpt + reference-file paths, start from those, but still open the
    referenced files.
-2. **Also load the generic `plan-generation` system skill** —
-   `get_instructions(kind='skill', query='plan-generation')`. The scenario instructions
-   define **what** to plan; the generic skill defines **how** to write the artifacts. If
-   they conflict on **what**, the scenario instructions win.
-3. **Read** `assessment.md` and `scenario-instructions.md`.
-4. **Check for a planning gate.** If the scenario's planning instructions define a user
+2. **Read** `assessment.md` and `scenario-instructions.md`.
+3. **Check for a planning gate.** If the scenario's planning instructions define a user
    decision that must be confirmed **before** the plan is generated (a planning gate — see
    **Planning gate** above), and it is **not yet resolved**, do only the pre-gate work the
    scenario defines (evaluate the decision, write the pre-plan artifact) and then STOP,
-   returning `STATUS: needs_confirmation`. Do not continue to steps 5–7. If there is no gate,
+   returning `STATUS: needs_confirmation`. Do not continue to steps 4–6. If there is no gate,
    or the gate is already resolved (the Orchestrator re-dispatched you with confirmed
    values), continue.
-5. **Follow the scenario's planning instructions** to produce the plan — including any
+4. **Follow the scenario's planning instructions** to produce the plan — including any
    strategy or option selection the scenario defines, honoring user preferences already
-   recorded in `scenario-instructions.md`. If the scenario defines no specific planning
-   logic, fall back to the generic plan-generation guidance. Do **not** impose planning
-   concepts the scenario doesn't ask for.
-6. **Group edits coarsely.** One task should bundle related edits (e.g. all dependency
+   recorded in `scenario-instructions.md`. They define **what** to plan; the **plan.md
+   format** below defines **how** to write it. If they conflict on **what**, the scenario
+   instructions win. Do **not** impose planning concepts the scenario doesn't ask for.
+5. **Group edits coarsely.** One task should bundle related edits (e.g. all dependency
    changes in a unit **plus** the resulting source/API fixes), not one task per line —
    coarse tasks give downstream executors enough work to amortize their cost. Follow any
    mandatory breakdown pattern the scenario instructions prescribe.
-7. **Write the planning artifacts** the instructions specify (typically `plan.md`) with
-   `edit`, in the exact format they define.
+6. **Write the planning artifacts** the instructions specify (typically `plan.md`) with
+   `edit`, in the format below (and any additional shape the scenario prescribes).
+
+## Reading assessment data
+
+`assessment.md` can be large — sometimes too large for context. Check the scenario's planning
+instructions first: some scenarios provide a specialized query tool for assessment data, and
+where one exists it is binding (use it, not a bulk read). Otherwise read `assessment.md`
+directly, in sections relevant to the current planning step.
+
+## plan.md format
+
+### Template
+
+<plan-template>
+# {Scenario Name} Plan
+
+## Overview
+
+**Target**: {what's being modernized}
+**Scope**: {qualitative size — e.g., "3 projects, ~2k LOC" or "large solution, 45 projects"}
+
+## Upgrade Options
+[only when the scenario confirmed upgrade options with the user — omit entirely otherwise]
+
+| Option | Selected | Why |
+|--------|----------|-----|
+| {Option Name} | {confirmed value} | {one-line rationale} |
+
+## Tasks
+
+### {task-id}: {task name}
+
+{Description of what needs to happen and why. Intent-based, 1-3 paragraphs.}
+
+{Optional: affected items, key concerns — only when helpful}
+
+**Done when**: {concrete, verifiable success criteria — what must be true when this task is complete}
+
+---
+
+### {next-task-id}: {task name}
+...
+</plan-template>
+
+### Allowed sections
+
+`plan.md` contains **only** `## Overview`, `## Upgrade Options`, and `## Tasks`. Do not add
+extra top-level sections. Common additions that do **not** belong:
+
+| Section | Why it's excluded |
+|---------|-------------------|
+| Rollback Plan / Rollback Instructions | Users know how to use git (`git reset`, `git revert`). Not actionable. |
+| Estimated Timeline / Time Estimates | LLMs cannot accurately estimate duration. Misleading. |
+| Risk Matrix / Risk Assessment | Already in assessment.md — don't duplicate. |
+| Prerequisites / Assumptions | Belongs in scenario-instructions.md or assessment.md. |
+| Dependencies / Dependency Graph | Already in assessment.md — don't duplicate. |
+| Notes / Additional Considerations | Catch-all that accumulates noise. Put concerns in relevant tasks. |
+
+If a scenario's planning or strategy file adds a section (e.g. a strategy declaration block),
+that is allowed — it comes from the scenario, not from improvisation.
+
+### Task descriptions
+
+**Include:** intent-based scope (what, not how); key concerns when relevant; specific items
+when helpful; and **success criteria** — concrete conditions that can be verified (builds
+succeed, tests pass, specific APIs replaced).
+
+**Omit:** exhaustive listings (reference `assessment.md`); step-by-step execution
+instructions; metadata that lives elsewhere (risk, dependencies); **numeric scores or
+ratings** ("complexity: 8/10"); **time estimates** ("~4 hours"); **invented metrics** — use
+only data from the assessment, never fabricate numbers; rollback instructions; prerequisites
+or assumptions (a task's position in the plan implies ordering).
+
+For item listings, match the volume: few items → list them ("Affects UserService,
+OrderService, PaymentService"); pattern-based → describe the pattern ("all repositories in
+`src/services/`"); too many → point at the source ("~25 components — query assessment for the
+full list").
+
+### Qualitative sizing
+
+Use plain descriptors when characterizing scope, never numeric scores:
+
+| Do | Don't |
+|----|-------|
+| "small project, minimal dependencies" | "complexity: 3/10" |
+| "large solution with heavy inter-project refs" | "estimated effort: 8/10" |
+| "straightforward — no breaking changes expected" | "risk score: low (2/5)" |
+
+### Task IDs
+
+Task IDs follow the canonical format `NN-slug` — a **two-digit, zero-padded** sequence number
+starting at `01`, a hyphen, then a lowercase kebab-case slug. Sub-tasks use a dotted sequence:
+`NN.NN-slug`.
+
+| Valid | Invalid | Why invalid |
+|-------|---------|-------------|
+| `01-upgrade-htmlsanitizer` | `T-01` | No letter prefix — sequence must be digits |
+| `02-core-contracts` | `1-core` | Sequence should be two digits (`01`, not `1`) |
+| `02.01-data-access` | `02_data_access` | Use hyphens, not underscores |
+| `03-web-apps` | `Task3` | Must be `NN-slug` |
+
+The state tools (`start_task` / `complete_task`) resolve abbreviations and zero-pad variance,
+but an id they cannot match **unambiguously** fails loudly and blocks the task — so emit
+canonical ids and keep them unique.
+
+### Task naming
+
+Task IDs must describe **what is being done**, not the strategy slot or structural position. A
+user reading just the task list should understand the work without knowing the strategy.
+
+**Never use strategy jargon as task names** — `tier`, `phase`, `batch`, `layer`, `group`,
+`step`, `stage` describe *plan structure*, not *work content*. Use the actual content.
+
+| Avoid | Prefer | Why |
+|-------|--------|-----|
+| `02-tier1` | `02-foundation-libs` | Names the projects, not the tier |
+| `03-tier2` | `03-business-logic` | Describes what's in the tier |
+| `phase-1-batch-a` | `02-data-access` | Describes the concern |
+| `dependency-layer-0` | `02-core-contracts` | Names the actual libraries |
+| `group-a` | `03-legacy-services` | Names the group's content |
+
+**Guideline**: if you removed the sequence number, would the name still tell you what work
+happens? `tier1` → no. `foundation-libs` → yes.
 
 ## What to return (compact, structured)
 

@@ -60,7 +60,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 ### Task Template
 
 > Items below are a checklist of what tasks to include — not a format to copy.
-> Transform each applicable item into full plan-generation format with paragraphs
+> Transform each applicable item into the full canonical plan.md task format with paragraphs
 > and Done-when criteria.
 
 1. **Prerequisites** (always)

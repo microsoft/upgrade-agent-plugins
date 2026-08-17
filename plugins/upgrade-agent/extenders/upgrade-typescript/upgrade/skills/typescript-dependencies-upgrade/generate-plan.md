@@ -14,7 +14,6 @@ Review the scan results. The tool returns structured JSON including:
 - `applicableGuidance` — an ordered list of guidance **entries** the agent must read before proceeding, already sorted into execution order. Each entry is a self-describing object: `file` (skill-relative path, e.g. `react.md`, `react/19.md`), `framework` (e.g. `react`), `mode` (`replaces` = the file drives Phase 2 for its packages, e.g. `angular.md`; `constrains` = the file constrains the standard flow, e.g. `react.md`), and — on a framework's primary entry — optional `runAfter` (frameworks that must be handled first), `fromMajor`/`toMajor` (the version delta), and a one-line `summary`. Example: `[{"file":"react.md","framework":"react","mode":"constrains","fromMajor":18,"toMajor":19,"summary":"…"}, {"file":"react/19.md","framework":"react","mode":"constrains"}]`. An empty list means no framework-specific guidance applies.
 - `typeScriptMigrationNeeded` — whether the project's TypeScript is outdated (a project fact, independent of the requested scope). If true, the response also includes `currentTypeScriptVersion` and `targetTypeScriptVersion`. Whether you act on it is gated by scope — see below.
 - `featureFlags` — which optional validation phases are enabled:
-  - `validateRuntime` — validate the app runs after upgrades
   - `validateBundlerChanges` — validate build after bundler upgrades
   - `runNpmAudit` — fix security vulnerabilities after upgrades
   - `disableKnowledgeBase` — skip knowledge base fixes
@@ -38,6 +37,6 @@ Before making any changes, verify the project works:
 1. Call `typescript_install_dependencies` with `rootDirectory` and `packageDirectory`. If it fails or hangs because of a package-manager/toolchain problem (missing or wrong-versioned `npm`/`yarn`/`pnpm`/`corepack`, lockfile/integrity mismatch), stop and report the blocker via `typescript_write_upgrade_summary` — do not try to repair the toolchain (see Key Principle #9 in [SKILL.md](./SKILL.md)).
 2. Call `typescript_compile_package` with `rootDirectory` and `packageDirectory`.
 3. If `validateBundlerChanges` is true and **any dependency group has `containsBundlers: true`**, call `typescript_build_package` with `rootDirectory` and `packageDirectory` to establish a bundler build baseline.
-4. If `validateRuntime` is true, establish a runtime baseline — read [runtime-validation.md](./runtime-validation.md).
+4. Establish a runtime baseline — REQUIRED, do not skip. Read [runtime-validation.md](./runtime-validation.md).
 
 Record the baseline: install success, number of pre-existing build errors, test pass/fail counts.

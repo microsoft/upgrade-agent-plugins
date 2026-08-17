@@ -1,6 +1,7 @@
 # Test Coverage
 
 **Category**: Reliability
+**Plan impact**: Yes — `Generate flow`, `Test Baseline`, `Generation failure`
 
 **Applicable when**:
 - The assessment recommends coverage for at least one project. The assessment computes
@@ -84,8 +85,10 @@ another direction if the user provides one.
 
 If the user chooses to continue without generated tests:
 
-1. Update `upgrade-options.md` so **Test Coverage** selects **Skip**.
-2. Update `scenario-instructions.md`:
+1. Update `scenario-instructions.md`:
    - Under `## Upgrade Options` → `### Reliability`, change `Test Coverage` to `Skip`.
    - Under `## Test Baseline`, change `Status` to `skipped`.
-3. Continue the upgrade without a test baseline.
+2. Continue the upgrade without a test baseline.
+
+This flow runs **before** `plan.md` is written, so the plan's `## Upgrade Options`
+section will already record the corrected value — there is nothing to update there.

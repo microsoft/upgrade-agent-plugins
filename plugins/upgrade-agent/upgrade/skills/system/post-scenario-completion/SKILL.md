@@ -72,11 +72,10 @@ Would you like me to generate the detailed change report?
 
 🔍 **Discover more modernization opportunities**
 Want me to scan your solution for other modernization opportunities?
-
-When the user says yes, load the `scenario-discovery` skill: `get_instructions(kind='skill', query='scenario-discovery')` — and follow it.
 ```
 
 **Formatting rules:**
+- If the user accepts the discovery offer, dispatch the **ScenarioDiscovery** worker and present its cards verbatim
 - Each suggestion gets a relevant emoji, bold title, description paragraph, and a CTA question
 - Separate items with `---`
 - Scenario-specific suggestions come first, generic actions last

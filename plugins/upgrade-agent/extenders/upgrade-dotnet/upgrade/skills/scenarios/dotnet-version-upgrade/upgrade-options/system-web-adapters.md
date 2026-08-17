@@ -1,6 +1,7 @@
 # System.Web Adapters
 
 **Category**: Compatibility
+**Plan impact**: No
 
 **Applicable when**:
 - Any of the following detected:
@@ -35,15 +36,15 @@
 
 **Stored as**: `Upgrade Options > Compatibility > System.Web Adapters`
 
-**Skill**: `aspnet-system-web-adapters`
+**Skill**: `migrating-mvc-system-web-adapters`
 This is the only option that carries a skill ID. The skill is a **standing context skill** —
 loaded before Phase 0 and active for the entire scaffold + migrate task duration, not
 pre-matched per task. It overrides three feature satellites during those phases:
-`aspnet-httpcontext-migration`, `aspnet-pipeline-migration`, `aspnet-session-migration`.
+`migrating-mvc-httpcontext`, `migrating-mvc-http-pipeline`, `migrating-mvc-session-state`.
 During the final cleanup subtasks of the migrate task it remains loaded alongside those
 feature satellites, providing the shim → native mapping. All other upgrade options change
 task structure or executor behavior only — none carry a skill ID.
 
 **Affects**: Standing skill load at Phase 0, scaffold task for web projects,
-`aspnet-httpcontext-migration` / `aspnet-pipeline-migration` / `aspnet-session-migration`
+`migrating-mvc-httpcontext` / `migrating-mvc-http-pipeline` / `migrating-mvc-session-state`
 override behavior during migrate phases, cleanup subtasks within migrate task.

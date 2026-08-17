@@ -1,6 +1,7 @@
 # Project Approach
 
 **Category**: Project Structure
+**Plan impact**: Yes — `Strategy Interaction`
 
 **Applicable when**:
 - Any project in the solution targets .NET Framework

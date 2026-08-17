@@ -46,6 +46,25 @@ If `react`/`react-dom` appear only under the manifest's `peerDependencies` — a
 
 **Exception:** if `applicableGuidance` from the scan includes a `mui.md` entry (an entry whose `file` is `mui.md`), treat the MUI cluster as a group that upgrades together. When the user requests any `@mui/*` or `@emotion/*` package, present the rest of the cluster present in the manifest — `@mui/material`, `@mui/icons-material`, the `@mui/x-*` packages, and the `@emotion/react` / `@emotion/styled` styling engine — with an explicit **recommendation to include** them (not a neutral opt-in). Emotion is `@mui/material`'s peer styling engine, and `@mui/x-*` must not lead `@mui/material`'s major, so leaving one behind causes peer-dependency errors at install time. See [mui.md](./mui.md) for the coupling rules.
 
+### TanStack Query, Table, and Router use family-specific companion packages
+
+If `applicableGuidance` includes `tanstack.md`, keep direct dependencies from the same family in
+the same upgrade group: Query's React adapter/core/devtools/persistence packages, Table's React
+adapter/core packages, and Router's React adapter/core/plugin/CLI/devtools packages. Upgrade every
+included package to **its own latest compatible version**; the Query, Table, and Router version
+lines are independent and must not be forced to one shared version. Check each target React
+adapter's declared peer range and surface the React core as a required peer-floor upgrade when the
+project is below it. See [tanstack.md](./tanstack.md).
+
+For a Table v7 migration, `react-table` and `@types/react-table` are legacy package names rather
+than companions to retain: replace `react-table` with `@tanstack/react-table` and remove the
+separate types package, following the official v8 migration guide.
+
+Also surface integration packages whose peer range pins a TanStack major. In particular,
+`@trpc/react-query` v10 requires React Query v4, while tRPC v11 moves the tRPC package set to React
+Query v5 and TypeScript 5.7.2+. Recommend including that coordinated migration when a Query v5
+upgrade is requested; do not silently expand a Query-only request into a tRPC major migration.
+
 ### i18next is a compatibility group
 
 **Exception:** if `applicableGuidance` from the scan includes an `i18next.md` entry (an entry whose `file` is `i18next.md`), treat the i18next cluster as a group that upgrades together. When the user requests `i18next`, `react-i18next`, or any `i18next-*` plugin, present the rest of the cluster present in the manifest — the `i18next` core, its `react-i18next` binding, and the `i18next-*` plugins (e.g. `i18next-http-backend`, `i18next-browser-languagedetector`, `i18next-fs-backend`) — with an explicit **recommendation to include** them (not a neutral opt-in). Each `react-i18next` major raises its minimum `i18next` peer (e.g. `react-i18next@17` requires `i18next >= 26`), and the plugins are peers of the core, so leaving one behind causes an `ERESOLVE`/peer error or missing-type-export errors at install time. See [i18next.md](./i18next.md) for the coupling rules.
@@ -53,6 +72,12 @@ If `react`/`react-dom` appear only under the manifest's `peerDependencies` — a
 ### Karma + Jasmine is a compatibility group
 
 **Exception:** if `applicableGuidance` from the scan includes a `karma-jasmine.md` entry (an entry whose `file` is `karma-jasmine.md`), treat the test stack as a group that upgrades together. When the user requests `karma`, any `karma-*` plugin, `jasmine`/`jasmine-core`, or `@types/jasmine`, present the rest of the cluster present in the manifest — `karma` and its `karma-*` plugins (`karma-jasmine`, `karma-chrome-launcher`, `karma-coverage`, `karma-jasmine-html-reporter`, …), `jasmine-core`, and `@types/jasmine` — with an explicit **recommendation to include** them (not a neutral opt-in). `karma-jasmine@5` pins `karma ^6`, `@types/jasmine`'s major must equal `jasmine-core`'s, and `jasmine-core` must stay on **6.x** while Karma is present (`karma-jasmine` breaks on Jasmine 7), so leaving a member behind — or advancing `jasmine-core` to 7 — causes `ERESOLVE`/peer errors or broken specs. These are **not** upgraded by `ng update`. See [karma-jasmine.md](./karma-jasmine.md) for the coupling rules.
+
+### Radix UI is a required compatibility group
+
+**Exception:** if `applicableGuidance` from the scan includes a `radix.md` entry (an entry whose `file` is `radix.md`), treat the Radix cluster as a **required** group that upgrades together — like the React core, do **not** present it as an optional opt-in. When the user requests any `@radix-ui/*` package or `radix-ui`, all `@radix-ui/*` packages present in the manifest must be upgraded together, because the primitives declare their shared internals with **exact** versions (`@radix-ui/react-dialog@1.1.23` pins `"@radix-ui/react-slot": "1.3.3"`). A partial upgrade leaves the upgraded and stale members demanding different exact versions of the same internal, so both get installed and their emitted types become unrelated — `TS2719` errors in files the upgrade never touched. This does **not** fail at install time, only at compile time, so Radix is all-or-nothing: if the cluster cannot move as a unit, leave every Radix package at its current version and report why. Present it as informational, and see [radix.md](./radix.md) for the coupling rules and the required `npm ls` deduplication check.
+
+**Bound the required group to Radix members only.** Because `dependencyGroups` are built from peer relationships, the group containing a `@radix-ui/*` package also contains `react`, `react-dom`, `@types/react`, and the rest of the React ecosystem (`next`, `lucide-react`, …). Intersect that group down to the `@radix-ui/*` members plus `radix-ui` before treating it as required; **everything else in the group follows the normal opt-in flow above**. Radix declares `react` as `^16.8 || ^17.0 || ^18.0 || ^19.0`, so a Radix upgrade never requires a React major bump.
 
 ## Step 4: Organize into Upgrade Groups
 
