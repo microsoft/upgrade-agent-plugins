@@ -78,7 +78,7 @@ flow-mode detection).
    (read-only). Scenario values that include source-control hints override the generic defaults.
 6. Return `STATUS: ready` with the gathered block below. **Mutate nothing.**
 
-## What to return
+## What to return (structured output)
 
 Return **exactly one** `STATUS:` block and **nothing else** — no preface, no narration
 ("Now I'll inspect the repo…"), no raw tool transcripts. The block enters the Orchestrator's

@@ -1,9 +1,21 @@
 # Entity Framework Core Considerations
 
+> **STOP — is another host writing this schema?** The guidance below tells you to scaffold a
+> migration from your annotations and apply it. During a side-by-side migration — a .NET
+> Framework host and a new .NET host both live against one database — that is exactly the
+> contraction this window prohibits: an `AlterColumn` that makes a column `NOT NULL` breaks
+> every legacy insert that still omits it, and the migration may not even be yours to run.
+> Load `managing-shared-database-schema` first:
+> `get_instructions(kind='skill', query='managing-shared-database-schema')`
+>
+> In that case, annotate the model but **do not scaffold or apply a nullability migration**.
+> Configure the model to match the schema that exists (`.IsRequired(false)`, or `string?`)
+> rather than changing the schema to match the model.
+
 EF Core uses nullable annotations to infer database schema. Enabling NRTs in a project that uses EF Core has effects beyond compiler warnings:
 
 - **Schema changes from annotations**: When NRTs are enabled, EF Core treats `string` properties as required (NOT NULL) columns and `string?` as optional (NULL) columns. If you enable NRTs on an existing model without reviewing every entity property, running `Add-Migration` can generate migrations that make previously nullable columns required — potentially causing data loss if those columns already store nulls.
-- **Always review generated migrations**: After enabling NRTs on entity classes, run `Add-Migration` and carefully inspect the output before applying it. Look for unexpected `AlterColumn` calls that change column nullability.
+- **Always review generated migrations**: After enabling NRTs on entity classes, run `Add-Migration` and carefully inspect the output before applying it. Look for unexpected `AlterColumn` calls that change column nullability. A nullability tightening (`NULL` → `NOT NULL`) is a contraction: it breaks any writer that still omits the column, so it is only safe once you have confirmed no other application writes this table.
 - **Navigation properties**: Required navigation properties present a design choice because they are null until loaded. The official EF Core docs describe three approaches: **(a)** Non-nullable with `= null!` — appropriate when accessing an unloaded navigation is a programmer error; **(b)** Nullable (`public Order? Order { get; set; }`) — appropriate when code legitimately checks whether the navigation is loaded; **(c)** Non-nullable property wrapping a nullable backing field that throws `InvalidOperationException` on uninitialized access — the strictest pattern. Collection navigations should always be non-nullable (initialize to an empty collection, e.g., `= new List<Comment>()`; an empty collection means no related entities exist, but the list itself should never be null).
 - **Migrate entity classes carefully**: Consider annotating entity model classes one at a time rather than enabling NRTs project-wide, to control the scope of schema impact.
 - **Use `#nullable disable`, not `#nullable disable warnings` on entity files**: `#nullable disable warnings` only suppresses compiler warnings — the nullable annotations remain active and EF Core still reads them via reflection. This means properties without `?` are still treated as required, potentially altering schema. To fully opt entity files out of NRT effects, use `#nullable disable` which disables both warnings and the annotation context.

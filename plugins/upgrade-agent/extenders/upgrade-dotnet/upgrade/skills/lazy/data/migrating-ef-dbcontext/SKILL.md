@@ -23,6 +23,25 @@ Migrates DbContext initialization from legacy ASP.NET patterns (Global.asax, Sta
 
 Verify the project uses Entity Framework before proceeding. Search for `DbContext` subclasses in the codebase and check NuGet references for `EntityFramework` or `Microsoft.EntityFrameworkCore`. If neither is found, skip and inform the user.
 
+### Shared-database check (do this first)
+
+Before changing any registration, determine whether the .NET Framework host stays live
+against the same database. Check whether the old project's `*.config` and the new host's
+configuration resolve to the same database, and whether the old host is still deployed.
+
+If they share a database, **load `managing-shared-database-schema` now and follow it** —
+`get_instructions(kind='skill', query='managing-shared-database-schema')`. This skill
+tells you where to register a `DbContext`; it does not tell you who is allowed to change
+the schema, and getting that wrong on a live shared database is not recoverable by
+rolling back code. In particular, do not enable startup migration and do not create a
+second `Migrations/` folder until that skill's ownership decision says you own the schema.
+
+**If you cannot tell, assume the database is shared.** At scaffold time the answer often is
+not determinable from the repo. Silence is not a "no": unless you can positively confirm the
+old host is retired or runs against its own database, take the shared branch — do not enable
+startup migration, and load `managing-shared-database-schema` first. Being wrong that way
+costs one skill load; being wrong the other way is not recoverable by rolling back code.
+
 ### Dual EF Usage Decision
 
 When both `EntityFramework` and `Microsoft.EntityFrameworkCore` packages are present, pause and ask the user which to use for main database logic. Common scenarios:
@@ -134,21 +153,46 @@ public class MyService
 
 Search for `Database.SetInitializer` calls and move initialization logic to Program.cs. Register any initializer dependencies in the DI container, including transitive dependencies.
 
-**EF6** — Preserve the original initialization pattern:
+**EF6** — Preserve the original initialization pattern.
+
+> **Do not carry a migration-applying initializer across.** If the preserved initializer is
+> `MigrateDatabaseToLatestVersion<TContext, TConfiguration>`, re-registering it here runs
+> `DbMigrator.Update()` on first context use — a second, uncoordinated schema writer that
+> deploys on process start. Where another host still writes this database, register
+> `Database.SetInitializer<TContext>(null)` instead and load the shared-database skill first:
+> `get_instructions(kind='skill', query='managing-shared-database-schema')`
+
 ```csharp
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    Database.SetInitializer(services.GetRequiredService<MyInitializer>());
+
+    // Add ONLY if this host is the sole schema owner. If another host still writes this
+    // database, leave this commented and use Database.SetInitializer<MyDBContext>(null).
+    // Database.SetInitializer(services.GetRequiredService<MyInitializer>());
 }
 ```
 
-**EF Core** — Replace initializers with migrations. EF Core does not support `Database.SetInitializer`; refactor old initializers (e.g., `CreateDatabaseIfNotExists`, `DropCreateDatabaseIfModelChanges`) into EF Core migrations and seed methods:
+**EF Core** — Replace initializers with migrations. EF Core does not support `Database.SetInitializer`; refactor old initializers (e.g., `CreateDatabaseIfNotExists`, `DropCreateDatabaseIfModelChanges`) into EF Core migrations and seed methods.
+
+> **Do not enable startup migration on a shared database.** `Database.Migrate()` at startup is
+> safe only when this host is the **sole** schema owner. If a .NET Framework host still runs
+> against the same database (a side-by-side migration), this line gives you a second,
+> uncoordinated schema writer. Load `managing-shared-database-schema` first and follow its
+> ownership decision: `get_instructions(kind='skill', query='managing-shared-database-schema')`
+>
+> Where another host owns the schema, omit the `Database.Migrate()` call entirely and seed
+> only — or leave initialization out of the host and run migrations from the dedicated runner.
+
 ```csharp
 using (var scope = app.Services.CreateScope())
 {
     var myContext = scope.ServiceProvider.GetRequiredService<MyDBContext>();
-    myContext.Database.Migrate();
+
+    // Add ONLY if this host is the sole schema owner. Left commented deliberately: on a
+    // shared database this line is a second, uncoordinated schema writer.
+    // myContext.Database.Migrate();
+
     MyDBContextSeed.Seed(myContext);
 }
 ```
@@ -160,7 +204,7 @@ Remove the original `Database.SetInitializer` calls after migration.
 | Aspect | EF6 | EF Core |
 |--------|-----|---------|
 | DI registration | `AddScoped<T>(provider => new T("name=..."))` | `AddDbContext<T>(options => ...)` |
-| DB initialization | `Database.SetInitializer(...)` | `context.Database.Migrate()` |
+| DB initialization | `Database.SetInitializer(...)` | `context.Database.Migrate()` — only from the single designated migration runner; never at startup while another host shares the database |
 | Connection string | `"name=ConnectionStringName"` format | `Configuration.GetConnectionString(...)` |
 | Initializers | `CreateDatabaseIfNotExists`, `DropCreateDatabaseIfModelChanges` | Migrations-based approach |
 
@@ -172,5 +216,7 @@ Remove the original `Database.SetInitializer` calls after migration.
 - All direct `new DbContext()` instantiations replaced with constructor injection
 - Database initialization and seeding migrated to Program.cs
 - Old `Database.SetInitializer` calls removed
+- Startup `Database.Migrate()` present **only** where this host is the sole schema owner —
+  omitted when another live host shares the database
 - All initializer dependencies registered in DI
 - Project builds without errors

@@ -283,6 +283,11 @@ For libraries, see [ref/breaking-changes.md](ref/breaking-changes.md) — NRT an
 
 If the project uses EF Core, see [ref/ef-core.md](ref/ef-core.md) — enabling NRTs can change database schema inference and migration output.
 
+> **If another host writes this database** — a side-by-side migration where the .NET Framework
+> app is still live — annotate the model but do not scaffold or apply a nullability migration.
+> Load `managing-shared-database-schema` first. If you cannot tell whether another host writes
+> it, assume one does and take this branch.
+
 ## ASP.NET Core Considerations
 
 If the project uses ASP.NET Core, see [ref/aspnet-core.md](ref/aspnet-core.md) — enabling NRTs can change MVC model validation and JSON serialization behavior.

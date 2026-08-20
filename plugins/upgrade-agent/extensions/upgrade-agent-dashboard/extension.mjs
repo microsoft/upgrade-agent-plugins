@@ -61,6 +61,20 @@ function resolveActivityArchives(repoRoot) {
   return names.filter((name) => /^activity-.*\.jsonl$/i.test(name)).sort((a, b) => b.localeCompare(a)).map((name) => path.join(dir, name));
 }
 
+// lib/commit-message.ts
+var NEWLINE = /\r\n|\r|\n/;
+function messageLines(message) {
+  return typeof message === "string" ? message.split(NEWLINE) : [];
+}
+function subjectIndex(lines) {
+  return lines.findIndex((line) => line.trim() !== "");
+}
+function commitSubject(message) {
+  const lines = messageLines(message);
+  const index = subjectIndex(lines);
+  return index === -1 ? "" : lines[index].trim();
+}
+
 // lib/activity.ts
 var ACTIVITY_EVENT_LABELS = {
   task_started: { label: "Task started", kind: "task" },
@@ -85,6 +99,36 @@ var ACTIVITY_EVENT_LABELS = {
   provider_stopped: { label: "Provider stopped", kind: "system" }
 };
 var SYSTEM_ACTIVITY_KIND = "system";
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
+function isUnknownArray(value) {
+  return Array.isArray(value);
+}
+function stringOrNull(value) {
+  return typeof value === "string" ? value : null;
+}
+function numberOrNull(value) {
+  return typeof value === "number" ? value : null;
+}
+function booleanOrNull(value) {
+  return typeof value === "boolean" ? value : null;
+}
+function timestampOrNull(value) {
+  if (typeof value === "string" || typeof value === "number" || value instanceof Date) {
+    return value;
+  }
+  return null;
+}
+function toBuildProjectResult(value) {
+  const record = isRecord(value) ? value : {};
+  return {
+    ...record,
+    projectPath: stringOrNull(record.projectPath),
+    succeeded: booleanOrNull(record.succeeded),
+    durationMs: numberOrNull(record.durationMs)
+  };
+}
 function humanizeEventName(eventName) {
   if (typeof eventName !== "string" || eventName.length === 0) return "Unknown";
   const words = eventName.split(/[_\-.]+/).filter(Boolean);
@@ -92,65 +136,64 @@ function humanizeEventName(eventName) {
   return words.join(" ").replace(/^./, (c) => c.toUpperCase());
 }
 function formatActivityEntry(raw) {
-  const payload = raw && typeof raw.payload === "object" && raw.payload !== null ? raw.payload : null;
-  const fields = payload ? { ...raw, ...payload } : raw;
+  const row = isRecord(raw) ? raw : {};
+  const payload = isRecord(row.payload) ? row.payload : null;
+  const fields = payload ? { ...row, ...payload } : row;
   const ts = fields.timestamp ?? fields.ts ?? fields.time ?? null;
-  const eventName = fields.event ?? fields.type ?? "unknown";
+  const rawEvent = fields.event ?? fields.type;
+  const eventName = typeof rawEvent === "string" ? rawEvent : "unknown";
   const meta = ACTIVITY_EVENT_LABELS[eventName] ?? { label: humanizeEventName(eventName), kind: "other" };
   const detail = buildActivityDetail(eventName, fields);
   const entry = {
-    seq: raw.seq ?? fields.seq ?? null,
-    timestamp: ts,
+    seq: numberOrNull(row.seq ?? fields.seq),
+    timestamp: timestampOrNull(ts),
     event: eventName,
     label: meta.label,
     kind: meta.kind,
-    taskId: fields.taskId ?? fields.task_id ?? null,
+    taskId: stringOrNull(fields.taskId ?? fields.task_id),
     detail
   };
   if (meta.kind === "file") {
-    entry.filePath = fields.path ?? fields.filePath ?? null;
-    entry.linesAdded = fields.linesAdded ?? fields.lines_added ?? null;
-    entry.linesRemoved = fields.linesRemoved ?? fields.lines_removed ?? null;
-    entry.patchFile = fields.patchFile ?? fields.patch_file ?? null;
+    entry.filePath = stringOrNull(fields.path ?? fields.filePath);
+    entry.linesAdded = numberOrNull(fields.linesAdded ?? fields.lines_added);
+    entry.linesRemoved = numberOrNull(fields.linesRemoved ?? fields.lines_removed);
+    entry.patchFile = stringOrNull(fields.patchFile ?? fields.patch_file);
   }
   if (meta.kind === "commit") {
-    entry.commitHash = fields.commitHash ?? fields.hash ?? null;
-    entry.commitMessage = fields.commitMessage ?? fields.message ?? null;
+    entry.commitHash = stringOrNull(fields.commitHash ?? fields.hash);
+    entry.commitMessage = stringOrNull(fields.commitMessage ?? fields.message);
     entry.commitFiles = fields.files ?? null;
-    entry.insertions = fields.insertions ?? null;
-    entry.deletions = fields.deletions ?? null;
+    entry.insertions = numberOrNull(fields.insertions);
+    entry.deletions = numberOrNull(fields.deletions);
   }
   if (meta.kind === "build") {
-    entry.succeeded = fields.succeeded ?? null;
-    entry.durationMs = fields.durationMs ?? fields.duration ?? null;
-    entry.succeededProjects = fields.succeededProjects ?? null;
-    entry.projectResults = Array.isArray(fields.projectResults) ? fields.projectResults : null;
-    entry.command = fields.command ?? null;
+    entry.succeeded = booleanOrNull(fields.succeeded);
+    entry.durationMs = numberOrNull(fields.durationMs ?? fields.duration);
+    entry.succeededProjects = numberOrNull(fields.succeededProjects);
+    entry.projectResults = isUnknownArray(fields.projectResults) ? fields.projectResults.map(toBuildProjectResult) : null;
+    entry.command = stringOrNull(fields.command);
     entry.buildSucceeded = readBuildSucceeded(eventName, fields);
-    entry.errorCount = fields.errorCount ?? fields.errors ?? null;
-    entry.warningCount = fields.warningCount ?? fields.warnings ?? null;
-    entry.totalProjects = fields.totalProjects ?? fields.total ?? null;
-    entry.failedProjects = fields.failedProjects ?? null;
+    entry.errorCount = numberOrNull(fields.errorCount ?? fields.errors);
+    entry.warningCount = numberOrNull(fields.warningCount ?? fields.warnings);
+    entry.totalProjects = numberOrNull(fields.totalProjects ?? fields.total);
+    entry.failedProjects = numberOrNull(fields.failedProjects);
   }
   if (meta.kind === "phase") {
-    entry.phase = fields.phase ?? fields.name ?? null;
+    entry.phase = stringOrNull(fields.phase ?? fields.name);
   }
   if (meta.kind === "branch") {
-    entry.oldBranch = fields.oldBranch ?? fields.from ?? null;
-    entry.newBranch = fields.newBranch ?? fields.to ?? null;
+    entry.oldBranch = stringOrNull(fields.oldBranch ?? fields.from);
+    entry.newBranch = stringOrNull(fields.newBranch ?? fields.to);
   }
   if (meta.kind === SYSTEM_ACTIVITY_KIND) {
-    entry.providerId = fields.providerId ?? fields.provider ?? null;
+    entry.providerId = stringOrNull(fields.providerId ?? fields.provider);
   }
   return entry;
 }
 function readBuildSucceeded(eventName, e) {
   if (eventName === "build_started") return null;
   if (typeof e.succeeded === "boolean") return e.succeeded;
-  if (eventName === "build_session_completed") {
-    return (e.failedProjects ?? 0) === 0;
-  }
-  return (e.errorCount ?? e.errors ?? 0) === 0;
+  return (e.errorCount ?? e.errors ?? 0) === 0 && (e.failedProjects ?? 0) === 0;
 }
 function buildOutcomeLabel(eventName, e) {
   const succeeded = readBuildSucceeded(eventName, e);
@@ -165,28 +208,28 @@ function buildActivityDetail(eventName, e) {
     case "task_failed": {
       const parts = [];
       const name = e.displayName ?? e.taskName ?? e.name;
-      if (name) parts.push(name);
-      else if (e.taskId) parts.push(e.taskId);
-      if (e.reason) parts.push(`\u2014 ${e.reason}`);
+      if (name) parts.push(String(name));
+      else if (e.taskId) parts.push(String(e.taskId));
+      if (e.reason) parts.push(`\u2014 ${String(e.reason)}`);
       return parts.join(" ");
     }
     case "file_modified":
     case "file_created":
     case "file_deleted":
     case "file_renamed": {
-      const p = e.path ?? e.filePath ?? "";
+      const p = String(e.path ?? e.filePath ?? "");
       const adds = e.linesAdded ?? e.lines_added;
       const dels = e.linesRemoved ?? e.lines_removed;
       let suffix = "";
       if (adds != null || dels != null) {
-        suffix = ` (+${adds ?? 0} / -${dels ?? 0})`;
+        suffix = ` (+${String(adds ?? 0)} / -${String(dels ?? 0)})`;
       }
       return `${p}${suffix}`;
     }
     case "commit_created":
     case "commit_amended": {
-      const hash = (e.commitHash ?? e.hash ?? "").slice(0, 7);
-      const msg = e.commitMessage ?? e.message ?? "";
+      const hash = String(e.commitHash ?? e.hash ?? "").slice(0, 7);
+      const msg = commitSubject(String(e.commitMessage ?? e.message ?? ""));
       return hash ? `${hash} ${msg}` : msg;
     }
     case "build_started": {
@@ -194,10 +237,10 @@ function buildActivityDetail(eventName, e) {
       const total = e.totalProjects ?? e.total ?? null;
       if (project) {
         const config = e.configuration ?? e.config;
-        return config ? `${project} (${config})` : String(project);
+        return config ? `${String(project)} (${String(config)})` : String(project);
       }
       if (total != null) {
-        return `${total} project${total === 1 ? "" : "s"}`;
+        return `${String(total)} project${total === 1 ? "" : "s"}`;
       }
       return "";
     }
@@ -205,10 +248,10 @@ function buildActivityDetail(eventName, e) {
       const errs = e.errorCount ?? e.errors ?? null;
       const warns = e.warningCount ?? e.warnings ?? null;
       const total = e.totalProjects ?? e.total ?? null;
-      const tail = total != null ? ` across ${total} project${total === 1 ? "" : "s"}` : "";
+      const tail = total != null ? ` across ${String(total)} project${total === 1 ? "" : "s"}` : "";
       const counts = [];
-      if (errs != null) counts.push(`${errs} error${errs === 1 ? "" : "s"}`);
-      if (warns != null) counts.push(`${warns} warning${warns === 1 ? "" : "s"}`);
+      if (errs != null) counts.push(`${String(errs)} error${errs === 1 ? "" : "s"}`);
+      if (warns != null) counts.push(`${String(warns)} warning${warns === 1 ? "" : "s"}`);
       const tally = counts.length > 0 ? ` \u2014 ${counts.join(", ")}` : "";
       return `${buildOutcomeLabel(eventName, e)}${tally}${tail}`;
     }
@@ -216,31 +259,31 @@ function buildActivityDetail(eventName, e) {
       const total = e.totalProjects ?? null;
       const succeeded = e.succeededProjects ?? null;
       const failed = e.failedProjects ?? 0;
-      const tally = total != null ? ` (${succeeded ?? 0}/${total} ok${failed ? `, ${failed} failed` : ""})` : failed ? ` \u2014 ${failed} failed` : "";
+      const tally = total != null ? ` (${String(succeeded ?? 0)}/${String(total)} ok${failed ? `, ${String(failed)} failed` : ""})` : failed ? ` \u2014 ${String(failed)} failed` : "";
       return `${buildOutcomeLabel(eventName, e)}${tally}`;
     }
     case "phase_entered": {
-      return e.phase ?? e.name ?? "";
+      return String(e.phase ?? e.name ?? "");
     }
     case "branch_changed": {
-      const from = e.oldBranch ?? e.from ?? "?";
-      const to = e.newBranch ?? e.to ?? "?";
+      const from = String(e.oldBranch ?? e.from ?? "?");
+      const to = String(e.newBranch ?? e.to ?? "?");
       return `${from} \u2192 ${to}`;
     }
     case "head_detached": {
-      const at = (e.commitHash ?? e.hash ?? e.sha ?? "").slice(0, 7);
+      const at = String(e.commitHash ?? e.hash ?? e.sha ?? "").slice(0, 7);
       const from = e.oldBranch ?? e.previousBranch ?? e.from;
       const parts = [];
-      if (from) parts.push(`${from} \u2192`);
+      if (from) parts.push(`${String(from)} \u2192`);
       parts.push(at ? `detached at ${at}` : "detached HEAD");
       return parts.join(" ");
     }
     case "scenario_started": {
       const parts = [];
-      if (e.scenarioId) parts.push(e.scenarioId);
+      if (e.scenarioId) parts.push(String(e.scenarioId));
       const source = e.sourceFramework;
       const target = e.targetFramework;
-      if (source || target) parts.push(`${source ?? "?"} \u2192 ${target ?? "?"}`);
+      if (source || target) parts.push(`${String(source ?? "?")} \u2192 ${String(target ?? "?")}`);
       const opts = [e.mode, e.strategy].filter(Boolean);
       if (opts.length > 0) parts.push(`(${opts.join(", ")})`);
       return parts.join(" ");
@@ -251,15 +294,15 @@ function buildActivityDetail(eventName, e) {
       const total = e.totalTasks ?? null;
       if (total != null) {
         const done = e.completed ?? 0;
-        const tally = [`${done}/${total} tasks`];
-        if (e.failed) tally.push(`${e.failed} failed`);
-        if (e.skipped) tally.push(`${e.skipped} skipped`);
+        const tally = [`${String(done)}/${String(total)} tasks`];
+        if (e.failed) tally.push(`${String(e.failed)} failed`);
+        if (e.skipped) tally.push(`${String(e.skipped)} skipped`);
         parts.push(`\u2014 ${tally.join(", ")}`);
       }
       const commits = e.totalCommits;
       const files = e.totalFilesChanged;
       if (commits != null || files != null) {
-        parts.push(`(${commits ?? 0} commit${commits === 1 ? "" : "s"}, ${files ?? 0} file${files === 1 ? "" : "s"})`);
+        parts.push(`(${String(commits ?? 0)} commit${commits === 1 ? "" : "s"}, ${String(files ?? 0)} file${files === 1 ? "" : "s"})`);
       }
       return parts.join(" ");
     }
@@ -267,22 +310,22 @@ function buildActivityDetail(eventName, e) {
       const key = e.key ?? e.setting ?? e.name;
       if (!key) {
         const keys = e.keys ?? e.changed;
-        return Array.isArray(keys) ? keys.join(", ") : "";
+        return isUnknownArray(keys) ? keys.join(", ") : "";
       }
       const from = e.oldValue ?? e.previousValue;
       const to = e.newValue ?? e.value;
       if (from === void 0 && to === void 0) return String(key);
-      return `${key}: ${formatScalar(from)} \u2192 ${formatScalar(to)}`;
+      return `${String(key)}: ${formatScalar(from)} \u2192 ${formatScalar(to)}`;
     }
     case "provider_started": {
       const id = e.providerId ?? e.provider ?? e.id ?? "provider";
       const pid = e.pid ?? e.processId;
-      return pid != null ? `${id} (pid ${pid})` : String(id);
+      return pid != null ? `${String(id)} (pid ${String(pid)})` : String(id);
     }
     case "provider_stopped": {
       const id = e.providerId ?? e.provider ?? e.id ?? "provider";
-      const reason = e.reason ?? (e.exitCode != null ? `exit ${e.exitCode}` : null);
-      return reason ? `${id} \u2014 ${reason}` : String(id);
+      const reason = e.reason ?? (e.exitCode != null ? `exit ${String(e.exitCode)}` : null);
+      return reason ? `${String(id)} \u2014 ${String(reason)}` : String(id);
     }
     default: {
       const {
@@ -309,7 +352,7 @@ function formatScalar(v) {
   if (v == null) return "";
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
-  return JSON.stringify(v);
+  return JSON.stringify(v) ?? "";
 }
 
 // lib/time-format.ts
@@ -489,8 +532,11 @@ function readProjectReferences(xml) {
 }
 
 // lib/deps.ts
+function isRecord2(value) {
+  return typeof value === "object" && value !== null;
+}
 function pick(obj, ...names) {
-  if (!obj || typeof obj !== "object") return void 0;
+  if (!isRecord2(obj)) return void 0;
   for (const name of names) {
     if (Object.prototype.hasOwnProperty.call(obj, name)) {
       return obj[name];
@@ -521,7 +567,7 @@ function countIncompatible(deps) {
     if (!Array.isArray(arr)) continue;
     for (const entry of arr) {
       const c = pick(entry, "compatibility", "Compatibility", "targetCompatibility", "TargetCompatibility");
-      if (INCOMPAT_VALUES.has(c)) {
+      if (typeof c === "string" && INCOMPAT_VALUES.has(c)) {
         count++;
       }
     }
@@ -553,7 +599,7 @@ function isAgentArtifactPath(p) {
 }
 
 // lib/assessment.ts
-function isRecord(value) {
+function isRecord3(value) {
   return typeof value === "object" && value !== null;
 }
 function aggregateFeatures(projects) {
@@ -562,16 +608,16 @@ function aggregateFeatures(projects) {
   }
   const map = /* @__PURE__ */ new Map();
   for (const proj of projects) {
-    if (!isRecord(proj)) {
+    if (!isRecord3(proj)) {
       continue;
     }
     const projFeatures = Array.isArray(proj.features) ? proj.features : [];
     const projPath = typeof proj.path === "string" ? proj.path : "";
-    const properties = isRecord(proj.properties) ? proj.properties : {};
+    const properties = isRecord3(proj.properties) ? proj.properties : {};
     const appName = properties.appName ?? properties.AppName;
     const projName = typeof appName === "string" && appName ? appName : projectNameFromPath(projPath);
     for (const f of projFeatures) {
-      if (!isRecord(f) || typeof f.featureId !== "string") {
+      if (!isRecord3(f) || typeof f.featureId !== "string") {
         continue;
       }
       const incidents = Array.isArray(f.incidents) ? f.incidents.length : 0;
@@ -594,6 +640,27 @@ function aggregateFeatures(projects) {
 
 // lib/snapshot.ts
 var SCENARIOS_REL = path2.join(".github", "upgrades", "scenarios");
+function isRecord4(value) {
+  return typeof value === "object" && value !== null;
+}
+function isUnknownArray2(value) {
+  return Array.isArray(value);
+}
+function recordOrEmpty(value) {
+  return isRecord4(value) ? value : {};
+}
+function unvalidatedList(value) {
+  return value;
+}
+function unvalidatedRecord(value) {
+  return value;
+}
+function unvalidatedString(value) {
+  return value;
+}
+function unvalidatedNumber(value) {
+  return value;
+}
 var ACTIVITY_TAIL_LIMIT = 1e3;
 async function readActivityTail(repoRoot, maxLines = ACTIVITY_TAIL_LIMIT) {
   const sources = [];
@@ -609,7 +676,7 @@ async function readActivityTail(repoRoot, maxLines = ACTIVITY_TAIL_LIMIT) {
         try {
           entries.push(formatActivityEntry(JSON.parse(line)));
         } catch {
-          entries.push({ event: "unparseable", label: "unparseable", kind: "other", detail: line });
+          entries.push({ event: "unparseable", label: "unparseable", kind: "other", detail: line, seq: null, timestamp: null, taskId: null });
         }
       }
     } catch {
@@ -649,13 +716,13 @@ async function readScenarios(repoRoot) {
     }
     let body = {};
     try {
-      body = JSON.parse(await fs.readFile(path2.join(scenarioPath, "scenario.json"), "utf8"));
+      body = unvalidatedRecord(JSON.parse(await fs.readFile(path2.join(scenarioPath, "scenario.json"), "utf8")));
     } catch {
       body = { error: "could not read scenario.json" };
     }
     scenarios.push({ id: entry.name, scenarioPath, mtime, ...body });
   }
-  scenarios.sort((a, b) => (b.mtime ?? 0) - (a.mtime ?? 0));
+  scenarios.sort((a, b) => (unvalidatedNumber(b.mtime) ?? 0) - (unvalidatedNumber(a.mtime) ?? 0));
   return scenarios;
 }
 function getActiveScenario(scenarios) {
@@ -711,7 +778,7 @@ async function readProjects(repoRoot) {
 }
 function findAssessmentJson(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const file = path2.join(activeScenario.scenarioPath, "assessment.json");
+  const file = path2.join(unvalidatedString(activeScenario.scenarioPath), "assessment.json");
   return existsSync(file) ? file : null;
 }
 async function readAssessment(activeScenario) {
@@ -719,44 +786,49 @@ async function readAssessment(activeScenario) {
   if (!file) return null;
   try {
     const data = JSON.parse(await fs.readFile(file, "utf8"));
-    const stats = data.stats ?? {};
-    const summary = stats.summary ?? {};
-    const charts = stats.charts ?? {};
-    const projects = Array.isArray(data.projects) ? data.projects : [];
+    if (data === null || data === void 0) throw new TypeError("assessment.json is not an object");
+    const record = recordOrEmpty(data);
+    const stats = recordOrEmpty(record.stats);
+    const summary = recordOrEmpty(stats.summary);
+    const charts = recordOrEmpty(stats.charts);
+    const projects = isUnknownArray2(record.projects) ? record.projects : [];
     const features = aggregateFeatures(projects);
     return {
       path: file,
-      settings: data.settings ?? null,
-      analysisStartTime: data.analysisStartTime ?? null,
-      analysisEndTime: data.analysisEndTime ?? null,
+      settings: record.settings ?? null,
+      analysisStartTime: record.analysisStartTime ?? null,
+      analysisEndTime: record.analysisEndTime ?? null,
       counts: {
         projects: summary.projects ?? projects.length,
         issues: summary.issues ?? 0,
         incidents: summary.incidents ?? 0,
         effort: summary.effort ?? 0,
-        mandatory: charts.severity?.Mandatory ?? 0
+        mandatory: recordOrEmpty(charts.severity).Mandatory ?? 0
       },
       severity: charts.severity ?? {},
       category: charts.category ?? {},
       features,
-      projects: projects.filter((p) => p && typeof p === "object").map((p) => ({
-        path: p.path,
-        startingProject: !!p.startingProject,
-        issues: p.issues ?? 0,
-        storyPoints: p.storyPoints ?? 0,
-        appName: p.properties?.appName ?? null,
-        frameworks: p.properties?.frameworks ?? [],
-        projectKind: p.properties?.projectKind ?? null,
-        isSdk: !!p.properties?.isSdkStyle,
-        // Sizing metrics surfaced by the Assessment "Highlevel metrics"
-        // block (camelCase in the canonical producer's assessment.json).
-        numberOfCodeFiles: p.properties?.numberOfCodeFiles ?? 0,
-        linesOfCode: p.properties?.linesOfCode ?? 0,
-        minLinesOfCodeToChange: p.properties?.minLinesOfCodeToChange ?? 0,
-        maxLinesOfCodeToChange: p.properties?.maxLinesOfCodeToChange ?? 0,
-        ruleInstances: Array.isArray(p.ruleInstances) ? p.ruleInstances.filter((ri) => ri && typeof ri === "object") : []
-      })),
-      rules: data.rules && typeof data.rules === "object" ? data.rules : {},
+      projects: projects.filter((p) => isRecord4(p)).map((p) => {
+        const props = recordOrEmpty(p.properties);
+        return {
+          path: p.path,
+          startingProject: !!p.startingProject,
+          issues: p.issues ?? 0,
+          storyPoints: p.storyPoints ?? 0,
+          appName: props.appName ?? null,
+          frameworks: props.frameworks ?? [],
+          projectKind: props.projectKind ?? null,
+          isSdk: !!props.isSdkStyle,
+          // Sizing metrics surfaced by the Assessment "Highlevel metrics"
+          // block (camelCase in the canonical producer's assessment.json).
+          numberOfCodeFiles: props.numberOfCodeFiles ?? 0,
+          linesOfCode: props.linesOfCode ?? 0,
+          minLinesOfCodeToChange: props.minLinesOfCodeToChange ?? 0,
+          maxLinesOfCodeToChange: props.maxLinesOfCodeToChange ?? 0,
+          ruleInstances: isUnknownArray2(p.ruleInstances) ? p.ruleInstances.filter((ri) => isRecord4(ri)) : []
+        };
+      }),
+      rules: isRecord4(record.rules) ? record.rules : {},
       markdown: await readAssessmentMarkdown(activeScenario)
     };
   } catch {
@@ -765,7 +837,7 @@ async function readAssessment(activeScenario) {
 }
 async function readAssessmentMarkdown(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const file = path2.join(activeScenario.scenarioPath, "assessment.md");
+  const file = path2.join(unvalidatedString(activeScenario.scenarioPath), "assessment.md");
   if (!existsSync(file)) return null;
   try {
     return { path: file, content: await fs.readFile(file, "utf8") };
@@ -775,7 +847,7 @@ async function readAssessmentMarkdown(activeScenario) {
 }
 async function readPlan(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const file = path2.join(activeScenario.scenarioPath, "plan.md");
+  const file = path2.join(unvalidatedString(activeScenario.scenarioPath), "plan.md");
   if (!existsSync(file)) return null;
   try {
     return { path: file, content: await fs.readFile(file, "utf8") };
@@ -785,7 +857,7 @@ async function readPlan(activeScenario) {
 }
 function findDependencyHealthJson(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const file = path2.join(activeScenario.scenarioPath, "dependencies-health.json");
+  const file = path2.join(unvalidatedString(activeScenario.scenarioPath), "dependencies-health.json");
   return existsSync(file) ? file : null;
 }
 function _depRefPath(x) {
@@ -809,8 +881,10 @@ async function readDependencyHealth(activeScenario) {
   try {
     const data = JSON.parse(await fs.readFile(file, "utf8"));
     const gov = pick(data, "packageGovernance", "PackageGovernance") ?? {};
-    const packages = Array.isArray(pick(gov, "packages", "Packages")) ? pick(gov, "packages", "Packages") : [];
-    const projects = Array.isArray(pick(data, "projects", "Projects")) ? pick(data, "projects", "Projects") : [];
+    const packagesRaw = pick(gov, "packages", "Packages");
+    const packages = isUnknownArray2(packagesRaw) ? packagesRaw : [];
+    const projectsRaw = pick(data, "projects", "Projects");
+    const projects = isUnknownArray2(projectsRaw) ? projectsRaw : [];
     return {
       path: file,
       targetFramework: pick(gov, "targetFramework", "TargetFramework") ?? null,
@@ -820,11 +894,11 @@ async function readDependencyHealth(activeScenario) {
         projects: projects.length
       },
       packages: packages.map((p) => {
-        const versionsRaw = pick(p, "versions", "Versions") ?? [];
+        const versionsRaw = unvalidatedList(pick(p, "versions", "Versions") ?? []);
         const seen = /* @__PURE__ */ new Set();
         const projectRefs = [];
         for (const v of versionsRaw) {
-          for (const pr of pick(v, "projects", "Projects") ?? []) {
+          for (const pr of unvalidatedList(pick(v, "projects", "Projects") ?? [])) {
             const full = _depRefPath(pr);
             if (!full || seen.has(full)) continue;
             seen.add(full);
@@ -840,7 +914,7 @@ async function readDependencyHealth(activeScenario) {
           projects: [...projectRefs],
           versions: versionsRaw.map((v) => ({
             version: pick(v, "version", "Version") ?? "",
-            projectCount: (pick(v, "projects", "Projects") ?? []).length,
+            projectCount: unvalidatedList(pick(v, "projects", "Projects") ?? []).length,
             isRecommended: !!pick(v, "isRecommended", "IsRecommended")
           })),
           upgrade: pick(p, "upgrade", "Upgrade") ?? null
@@ -855,11 +929,11 @@ async function readDependencyHealth(activeScenario) {
           isSdk: !!pick(proj, "isSdk", "IsSdk"),
           currentFrameworks: pick(proj, "currentFrameworks", "CurrentFrameworks") ?? [],
           targetFramework: pick(proj, "targetFramework", "TargetFramework") ?? null,
-          packageCount: (pick(deps, "packages", "Packages") ?? []).length,
-          assemblyCount: (pick(deps, "assemblies", "Assemblies") ?? []).length,
-          projectRefCount: (pick(deps, "projectReferences", "ProjectReferences") ?? []).length,
-          frameworkRefCount: (pick(deps, "frameworkReferences", "FrameworkReferences") ?? []).length,
-          importsCount: Array.isArray(imports) ? imports.length : 0,
+          packageCount: unvalidatedList(pick(deps, "packages", "Packages") ?? []).length,
+          assemblyCount: unvalidatedList(pick(deps, "assemblies", "Assemblies") ?? []).length,
+          projectRefCount: unvalidatedList(pick(deps, "projectReferences", "ProjectReferences") ?? []).length,
+          frameworkRefCount: unvalidatedList(pick(deps, "frameworkReferences", "FrameworkReferences") ?? []).length,
+          importsCount: isUnknownArray2(imports) ? imports.length : 0,
           incompatible: countIncompatible(deps),
           dependencies: deps ?? null
         };
@@ -869,32 +943,37 @@ async function readDependencyHealth(activeScenario) {
     return null;
   }
 }
-async function readTasks(repoRoot, activeScenario) {
+async function readTasks(_repoRoot, activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const tasksPath = path2.join(activeScenario.scenarioPath, "tasks.md");
+  const tasksPath = path2.join(unvalidatedString(activeScenario.scenarioPath), "tasks.md");
   if (!existsSync(tasksPath)) return null;
   try {
     const content = await fs.readFile(tasksPath, "utf8");
     const { tasks, overview } = parseTasksMd(content);
-    const tasksDir = path2.join(activeScenario.scenarioPath, "tasks");
-    await Promise.all(
+    const tasksDir = path2.join(unvalidatedString(activeScenario.scenarioPath), "tasks");
+    const detailedTasks = await Promise.all(
       tasks.map(async (task) => {
         const taskDir = path2.join(tasksDir, task.id);
         const detailsPath = path2.join(taskDir, "progress-details.md");
         const taskMdPath = path2.join(taskDir, "task.md");
+        let progressDetails = null;
+        let hasProgressDetails = false;
         try {
-          task.progressDetails = await fs.readFile(detailsPath, "utf8");
-          task.progressDetailsPath = detailsPath;
+          progressDetails = await fs.readFile(detailsPath, "utf8");
+          hasProgressDetails = true;
         } catch {
-          task.progressDetails = null;
+          progressDetails = null;
         }
+        let taskBlurb = null;
+        let taskBlurbPath = null;
         try {
-          task.taskBlurb = (await fs.readFile(taskMdPath, "utf8")).trim();
-          task.taskBlurbPath = taskMdPath;
+          taskBlurb = (await fs.readFile(taskMdPath, "utf8")).trim();
+          taskBlurbPath = taskMdPath;
         } catch {
-          task.taskBlurb = null;
-          task.taskBlurbPath = null;
+          taskBlurb = null;
+          taskBlurbPath = null;
         }
+        return hasProgressDetails ? { ...task, progressDetails, progressDetailsPath: detailsPath, taskBlurb, taskBlurbPath } : { ...task, progressDetails, taskBlurb, taskBlurbPath };
       })
     );
     let updatedAt = null;
@@ -903,7 +982,7 @@ async function readTasks(repoRoot, activeScenario) {
     } catch {
       updatedAt = null;
     }
-    return { path: tasksPath, scenarioId: activeScenario.id, overview, tasks, updatedAt };
+    return { path: tasksPath, scenarioId: activeScenario.id, overview, tasks: detailedTasks, updatedAt };
   } catch {
     return null;
   }
@@ -933,11 +1012,11 @@ async function buildDiagnostics(repoRoot, resolution, activeScenario) {
   probe("activity.jsonl (.vs)", path2.join(repoRoot, ".vs", "upgrade", "activity.jsonl"));
   probe("scenarios dir", path2.join(repoRoot, SCENARIOS_REL));
   if (activeScenario?.scenarioPath) {
-    probe("active scenario", activeScenario.scenarioPath);
-    probe("scenario.json", path2.join(activeScenario.scenarioPath, "scenario.json"));
-    probe("tasks.md", path2.join(activeScenario.scenarioPath, "tasks.md"));
-    probe("assessment.json", path2.join(activeScenario.scenarioPath, "assessment.json"));
-    probe("dependencies-health.json", path2.join(activeScenario.scenarioPath, "dependencies-health.json"));
+    probe("active scenario", unvalidatedString(activeScenario.scenarioPath));
+    probe("scenario.json", path2.join(unvalidatedString(activeScenario.scenarioPath), "scenario.json"));
+    probe("tasks.md", path2.join(unvalidatedString(activeScenario.scenarioPath), "tasks.md"));
+    probe("assessment.json", path2.join(unvalidatedString(activeScenario.scenarioPath), "assessment.json"));
+    probe("dependencies-health.json", path2.join(unvalidatedString(activeScenario.scenarioPath), "dependencies-health.json"));
   }
   return {
     resolvedRepoRoot: repoRoot,
@@ -985,11 +1064,12 @@ function buildTokenTargets(repoRoot, scenarios, activeScenario, tasks, walkedDir
     if (!s?.scenarioPath) {
       continue;
     }
-    targets.push(s.scenarioPath, path2.join(s.scenarioPath, "scenario.json"));
+    const sPath = unvalidatedString(s.scenarioPath);
+    targets.push(sPath, path2.join(sPath, "scenario.json"));
   }
   targets.push(...scenarioChildDirs ?? []);
   if (activeScenario?.scenarioPath) {
-    const sp = activeScenario.scenarioPath;
+    const sp = unvalidatedString(activeScenario.scenarioPath);
     for (const file of ["assessment.json", "assessment.md", "dependencies-health.json", "plan.md", "scenario-instructions.md", "tasks.md"]) {
       targets.push(path2.join(sp, file));
     }
@@ -1088,7 +1168,7 @@ async function computeSnapshot(repoRoot, resolution, force = false) {
 }
 async function readScenarioInstructions(activeScenario) {
   if (!activeScenario?.scenarioPath) return null;
-  const file = path2.join(activeScenario.scenarioPath, "scenario-instructions.md");
+  const file = path2.join(unvalidatedString(activeScenario.scenarioPath), "scenario-instructions.md");
   if (!existsSync(file)) return null;
   try {
     return { path: file, content: await fs.readFile(file, "utf8") };
@@ -1128,8 +1208,11 @@ import { promises as fs2 } from "node:fs";
 import path3 from "node:path";
 
 // lib/state-hash.ts
+function isRecord5(value) {
+  return typeof value === "object" && value !== null;
+}
 function sortedKeysReplacer(_key, value) {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
+  if (isRecord5(value) && !Array.isArray(value)) {
     const sorted = {};
     for (const k of Object.keys(value).sort()) {
       sorted[k] = value[k];
@@ -1140,17 +1223,30 @@ function sortedKeysReplacer(_key, value) {
 }
 function hashState(state) {
   const { generatedAt, diagnostics, ...rest } = state;
+  const diagRecord = isRecord5(diagnostics) ? diagnostics : {};
   const diagKey = diagnostics ? {
-    paths: diagnostics.paths,
-    resolutionSource: diagnostics.resolutionSource,
-    resolvedRepoRoot: diagnostics.resolvedRepoRoot,
-    gitKind: diagnostics.gitKind,
-    gitDir: diagnostics.gitDir
+    paths: diagRecord.paths,
+    resolutionSource: diagRecord.resolutionSource,
+    resolvedRepoRoot: diagRecord.resolvedRepoRoot,
+    gitKind: diagRecord.gitKind,
+    gitDir: diagRecord.gitDir
   } : null;
   return JSON.stringify({ ...rest, diagnostics: diagKey }, sortedKeysReplacer);
 }
 
 // lib/server.ts
+function unvalidatedRecord2(value) {
+  return value;
+}
+function thrown(value) {
+  return value;
+}
+function maybeThrown(value) {
+  return value;
+}
+function unvalidatedBody(value) {
+  return value;
+}
 var STATIC_CONTENT_TYPES = /* @__PURE__ */ new Map([
   [".css", "text/css; charset=utf-8"],
   [".gif", "image/gif"],
@@ -1189,7 +1285,7 @@ async function tryServeStaticAsset(staticRoot, pathname, res) {
     res.end(asset);
     return true;
   } catch (error) {
-    if (error?.code === "ENOENT" || error?.code === "EISDIR") {
+    if (maybeThrown(error)?.code === "ENOENT" || maybeThrown(error)?.code === "EISDIR") {
       return false;
     }
     throw error;
@@ -1357,7 +1453,7 @@ function createDashboardServer(options) {
     if (!resolution) return;
     meta.resolution = resolution;
     const state = await snapshot2(resolution.path, resolution, { force });
-    const hash = hashState(state);
+    const hash = hashState(unvalidatedRecord2(state));
     if (!force && hash === meta.lastStateHash) return;
     meta.lastStateHash = hash;
     const payload = `data: ${JSON.stringify(state)}
@@ -1455,7 +1551,7 @@ data: ${JSON.stringify(data)}
       }
       meta.resolution = resolution;
       const state = await snapshot2(resolution.path, resolution);
-      meta.lastStateHash = hashState(state);
+      meta.lastStateHash = hashState(unvalidatedRecord2(state));
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify(state));
       return;
@@ -1481,7 +1577,7 @@ data: ${JSON.stringify(data)}
         res.end(diff);
       } catch (err) {
         res.writeHead(500, { "content-type": "application/json" });
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: thrown(err).message }));
       }
       return;
     }
@@ -1544,7 +1640,7 @@ data: ${JSON.stringify(data)}
         res.end(JSON.stringify(files));
       } catch (err) {
         res.writeHead(500, { "content-type": "application/json" });
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: thrown(err).message }));
       }
       return;
     }
@@ -1575,7 +1671,7 @@ data: ${JSON.stringify(data)}
         res.end(diff);
       } catch (err) {
         res.writeHead(500, { "content-type": "application/json" });
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: thrown(err).message }));
       }
       return;
     }
@@ -1605,7 +1701,7 @@ data: ${JSON.stringify(data)}
       if (resolution) {
         meta.resolution = resolution;
         const state = await snapshot2(resolution.path, resolution);
-        meta.lastStateHash = hashState(state);
+        meta.lastStateHash = hashState(unvalidatedRecord2(state));
         try {
           res.write(`data: ${JSON.stringify(state)}
 
@@ -1635,7 +1731,7 @@ data: ${JSON.stringify(data)}
         if (overflow) return;
         try {
           const body = Buffer.concat(chunks).toString("utf8");
-          const payload = JSON.parse(body || "{}");
+          const payload = unvalidatedRecord2(JSON.parse(body || "{}"));
           const actionName = typeof payload.actionName === "string" ? payload.actionName : "";
           const handler = getActionHandler(actionName);
           if (!handler) {
@@ -1660,7 +1756,7 @@ data: ${JSON.stringify(data)}
             if (resolution) {
               meta.resolution = resolution;
               state = await snapshot2(resolution.path, resolution);
-              meta.lastStateHash = hashState(state);
+              meta.lastStateHash = hashState(unvalidatedRecord2(state));
             }
           } catch (refreshError) {
             const detail = refreshError instanceof Error ? refreshError.message : String(refreshError);
@@ -1710,7 +1806,7 @@ data: ${JSON.stringify(data)}
     handleRequest(req, res).catch((err) => {
       try {
         res.writeHead(500);
-        res.end(err?.message ?? "internal error");
+        res.end(unvalidatedBody(maybeThrown(err)?.message ?? "internal error"));
       } catch {
       }
     });
@@ -1723,7 +1819,7 @@ data: ${JSON.stringify(data)}
     closeInstance,
     stopPolling,
     async listen() {
-      await new Promise((resolve) => server.listen(port, host, resolve));
+      await new Promise((resolve) => server.listen(port, host, () => resolve()));
       const addr = server.address();
       const resolvedPort = typeof addr === "object" && addr ? addr.port : port;
       return {
@@ -1768,7 +1864,7 @@ function getGitDiff(repoRoot, filePath) {
             "git",
             ["diff", "--no-index", "--", "/dev/null", filePath],
             { cwd: repoRoot, maxBuffer: 1024 * 1024 },
-            (diffErr, diffOut) => {
+            (_diffErr, diffOut) => {
               if (diffOut) {
                 resolve(diffOut);
               } else {
@@ -1994,7 +2090,7 @@ function readHostVersion(env) {
   const version = env.COPILOT_CLI_BINARY_VERSION;
   return typeof version === "string" && version.trim() !== "" ? version.trim() : void 0;
 }
-function isRecord2(value) {
+function isRecord6(value) {
   return typeof value === "object" && value !== null;
 }
 function readPluginVersion(startDir, readFile = (p) => readFileSync2(p, "utf8")) {
@@ -2002,7 +2098,7 @@ function readPluginVersion(startDir, readFile = (p) => readFileSync2(p, "utf8"))
   for (let depth = 0; depth < MAX_MANIFEST_LOOKUP_DEPTH; depth += 1) {
     try {
       const parsed = JSON.parse(readFile(path6.join(dir, "plugin.json")));
-      if (isRecord2(parsed) && typeof parsed.version === "string" && parsed.version.trim() !== "") {
+      if (isRecord6(parsed) && typeof parsed.version === "string" && parsed.version.trim() !== "") {
         return parsed.version.trim();
       }
     } catch {
@@ -2024,7 +2120,8 @@ function activeScenarioOf(state) {
 function buildFeedbackContext(state, options) {
   const snapshot2 = state ?? {};
   const scenario = activeScenarioOf(snapshot2);
-  const targetFramework = scenario?.properties?.UpgradeTargetFramework ?? scenario?.properties?.upgradeTargetFramework ?? snapshot2.dependencies?.targetFramework ?? null;
+  const scenarioProperties = isRecord6(scenario?.properties) ? scenario.properties : {};
+  const targetFramework = scenarioProperties.UpgradeTargetFramework ?? scenarioProperties.upgradeTargetFramework ?? snapshot2.dependencies?.targetFramework ?? null;
   const moduleDir = options.moduleDir ?? path6.dirname(fileURLToPath2(import.meta.url));
   const env = options.env ?? {
     AI_AGENT: process.env.AI_AGENT,
@@ -2168,7 +2265,7 @@ var ARTIFACT_PHASES = [
   [/\/scenario-instructions\.md$/, "setup"],
   [/\/scenario\.json$/, "setup"]
 ];
-function isRecord3(value) {
+function isRecord7(value) {
   return typeof value === "object" && value !== null;
 }
 function normalizePhaseName(value) {
@@ -2190,20 +2287,20 @@ function build(id, inferred, evidence, at) {
   return { id, ...PHASE_META[id], inferred, evidence, at };
 }
 function derivePhase(state) {
-  const currentState = isRecord3(state) ? state : {};
+  const currentState = isRecord7(state) ? state : {};
   const activity = Array.isArray(currentState.activity) ? currentState.activity : [];
-  const tasks = isRecord3(currentState.tasks) && Array.isArray(currentState.tasks.tasks) ? currentState.tasks.tasks : [];
-  const hasLiveTask = tasks.some((task) => isRecord3(task) && task.state === "InProgress");
-  const allTasksDone = tasks.length > 0 && tasks.every((task) => isRecord3(task) && isTerminalTaskState(task.state));
-  const needsAttention = tasks.some((task) => isRecord3(task) && isAttentionTaskState(task.state));
+  const tasks = isRecord7(currentState.tasks) && Array.isArray(currentState.tasks.tasks) ? currentState.tasks.tasks : [];
+  const hasLiveTask = tasks.some((task) => isRecord7(task) && task.state === "InProgress");
+  const allTasksDone = tasks.length > 0 && tasks.every((task) => isRecord7(task) && isTerminalTaskState(task.state));
+  const needsAttention = tasks.some((task) => isRecord7(task) && isAttentionTaskState(task.state));
   const scenarios = Array.isArray(currentState.scenarios) ? currentState.scenarios : [];
   const hasScenario = typeof currentState.activeScenarioId === "string" && currentState.activeScenarioId !== "" || scenarios.length > 0;
   const hasAgentArtifact = activity.some(
-    (entry) => isRecord3(entry) && entry.kind === "file" && isAgentArtifactPath(entry.filePath)
+    (entry) => isRecord7(entry) && entry.kind === "file" && isAgentArtifactPath(entry.filePath)
   );
   const upgradeUnderway = hasScenario || hasAgentArtifact || tasks.length > 0;
   for (const entry of activity) {
-    if (!isRecord3(entry)) {
+    if (!isRecord7(entry)) {
       continue;
     }
     const at = toIsoTimestamp(entry.timestamp);
@@ -2235,6 +2332,12 @@ function derivePhase(state) {
 
 // extension.ts
 var INDEX_HTML_PATH = resolveCanvasIndexHtml(import.meta.url);
+function inputFields(input) {
+  return input;
+}
+function isRecord8(value) {
+  return typeof value === "object" && value !== null;
+}
 function resolveRepo(workingDirectory) {
   if (process.env.UPGRADE_AGENT_DASHBOARD_REPO) {
     return { path: process.env.UPGRADE_AGENT_DASHBOARD_REPO, source: "UPGRADE_AGENT_DASHBOARD_REPO env var", confident: true };
@@ -2285,7 +2388,7 @@ actionHandlers.set("refresh", async ({ instanceId }) => {
   return { ok: true, generatedAt: (/* @__PURE__ */ new Date()).toISOString() };
 });
 actionHandlers.set("set_panel", async ({ instanceId, input }) => {
-  const panel = input?.panel;
+  const panel = inputFields(input)?.panel;
   if (!isValidPanel(panel)) {
     throw new CanvasError("canvas_invalid_panel", `Unknown panel: ${panel}`);
   }
@@ -2300,7 +2403,7 @@ actionHandlers.set("set_panel", async ({ instanceId, input }) => {
 });
 actionHandlers.set("switch_mode", async ({ input }) => {
   const currentSession = requireSendSession();
-  const mode = input?.mode;
+  const mode = inputFields(input)?.mode;
   if (mode !== "guided" && mode !== "automatic") {
     throw new CanvasError("invalid_mode", "mode must be 'guided' or 'automatic'.");
   }
@@ -2311,7 +2414,7 @@ actionHandlers.set("switch_mode", async ({ input }) => {
 });
 actionHandlers.set("explain_dependency", async (context) => {
   const currentSession = requireSendSession();
-  const packageName = (context.input?.packageName ?? "").toString().trim();
+  const packageName = (inputFields(context.input)?.packageName ?? "").toString().trim();
   if (!packageName) {
     throw new CanvasError("invalid_package", "packageName is required.");
   }
@@ -2335,7 +2438,7 @@ actionHandlers.set("open_markdown_editor", async (context) => {
     );
   }
   const resolution = await ensureResolvedRepo(context.session?.workingDirectory);
-  const resolved = resolveEditableMarkdownPath(context.input?.path, resolution.path);
+  const resolved = resolveEditableMarkdownPath(inputFields(context.input)?.path, resolution.path);
   if (!resolved.ok) {
     throw new CanvasError(resolved.code, resolved.message);
   }
@@ -2361,6 +2464,7 @@ actionHandlers.set("push_context", async (context) => {
   }
   const state = await getSnapshotForResolution(context);
   const activeScenario = Array.isArray(state.scenarios) ? state.scenarios.find((candidate) => candidate?.id === state.activeScenarioId) ?? null : null;
+  const scenarioProperties = isRecord8(activeScenario?.properties) ? activeScenario.properties : {};
   let taskSummary = null;
   if (state.tasks && Array.isArray(state.tasks.tasks)) {
     const counts = { complete: 0, inProgress: 0, notStarted: 0, skipped: 0, failed: 0 };
@@ -2384,7 +2488,7 @@ actionHandlers.set("push_context", async (context) => {
     scenario: activeScenario ? {
       id: activeScenario.id,
       description: typeof activeScenario.description === "string" ? activeScenario.description : null,
-      targetFramework: activeScenario.properties?.UpgradeTargetFramework ?? activeScenario.properties?.upgradeTargetFramework ?? null
+      targetFramework: scenarioProperties.UpgradeTargetFramework ?? scenarioProperties.upgradeTargetFramework ?? null
     } : null,
     assessment: state.assessment ? { path: state.assessment.path, counts: state.assessment.counts, severity: state.assessment.severity } : null,
     dependencies: state.dependencies ? { targetFramework: state.dependencies.targetFramework, counts: state.dependencies.counts } : null,
@@ -2509,7 +2613,8 @@ var canvas = createCanvas({
   async open(context) {
     const { instanceId, input } = context;
     await ensureResolvedRepo(context.session?.workingDirectory);
-    const initialPanel = isValidPanel(input?.panel) ? input.panel : "overview";
+    const fields = inputFields(input);
+    const initialPanel = isValidPanel(fields?.panel) ? fields.panel : "overview";
     const url = `${baseUrl}/?instanceId=${encodeURIComponent(instanceId)}&panel=${encodeURIComponent(initialPanel)}`;
     return { url, title: "Upgrade Agent Dashboard", status: "open" };
   },

@@ -75,7 +75,7 @@ request text** (needed for flow-mode detection).
    suggested target framework + the available frameworks (id/label/hint each).
 6. Return `STATUS: ready` with the gathered block below. **Mutate nothing.**
 
-## What to return
+## What to return (structured output)
 
 Return **exactly one** `STATUS:` block and **nothing else** — no preface, no narration
 ("Now I'll inspect the repo…"), no raw tool transcripts. The block enters the Orchestrator's

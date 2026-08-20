@@ -24,6 +24,7 @@ and recognized values. Only load the files whose trigger condition is met.
 | Unsupported API Handling | Compatibility | [unsupported-api-handling.md](unsupported-api-handling.md) | Yes — `What is NOT configurable` |
 | Windows Native APIs | Compatibility | [windows-native-apis.md](windows-native-apis.md) | No |
 | System.Web Adapters | Compatibility | [system-web-adapters.md](system-web-adapters.md) | No |
+| Cross-App Cookie Authentication | Compatibility | [cross-app-cookie-auth.md](cross-app-cookie-auth.md) | No |
 | Configuration Migration | Modernization | [configuration-migration.md](configuration-migration.md) | No |
 | Logging Framework | Modernization | [logging-framework.md](logging-framework.md) | No |
 | Dependency Injection | Modernization | [dependency-injection.md](dependency-injection.md) | No |
@@ -77,6 +78,7 @@ surfaced.
 | Breaking API changes | APIs removed or changed in the target TFM (binary or source incompatible) | Assessment | [unsupported-api-handling.md](unsupported-api-handling.md) |
 | Windows-specific APIs | P/Invoke, Registry, System.Drawing, Win32 API usage | Assessment, code | [windows-native-apis.md](windows-native-apis.md) |
 | System.Web / ASP.NET Framework | System.Web references, ASP.NET MVC or WebAPI on .NET Framework | Assessment, project files | [system-web-adapters.md](system-web-adapters.md) |
+| Cookie-authenticated Framework web app | A .NET Framework web project authenticates browser requests with a cookie — Forms authentication, OWIN/Katana cookie middleware, ASP.NET Identity sign-in, or a `machineKey`-protected authentication cookie. A `machineKey` entry alone is not enough; it commonly protects only ViewState | Assessment, project files, config, user input | [cross-app-cookie-auth.md](cross-app-cookie-auth.md) |
 | Complex configuration | Custom config sections, transforms, encrypted settings, high key count | Project files, user input | [configuration-migration.md](configuration-migration.md) |
 | Third-party logging | log4net, NLog, ELMAH, Common.Logging in use | Assessment, project files, user input | [logging-framework.md](logging-framework.md) |
 | Third-party DI container | Autofac, Unity, Ninject, Castle Windsor, StructureMap, SimpleInjector in use | Assessment, project files, user input | [dependency-injection.md](dependency-injection.md) |
@@ -275,6 +277,8 @@ from here.
 - Windows Native APIs: {selected value}
 - System.Web Adapters: {selected value}
   Skill: migrating-mvc-system-web-adapters [only when "Use System.Web Adapters" selected]
+- Cross-App Cookie Authentication: {selected value}
+  Skill: sharing-authentication-cookies-katana-interop [only when "Shared Cookie (Data Protection interop)" selected]
 
 ### Modernization
 [one line per applicable option only]
@@ -293,8 +297,15 @@ from here.
 Rules for writing this block:
 - Omit headings whose options are all non-applicable
 - Never write a placeholder — use actual confirmed values
-- When System.Web Adapters selected value is "Use System.Web Adapters",
-  always include the `Skill:` line beneath it
+- An option that carries a `Skill:` sub-line gets that sub-line only when its confirmed
+  value matches the condition in brackets. An option may bind a skill to only some of its
+  values, so write the one sub-line whose condition matches and drop the rest; write none
+  if no condition matches. Copy the value into the condition **verbatim** from the option
+  file's **Options** list — an abbreviated value stops matching
+- A `Skill:` sub-line is what turns a skill into a standing load, so write it only from the
+  option file that owns that skill. Never add one for a value whose guidance a different
+  option already loads — that forces the skill in even when the owning option's value says
+  it should stay out
 - Custom options (from user-provided skills) go under their declared category heading
 
 ---

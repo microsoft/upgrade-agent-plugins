@@ -66,7 +66,7 @@ Orchestrator needs to start the upgrade, and the only field that must be reprodu
   in full and never add claims it does not make.
 - **`projects` empty** — omit the `Affects:` line entirely rather than guessing.
 
-## What to return
+## What to return (structured output)
 
 Lead with a `STATUS:` line and nothing before it — no preface, no narration.
 

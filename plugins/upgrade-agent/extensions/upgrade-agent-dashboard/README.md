@@ -57,25 +57,22 @@ is `bin/upgrade-agent-dashboard.ts`; `npm run build` emits the executable
 
 ## What it shows
 
-A tabbed view of the same artifacts the Blazor dashboard reads:
+A tabbed view of the same artifacts the Blazor dashboard reads. The bullets
+below follow the tab order in the UI, which is `TAB_PANELS` in `lib/panels.ts`:
+**Overview**, **Assessment**, **Plan**, **Execution**, **Activity**, and then
+**Options** — authored past the `.tabs` spacer so it right-aligns as an
+icon-only gear (#684), because it configures the run rather than reporting on
+it.
 
-- **Activity** — tail of `<repo>/.git/upgrade/activity.jsonl` (falls back to
-  `.vs/upgrade/activity.jsonl`), formatted per `JournalEventTypes`. Sub-views:
-  **Log** (chronological), **Timeline** (SVG lanes per event category, with
-  close-together events batched into one marker), **Commits**, and **By File**.
-  `system` events (settings/provider lifecycle) remain visible in the Log with
-  muted styling and are repeated in Diagnostics when that debug panel is open.
-- **Execution** — what the agent is actually doing, in two sub-views:
-  **Tasks** (parsed `<scenario>/tasks.md` — emoji-prefixed lines in
-  `TasksProducer`'s format — with progress, overview, and a hierarchical
-  state-badged list whose rows expand to their `progress-details.md`) and
-  **Builds** (the `build_completed` activity events, with per-project results).
-  `?panel=tasks` and `?panel=builds` deep-link straight to a sub-view.
-- **Plan** — the scenario's `plan.md` plus every `tasks/<id>/task.md`, rendered
-  as markdown. Each document offers an "Open in editor" button that opens the
-  file in the built-in `editor` canvas.
-- **Assessment** — the merged assessment view (2nd tab; 3rd until #668 removed
-  the Scenario tab). Built from
+- **Overview** — the landing tab, and the fallback for an unrecognized
+  `?panel=`. A "watch it go" surface: a hero band (what is being upgraded,
+  overall progress, run state, phase, elapsed/remaining time, latest build
+  result), the task in flight and its steps, one at-a-glance row per headline
+  number, the newest journal events, and a repository rollup. Its cards include
+  contextual handoffs into the corresponding detail tabs; the whitelist of
+  destinations is `OVERVIEW_LINK_PANELS` in
+  `canvas/src/overview/panels.ts`.
+- **Assessment** — the merged assessment view. Built from
   `<scenario>/assessment.json` and `<scenario>/dependencies-health.json`, it
   shows a summary header (metric tiles, severity donut, category bars) plus
   data-gated sub-tabs:
@@ -89,9 +86,46 @@ A tabbed view of the same artifacts the Blazor dashboard reads:
     `dependencies-health.json`; each package row expands to the projects that
     use it (capped, with "Show all N").
   - **Features** — detected feature usage.
+- **Plan** — the scenario's `plan.md` plus every `tasks/<id>/task.md`, rendered
+  as markdown. Each document offers an "Open in editor" button that opens the
+  file in the built-in `editor` canvas.
+- **Execution** — what the agent is actually doing, in three sub-views
+  (`EXECUTION_VIEWS` in `canvas/src/Execution.tsx`):
+  **Tasks** (parsed `<scenario>/tasks.md` — emoji-prefixed lines in
+  `TasksProducer`'s format — with progress, overview, and a hierarchical
+  state-badged list whose rows expand to their `progress-details.md`),
+  **Builds** (the `build_completed` activity events, with per-project results),
+  and **Repository** (the repo-shaped view of what the run has changed: the
+  working branch and the source branch it came from (read from
+  `scenario-instructions.md` when present, otherwise derived from
+  `branch_changed` journal events), plus files-changed / insertions / deletions
+  / commits totals derived by `lib/repo-summary.ts` from the journal rather
+  than by shelling out to git. A newest-first list of commit activity rows
+  shows their recorded file, insertion, and deletion counts and expands, via
+  `/api/commit-files` and `/api/commit-diff`, to each commit's files and then
+  to each file's diff).
+  `?panel=tasks`, `?panel=builds` and
+  `?panel=repository` deep-link straight to a sub-view.
+- **Activity** — tail of `<repo>/.git/upgrade/activity.jsonl` (falls back to
+  `.vs/upgrade/activity.jsonl`), formatted per `JournalEventTypes`. Sub-views:
+  **Log** (chronological), **Timeline** (SVG lanes per event category, with
+  close-together events batched into one marker), **Commits**, and **By File**.
+  `system` events (settings/provider lifecycle) remain visible in the Log with
+  muted styling and are repeated in Diagnostics when that debug panel is open.
+- **Options** — the gear. Renders the active scenario's
+  `scenario-instructions.md` as option cards, with a Flow Mode toggle that
+  relays `switch_mode` to the agent (shown only when the current mode is
+  `guided` or `automatic`, so an unrecognized value is never silently
+  overwritten). Shows an empty-state hint when there is no active scenario, or
+  when the scenario folder has no `scenario-instructions.md`.
 
-  The former standalone **Projects** and **Dependencies** tabs were folded in
-  here (#509/#508); they no longer exist as top-level tabs.
+Tabs that no longer exist, and where their `?panel=` names went: **Projects**
+(#507) and **Dependencies** (#506) were folded into Assessment (#509/#508) and
+now resolve only as the `assessment:projects` / `assessment:dependencies`
+sub-tab deep links; **Tasks** was folded into Execution (#512/#513) and `tasks`
+survives as an Execution sub-view; **Scenario** was removed outright (#668) and
+`scenario` is not a valid panel in any form. `lib/panels.ts` is the authority
+for all of this.
 
 ### Diagnostics (debug only, hidden)
 

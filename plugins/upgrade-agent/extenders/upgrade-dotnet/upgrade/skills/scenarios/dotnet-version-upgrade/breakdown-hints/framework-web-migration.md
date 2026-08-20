@@ -138,4 +138,11 @@ and should be isolated as a separate concern with its own subtask.
 **Recommendation**: EF6 can run on .NET Core but initialization patterns differ.
 The `<entityFramework>` config section doesn't work — initialization must move
 to code. Break from general web migration and handle separately.
+**Shared-database gate**: if Project Approach is **Side-by-side** and both hosts run against one
+database, moving initialization to code must **not** carry a migration-applying initializer
+across. `MigrateDatabaseToLatestVersion` calls `DbMigrator.Update()` on first context use, so
+porting it makes the new host a second, uncoordinated schema writer that deploys on process
+start rather than on a schedule. Port it as `Database.SetInitializer<TContext>(null)` instead,
+and add `#skill:managing-shared-database-schema` to the subtask description — that skill decides
+which toolchain applies migrations during the window.
 **Priority**: SHOULD

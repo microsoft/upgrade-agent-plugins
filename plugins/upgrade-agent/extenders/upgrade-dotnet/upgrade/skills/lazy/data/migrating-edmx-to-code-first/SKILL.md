@@ -17,6 +17,20 @@ metadata:
 
 Migrate Entity Framework EDMX files to EF Core Code-First. EDMX is not supported in EF Core, so the migration scaffolds a code-based model from the existing database and replaces all EDMX-dependent patterns.
 
+> **STOP — is the old app still running?** If a .NET Framework host and a new .NET host share
+> this database while both are live (a side-by-side migration), **load the
+> `managing-shared-database-schema` skill first** and follow it wherever it conflicts with the
+> guidance below: `get_instructions(kind='skill', query='managing-shared-database-schema')`
+>
+> Two instructions in this skill are correct for a full cutover and destructive during a
+> side-by-side window: deleting the EF6 `Migrations/` folder, and calling `Database.Migrate()`
+> at startup. During the window, the EF6 migration assets are the live schema ledger for the
+> host that still owns them, and a second host migrating at startup is a second schema writer.
+>
+> **If you cannot tell, assume the database is shared.** Unless you can positively confirm the
+> old host is retired or runs against its own database, take the shared branch — do not delete
+> the EF6 migration assets, do not enable startup migration, and load the skill first.
+
 > **Scope:** This skill targets EDMX-based (Database-First/Model-First) projects. If the project already uses EF6 Code-First (no `.edmx` files), use the `migrating-ef6-code-first-to-ef-core` skill instead. For DbContext registration and DI setup during ASP.NET Core migration, also apply the `migrating-ef-dbcontext` skill — it is complementary to this one.
 
 ## Workflow
@@ -112,7 +126,7 @@ context.Customers.FromSql($"SELECT * FROM Customers WHERE City = {city}")
 - Replace `CreateObjectSet<T>()` with `Set<T>()`
 - Replace `DbEntityEntry<T>` with `EntityEntry<T>`
 - Replace `Database.Log` with `Microsoft.Extensions.Logging` or `LogTo` in `OnConfiguring`
-- Replace `System.Data.Entity` usings with `Microsoft.EntityFrameworkCore`
+- Replace `System.Data.Entity` usings with `Microsoft.EntityFrameworkCore` — **except inside a retained EF6 `Migrations/` folder**, whose `DbMigration` classes are built on `System.Data.Entity.Migrations` (see the full-cutover gate under **Migrations** below)
 
 **Stored procedures:** EDMX function-import mappings do not exist in EF Core.
 - For **read** operations: use `FromSql` to map result sets to entities:
@@ -163,9 +177,37 @@ modelBuilder.Entity<Customer>().ComplexProperty(c => c.Address);
 
 **Many-to-many:** EF Core 5.0+ auto-generates the join table for simple many-to-many relationships. Pre-5.0 needs an explicit join entity. Even on 5.0+, explicit join entity configuration is required when the join table contains payload columns (columns other than the two foreign keys).
 
-**Migrations:** Advise the user to apply all pending EF6 migrations to their database before starting the EF Core migration — this is a manual prerequisite. Once confirmed, delete the Migrations folder and create an empty EF Core `InitialCreate` migration. This avoids schema conflicts between the two migration systems.
+**Migrations:**
 
-**Database initializers:** EF Core does not support automatic migrations or database initializers (`CreateDatabaseIfNotExists`, `DropCreateDatabaseIfModelChanges`, `DropCreateDatabaseAlways`, `MigrateDatabaseToLatestVersion`). Remove all `Database.SetInitializer` calls and use `Database.Migrate()` or `EnsureCreated()` explicitly at startup.
+> **Check first — does anything else still write this database?** If an EF6 host, job, or
+> pipeline still deploys schema here, the EF6 migration assets stay: that folder is those
+> writers' only way to deploy further schema changes, and the loss is not recoverable. Follow
+> `managing-shared-database-schema` and stop after the baseline registration below.
+
+Advise the user to apply all pending EF6 migrations to their database before starting the EF Core migration — this is a manual prerequisite. Once confirmed, scaffold an EF Core `InitialCreate` baseline **into its own folder, outside `Migrations/`**:
+
+```powershell
+dotnet ef migrations add InitialCreate --output-dir EFCoreMigrations
+```
+
+> **Do not let this land in `Migrations/`.** That is EF Core's default output directory and also
+> the folder holding the retained EF6 `DbMigration` classes. Two things break if they share it:
+> the exclusion glob recommended in Step 8 (`Migrations\**`) is recursive and would drop the EF
+> Core migrations from compilation as well, and any later folder-level EF6 teardown would delete
+> the EF Core snapshot along with them.
+
+Note that this baseline is **not** empty: with no prior snapshot, EF Core emits a full `CreateTable` set for the whole model. Do **not** apply it to the existing database — register it as already-applied by inserting its `MigrationId` into `__EFMigrationsHistory` (creating that table first, since a database managed only by EF6 does not have one). This avoids schema conflicts between the two migration systems.
+
+Retiring the EF6 migration assets happens only at a confirmed full cutover, with no other writer
+left — the `migrating-ef6-code-first-to-ef-core` skill carries that confirmation gate and the
+removal inventory in its cutover-teardown reference.
+
+**Database initializers:** EF Core does not support automatic migrations or database initializers (`CreateDatabaseIfNotExists`, `DropCreateDatabaseIfModelChanges`, `DropCreateDatabaseAlways`, `MigrateDatabaseToLatestVersion`). Remove all `Database.SetInitializer` calls and apply migrations from a single deployment step.
+
+> **Do not call `Database.Migrate()` or `EnsureCreated()` at startup while another host writes
+> this schema.** Every instance of the new host would race to migrate on boot, against a
+> database whose ledger belongs to the EF6 runner. Apply schema from one deployable migrator
+> instead; `managing-shared-database-schema` covers the ownership decision.
 
 **Configuration classes:**
 ```csharp
@@ -183,7 +225,7 @@ When using `IEntityTypeConfiguration<T>`, register all configurations in `OnMode
 Delete these EDMX artifacts:
 - `*.edmx`, `*.edmx.diagram`, `*.Designer.cs`, `*.Context.tt`, `*.tt` files
 - `<EntityDeploy>` entries from the project file
-- Remove `EntityFramework` and any related EF6 packages (e.g., `EntityFramework.SqlServer`, `EntityFramework.SqlServerCompact`) using the project's package management approach
+- Remove `EntityFramework` and any related EF6 packages (e.g., `EntityFramework.SqlServer`, `EntityFramework.SqlServerCompact`) using the project's package management approach — **unless a retained EF6 `Migrations/` folder is still compiled**, which depends on the `EntityFramework` reference. In that case either keep the reference or exclude the folder with `<Compile Remove="Migrations\**" />`. Renaming the folder does not exclude it: SDK-style projects glob `**/*.cs`.
 
 ### Step 9: Validate
 
@@ -191,7 +233,7 @@ Compilation alone is not sufficient. Many EF6→EF Core differences only surface
 
 **LLM responsibilities (automated):**
 1. Build the project and fix any compilation errors
-2. Confirm no EDMX artifacts remain in the project (`.edmx`, `.tt`, `<EntityDeploy>`, `EntityFramework` package reference)
+2. Confirm no EDMX artifacts remain in the project (`.edmx`, `.tt`, `<EntityDeploy>`, and — unless EF6 migrations are being retained for a still-live host — the `EntityFramework` package reference)
 3. Run existing unit tests
 
 **User responsibilities (require database access and manual verification):**
@@ -221,7 +263,7 @@ Present items 4–8 as a checklist for the user — the LLM cannot validate runt
 | `DbSet.Add` marks all reachable entities `Added` | Entities with store-generated key set → `Unchanged`; unset → `Added` | Test all Add/Update/Attach scenarios with entity graphs |
 | `DbSet.Attach` marks all reachable entities `Unchanged` | Entities with store-generated key set → `Unchanged`; unset → `Added` | Verify Attach behavior in disconnected-entity workflows |
 | Table names = pluralized entity class name | Table names = `DbSet<T>` property name; falls back to class name | Verify table mappings or add explicit `.ToTable()` calls |
-| Auto-creates DB/schema, checks model compatibility | No automatic initialization | Call `Database.Migrate()` or `EnsureCreated()` explicitly at startup |
+| Auto-creates DB/schema, checks model compatibility | No automatic initialization | Apply migrations from one deployment step. **Never** at startup while another host shares this database — see `managing-shared-database-schema`. Otherwise only where that deployable is the single designated migration runner: a host scaled to N instances runs N migrators concurrently |
 | Orphaned dependents preserved | Orphaned dependents **deleted** | Review parent-child removal logic; add `ClientSetNull` if preservation needed |
 | Full-graph change detection | Per-entity change detection | Configure notification entities if needed |
 | Self-tracking entities supported | Not supported | Switch to explicit change tracking via `DbContext` |

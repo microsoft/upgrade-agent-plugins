@@ -4,6 +4,26 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.441] - 2026-08-20
+
+### Added
+
+- New `managing-shared-database-schema` skill governing a SQL database that a legacy .NET Framework app and a new .NET app read and write at the same time during a side-by-side migration, covering schema ownership, expand-then-contract evolution, dual-write and backfill ordering, deployment ordering, and rollback.
+- Cross-app cookie authentication upgrade option for side-by-side ASP.NET MVC migrations, offering both a shared-cookie and a remote-authentication path.
+- The YARP proxy scaffold now wires up either auth-interop path, including Azure Data Protection key-ring packages, hardened proxy settings, and generated setup guidance.
+- Cutover and teardown guidance for completing an EF6 Code First to EF Core migration.
+- The VS Code extension now checks TypeScript extender prerequisites and reports what is missing.
+
+### Changed
+
+- Refreshed the .NET version upgrade scenario's planning rules, task breakdown hints, and post-completion guidance.
+- Updated the data migration skills (EDMX to Code First, EF DbContext, EF6 Code First to EF Core) and the C# nullable-references skill.
+
+### Fixed
+
+- Hovered rows in the Live activity view are now readable under the host theme.
+- Build failure state is now decided by a single predicate, so it is consistent everywhere the dashboard reports it.
+
 ## [1.1.404] - 2026-08-17
 
 ### Added

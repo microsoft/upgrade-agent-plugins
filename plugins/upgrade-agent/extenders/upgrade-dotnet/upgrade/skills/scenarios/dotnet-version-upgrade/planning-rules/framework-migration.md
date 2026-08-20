@@ -86,6 +86,11 @@ appropriate position within the strategy's task ordering.
 | Scaffold | `NN-scaffold-{project-short-name}` | Create new ASP.NET Core project alongside the old one, configure YARP proxy |
 | Migrate | `NN-migrate-{project-short-name}` | Move all web assets incrementally (broken into subtasks at execution time) |
 
+> Either task may be broken down further at execution time — the executor escalates a task to
+> the task-breaker whenever its scope spans independent concerns, which both of these can. That
+> matters for anything attached to them: skill pins in a parent description do **not** reach its
+> subtasks. See "Shared database between the old and new host".
+
 > **Old project removal** is NOT a plan task. After all migration and validation
 > is complete, final validation documents removal as a post-upgrade step for the
 > user to perform when they've confirmed production readiness. The agent performs
@@ -106,6 +111,45 @@ Libraries depended on by the web project are **not** given separate scaffold/mig
 tasks. They are handled as part of the migrate task for the web project that depends on
 them. The task description should note which libraries are in scope so the executor and
 project-type skill can handle them in the correct order within the migrate task breakdown.
+
+### Shared database between the old and new host
+
+The side-by-side window leaves the Framework host and the new Core host reading and
+writing **the same database** while both are live.
+
+**Detect it from Framework-side evidence only.** The new host does not exist at plan time, so
+"the same connection string appears in both" is not a signal you can evaluate — it can only
+ever be false. Use instead: the Framework project's `*.config` carries a connection string to
+an application database that the assessment shows is not being replaced, or the project being
+split is backed by a single database with no per-host split planned. Combined with Project
+Approach = **Side-by-side**, that is the window.
+
+When that holds, add `#skill:managing-shared-database-schema` to the description of
+every task whose scope touches the database — **at minimum both the scaffold and the migrate
+task**, plus any data-access or schema task. The pin attaches the skill to the task
+deterministically; without it the skill has to win a top-3 relevance ranking against the whole
+catalog and usually loses to the project-type and DbContext skills, which are correct about
+*moving code* and silent about *not breaking the live schema*.
+
+**Scaffold must carry the pin too, and it is the one that most needs it.** Scaffold is where
+the connection string is copied into the new host's configuration and `AddDbContext` is
+registered — the exact moment a second schema writer is created, and the moment the sibling
+DbContext skill offers a startup `Database.Migrate()`.
+
+**Pins do not propagate to subtasks, and neither task is guaranteed to stay whole.** A
+subtask's `task.md` is written from the breakdown, not merged with its parent, so the parent's
+`#skill:` pin does not reach the child that actually touches the database. The executor
+escalates any task whose scope spans independent concerns, and both of these qualify — scaffold
+covers project creation, YARP, configuration and DI; migrate is decomposed by design. So do not
+rely on either one executing directly.
+
+The load-bearing mitigation is the skill's own `## Decomposition Rules` section, which
+instructs the task-breaker to restate the pin on every data-touching subtask. The pins on the
+two parent tasks are what make that section reachable in the first place — the breaker only
+sees it because the skill is attached to the task it is decomposing.
+
+Do not add the pin when the new host gets its own database, or when the Framework host
+is retired at cutover rather than run alongside.
 
 ### Planning constraints
 
@@ -132,4 +176,5 @@ When side-by-side tasks are generated, add these constraints to
 - Libraries in migrate task scope are handled in dependency order before web layer assets
 - Reference cleanup (test projects, multi-targeting) is part of migrate, not a separate task
 - Old project is NOT deleted by the agent — documented as post-upgrade step for user
+- If both hosts share one database, schema changes are governed by managing-shared-database-schema: one toolchain owns schema deployment, changes stay additive, and the EF6 `Migrations/` folder is not deleted while the old host is live
 ```

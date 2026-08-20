@@ -100,7 +100,14 @@ After (`Program.cs`):
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
-// DB initializer moves to EF Core migration or service configuration
+// DB initializer does not move to startup. If a .NET Framework host — or any other
+// application, job, or pipeline — still writes this database, this is a side-by-side
+// window: load managing-shared-database-schema first and follow its ownership
+// decision. A second schema writer breaks it regardless of instance count.
+// If you cannot tell, assume it is shared and take that branch.
+// Otherwise, apply schema from one deployment step; only call Database.Migrate()
+// here if this deployable is the single designated migration runner — a host scaled
+// to N instances runs N migrators concurrently.
 var app = builder.Build();
 ```
 

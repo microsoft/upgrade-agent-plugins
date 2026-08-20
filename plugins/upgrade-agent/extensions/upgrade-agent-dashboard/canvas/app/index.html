@@ -33,8 +33,8 @@
 	be navigating. It also shipped -- an offline-capable panel carrying a hard
 	third-party fetch into every install.
 -->
-  <script type="module" crossorigin src="./assets/index-PYmfa-Op.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-B6lhs2SL.css">
+  <script type="module" crossorigin src="./assets/index-C4L_WPjQ.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DwwbXStN.css">
 </head>
 <body>
 <header class="topbar">
@@ -110,17 +110,7 @@
 </section>
 <section class="panel" id="panel-options" data-panel="options" hidden>
 	<h2>Options</h2>
-	<p class="panel-help" id="options-empty-hint" hidden>
-		No active scenario detected — open one to view and adjust its options.
-	</p>
-	<div id="options-sections"></div>
-</section>
-<section class="panel" id="panel-diagnostics" data-panel="diagnostics" hidden>
-<h2>Diagnostics</h2>
-<div id="diagnostics-content">
-	<div id="diagnostics-details-content" class="empty">Loading…</div>
-	<div id="diagnostics-system-events-react-root"></div>
-</div>
+	<div id="options-react-root"></div>
 </section>
 </main>
 <footer class="footer" id="footer">
@@ -209,16 +199,10 @@
 		</div>
 	</div>
 </footer>
-<div class="diagnostics-overlay" id="diagnostics-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="diagnostics-overlay-title">
-	<div class="diagnostics-overlay-backdrop" id="diagnostics-overlay-backdrop"></div>
-	<div class="diagnostics-overlay-card" role="document">
-		<header class="diagnostics-overlay-head">
-			<h2 id="diagnostics-overlay-title">Diagnostics</h2>
-			<button type="button" class="diagnostics-overlay-close" id="diagnostics-overlay-close" title="Close" aria-label="Close diagnostics">×</button>
-		</header>
-		<div id="diagnostics-overlay-body"></div>
-	</div>
-</div>
+<!-- The diagnostics modal, including its own open/close state, lives in the
+     Diagnostics island (issue #734). It sits outside <main> as the overlay
+     markup did, so the fixed-position card keeps the same stacking context. -->
+<div id="diagnostics-react-root"></div>
 <div class="toast" id="toast" hidden></div>
 </body>
 </html>

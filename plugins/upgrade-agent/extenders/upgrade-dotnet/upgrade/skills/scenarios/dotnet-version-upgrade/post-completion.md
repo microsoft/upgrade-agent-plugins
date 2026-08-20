@@ -28,7 +28,23 @@ If the version is already current, skip Aspire entirely.
 
 ## Candidate 2: Migrate to EF Core (emoji: 🗄️)
 
+**Suppression rule (check this FIRST, before the signal check below):** This rule decides only what *not* to offer. Read both confirmed upgrade options from `scenario-instructions.md`. Do **not** offer the EF Core migration if **either** of the following holds:
+
+- `Upgrade Options > Modernization > Entity Framework` is **Keep EF6** — the user has already declined the EF Core migration for this solution, and re-offering it contradicts their confirmed choice.
+- `Upgrade Options > Project Structure > Project Approach` is **Side-by-side** and the Framework host is still live against the same database — accepting the suggestion leads into a destructive teardown against a live shared schema.
+
+These two conditions are independent, and they very commonly hold together: **Keep EF6** with **Side-by-side** is the default shared-database configuration. So this rule never ends Candidate 2 and never means "skip the rest of this section" — whichever condition fired, continue to the redirect rule below, which decides what to offer *instead*.
+
+**Redirect rule (evaluated after the suppression rule, still before the signal check):** This rule decides what to offer in place of a suppressed suggestion. If `Upgrade Options > Project Structure > Project Approach` is **Side-by-side** and the Framework host is still live against the same database, do **not** fall silent. Both hosts are now running against one live schema, and this is the moment that window opens. Replace the suppressed suggestion with:
+
+- **Title:** Manage schema changes across both hosts
+- **Description:** Your .NET Framework host and your new .NET host are now both running against the same database. Until you retire the old host, a schema change made by either one can break the other — and the usual EF migration workflow assumes a single owner. There's a governed path for this: pick one toolchain to own schema deployment, keep changes additive with expand-then-contract, and leave the existing EF6 `Migrations/` folder in place while the old host is live.
+- **CTA:** Would you like me to set up shared-database schema governance for the side-by-side window?
+
+If the user accepts, load `managing-shared-database-schema`. Offer this instead of the EF Core migration regardless of which ORM the new host uses — the hazard comes from two live hosts sharing one schema, not from which ORM is on either side. Once the Framework host is retired, this redirect no longer applies and the EF Core suggestion below becomes appropriate again.
+
 **Signal-based check:** If signals include `HasEntityFramework` AND do NOT include `HasEfCore`, suggest EF Core migration. If `HasEfCore` is present, the migration has already happened — skip. If neither `HasEntityFramework` nor `HasEfCore` is in signals, the project doesn't use EF — skip.
+
 **Fallback check (no signals):**
 
 1. Read `assessment.md` and check whether Entity Framework 6 was detected in the solution. If EF6 was not listed, skip this suggestion entirely — the project doesn't use EF6.

@@ -34,6 +34,7 @@ Create an upgrade plan: confirm options (including strategy), then generate orde
 | Package risks | Security vulns, deprecated packages | Task priority |
 | Complexity indicators | LOC, project complexity ratings | Strategy selection |
 | Test Coverage recommendations | Global recommendation count and recommended project paths | Test Coverage applicability and generation scope |
+| Cookie authentication on Framework web projects | Auth signals already surfaced — `<authentication mode="Forms">` or `FormsAuthentication.*`, OWIN/Katana cookie middleware (`UseCookieAuthentication`, `CookieAuthenticationOptions`), ASP.NET Identity cookie sign-in, or a `<machineKey>`-protected authentication cookie, seen while reading the assessment or project files. A bare `Microsoft.Owin.Security.*` or `Microsoft.AspNet.Identity.*` package reference, or a `<machineKey>` entry on its own, is a hint to note rather than proof — those also appear in bearer-token-only and ViewState-only apps. Do not open files to go looking for any of it. Carry a hint forward as a hint: it does not fire the trigger by itself, but where it is the only cookie-auth evidence available, ask the user whether the app signs users in with a cookie rather than letting the question drop — the definitive signals usually sit in `Startup.Auth.cs`, which this step does not open | Cross-App Cookie Authentication trigger |
 
 Also extract: dependency graph (leaf → root ordering), project-to-project references.
 
@@ -144,14 +145,19 @@ Track which applicable options were resolved by user preference vs. default.
 After evaluating all options, verify that selected values are consistent with each
 other:
 
-1. For each applicable option, re-read its **"What is NOT configurable"** and
-   **Default logic** sections — these contain interaction rules that reference
-   other options by name (e.g., "if multi-targeting is selected…",
-   "if Windows Compatibility Pack already selected…").
+1. For each applicable option, re-read its **"What is NOT configurable"**,
+   **Default logic**, and **Interactions** sections — these contain interaction
+   rules that reference other options by name (e.g., "if multi-targeting is
+   selected…", "if Windows Compatibility Pack already selected…").
 2. If a selected value contradicts or undermines another selected value, adjust
    whichever option has the weaker signal and note the interaction in the `Why`
    column of the draft.
-3. The option files are the single source of truth for interaction
+3. Re-check any option whose **applicability** depends on another option's value —
+   the option file says so explicitly when it does. If that value moved during this
+   pass, re-evaluate: an option that is no longer applicable drops out of the payload
+   entirely (never present a selection the user cannot act on), and one that has
+   become applicable is evaluated and added.
+4. The option files are the single source of truth for interaction
    rules — do not invent interactions that are not documented there.
 
 ---
@@ -257,6 +263,18 @@ Before loading the strategy file, evaluate these rules against the assessment.
   projects, note in the description that test references must be updated
 - The strategy task template is the authoritative task shape — it includes
   prerequisites as the first task and final validation as the last task
+- **Shared-database pin.** When Project Approach is **Side-by-side** and the Framework host's
+  configuration carries a connection string to an application database the assessment does not
+  show being replaced, both hosts will run against one live database. Add
+  `#skill:managing-shared-database-schema` to the description of **every** task whose scope
+  touches that database — its schema, a `DbContext`, an entity model, a connection string, a
+  migration, a repository, or raw SQL — whatever those tasks happen to be named and whichever
+  strategy is in use. The pin attaches the skill deterministically; without it the skill must
+  win a relevance ranking against the whole catalog, and it loses to the project-type and
+  DbContext skills, which are correct about *moving code* and silent about *not breaking a live
+  shared schema*. This rule is not conditional on any flavor file being loaded — see
+  [planning-rules/framework-migration.md](planning-rules/framework-migration.md) only for the
+  detection detail.
 
 #### Flavor-specific planning guidance
 
@@ -322,7 +340,21 @@ and execute the task effectively. Include:
   detected in the affected projects)
 - **Known risks** — things the assessment flagged that this task will
   encounter (e.g., "23 incompatible packages", "Autofac DI container",
-  "OWIN middleware pipeline")
+  "OWIN middleware pipeline"). For a side-by-side web migration, this
+  includes whether signed-in users survive the host boundary: if a
+  .NET Framework host authenticates browser requests with a cookie and
+  no cross-app cookie mechanism was confirmed, record that how identity
+  crosses the boundary is unresolved, and that users may have to sign in
+  again on the modern host unless the migration establishes it. Do not
+  state the sign-out as settled — where the adapters migrate phase can
+  actually apply it still wires a pre-option default — and name only
+  remedies the evidence supports: retargeting
+  the Framework host applies to any such host, whereas sharing the
+  cookie itself is only worth raising where OWIN cookie middleware is
+  already in evidence. State it as a migration risk in the task's own
+  words — do not name or refer to an upgrade option that is not in the
+  confirmed set. This note informs the reader; it is not a decision
+  record, and no migrate-phase skill branches on it.
 - **Research starting points** — what the executor should investigate
   before starting work (e.g., "check EF6 DbContext initializers",
   "inventory System.Web references in library projects")

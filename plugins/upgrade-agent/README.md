@@ -107,11 +107,17 @@ upgrade-agent/
 │   │   │       │   │   └── modifying-project-properties/
 │   │   │       │   │       └── SKILL.md
 │   │   │       │   ├── data/
+│   │   │       │   │   ├── managing-shared-database-schema/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   └── worked-example.md
+│   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-edmx-to-code-first/
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-ef-dbcontext/
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-ef6-code-first-to-ef-core/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   └── cutover-teardown.md
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-linq-to-sql-to-ef-core/
 │   │   │       │   │   │   ├── ref/
@@ -265,6 +271,9 @@ upgrade-agent/
 │   │   │       │       │   │   └── SKILL.md
 │   │   │       │       │   ├── scaffolding-yarp-proxy-project/
 │   │   │       │       │   │   ├── tmpl/
+│   │   │       │       │   │   │   ├── auth/
+│   │   │       │       │   │   │   │   ├── README.REMOTEAUTH.md
+│   │   │       │       │   │   │   │   └── README.SHAREDCOOKIE.md
 │   │   │       │       │   │   │   ├── mvc/
 │   │   │       │       │   │   │   │   ├── Properties/
 │   │   │       │       │   │   │   │   │   └── launchSettings.json
@@ -279,6 +288,7 @@ upgrade-agent/
 │   │   │       │       │   │   │       ├── appsettings.json
 │   │   │       │       │   │   │       ├── Program.cs
 │   │   │       │       │   │   │       └── ProjectName.csproj
+│   │   │       │       │   │   ├── marker-processor.ps1
 │   │   │       │       │   │   ├── scaffold-project.ps1
 │   │   │       │       │   │   └── SKILL.md
 │   │   │       │       │   └── sharing-authentication-cookies-katana-interop/
@@ -347,6 +357,7 @@ upgrade-agent/
 │   │   │           │   ├── upgrade-options/
 │   │   │           │   │   ├── binding-redirects.md
 │   │   │           │   │   ├── configuration-migration.md
+│   │   │           │   │   ├── cross-app-cookie-auth.md
 │   │   │           │   │   ├── dependency-injection.md
 │   │   │           │   │   ├── entity-framework.md
 │   │   │           │   │   ├── logging-framework.md

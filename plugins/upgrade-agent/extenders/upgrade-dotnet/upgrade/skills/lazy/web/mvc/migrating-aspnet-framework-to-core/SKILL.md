@@ -64,6 +64,7 @@ that needs them — not all upfront.
 | `UsesCustomFilters`, `UsesOutputCache`, `UsesHandleError` | `migrating-mvc-filters` | Controller migration |
 | `UsesCustomModelBinders`, `UsesFromUri`, `UsesValueProviders` | `migrating-mvc-model-binding` | Controller migration |
 | `UsesMvcViews`, `UsesBundling`, `UsesHtmlHelpers`, `UsesChildActions` | `migrating-mvc-razor-views` | Views migration |
+| Old and new host resolve to the same database (side-by-side, shared connection string) | `managing-shared-database-schema` | **Any** schema, migration, or data-access change |
 
 ### Loading Rules
 
@@ -75,6 +76,12 @@ that needs them — not all upfront.
    general knowledge, and flag areas requiring manual review.
 4. **Multiple satellites may apply to the same step** — load all relevant ones before
    starting that step.
+5. **`managing-shared-database-schema` is the exception to rule 1.** When the old host
+   stays live against the same database, load it during baseline capture, before any
+   data-access work is scoped. Every other satellite is about moving code, which is
+   reversible; this one is about not corrupting a database both hosts are using, which
+   is not. Skipping it because a step "looks like just a DbContext registration" is the
+   common failure.
 
 ---
 
@@ -138,6 +145,14 @@ Do not add any features until this is green — a broken host wastes all subsequ
 
 ### Configuration
 
+> **Before copying any connection string:** if the .NET Framework host stays live against that
+> same database, this is a side-by-side window — **load `managing-shared-database-schema` and
+> follow it before the new host writes to that database**:
+> `get_instructions(kind='skill', query='managing-shared-database-schema')`.
+> Copying the connection string is the moment the second host becomes a writer, so the gate has
+> to clear before that bullet, not after it. If you cannot tell whether the Framework host is
+> still live against it, assume it is.
+
 - Migrate `Web.config` `<appSettings>` → `appsettings.json`
 - Migrate `Web.config` `<connectionStrings>` → `appsettings.json` connection strings section
 - Wire `IConfiguration` in `Program.cs`
@@ -170,7 +185,9 @@ Connection strings are config, auth settings are not.
 - Register all application services in `Program.cs` or extension methods
 - Replace `DependencyResolver.SetResolver` (MVC) or `config.DependencyResolver` (WebAPI)
   with `builder.Services` registrations
-- Register `DbContext`, repositories, application services
+- Register `DbContext`, repositories, application services — do **not** add `Database.Migrate()`
+  or `EnsureCreated()` to startup where another host shares the database; see
+  `managing-shared-database-schema`
 - Add `IHttpContextAccessor` registration if `HttpContext.Current` usage was found during baseline capture
 - Register session services if session usage was found (`builder.Services.AddSession()`)
 - Do not implement services that still have `System.Web` dependencies — stub them with
