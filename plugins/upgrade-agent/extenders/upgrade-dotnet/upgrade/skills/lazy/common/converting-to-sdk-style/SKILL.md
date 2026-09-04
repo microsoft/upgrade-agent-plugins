@@ -63,6 +63,25 @@ The conversion tool adds a special label to ItemGroups tracking files excluded f
 
 If the converted project is missing packages, identify and restore them. Keep all package versions identical — version changes are out of scope for format conversion.
 
+### Property-indirected DLL references
+
+The conversion engine detects `<Reference>` elements whose `<HintPath>` uses MSBuild property indirection (e.g., `$(NuGetPath_Foo)\lib\net472\Foo.dll`). It resolves the properties via the evaluated MSBuild project and converts matched references to `<PackageReference>`. References that use property indirection but cannot be resolved to a NuGet package layout are flagged with a warning for manual review — check the conversion output for these warnings and address them.
+
+### Package consumption semantics
+
+The conversion engine automatically preserves key package consumption semantics:
+
+- **`developmentDependency="true"`** → emits `PrivateAssets="All"` (suppresses downstream propagation).
+- **`<Private>false</Private>` on all package-backed references** → emits `ExcludeAssets="runtime"` (preserves "don't copy to output" behavior).
+- **Mixed `<Private>` metadata** (some references Private=false, others true) → emits a structured warning without auto-applying attributes. Present the warning to the user.
+- **Selective assembly inclusion** (project referenced fewer assemblies than the package provides) → emits a structured warning. Present the warning to the user.
+
+**After running the conversion tool**, check the conversion output for warnings. Present any warnings to the user with the package name and recommended action. The engine surfaces these as log messages during conversion.
+
+**Transitivity change (not auto-detected):** In `packages.config`, dependencies are not transitive — downstream projects do not automatically see a project's package dependencies. `PackageReference` makes all dependencies transitive by default. Inform the user about this behavioral change. If packages should remain private to the project, `PrivateAssets="All"` may be needed on those PackageReferences.
+
+When flagging these cases, present the finding with the package name, the original metadata, and the recommended `PackageReference` attribute so the user can make an informed decision.
+
 ## Handling Blockers
 
 When a project fails to build after reasonable, minimal fixes:

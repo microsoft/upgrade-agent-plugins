@@ -35,6 +35,7 @@ The plugin includes an MCP server (Upgrade) that provides upgrade and analysis t
 upgrade-agent/
 ├── agents/
 │   ├── assessor.agent.md
+│   ├── baseline-capturer.agent.md
 │   ├── branch-sync.agent.md
 │   ├── break-glass.agent.md
 │   ├── build-validator.agent.md
@@ -193,6 +194,11 @@ upgrade-agent/
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-newtonsoft-to-system-text-json/
 │   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-owin-authentication-handler-to-core/
+│   │   │       │   │   │   ├── ref/
+│   │   │       │   │   │   │   ├── core.cs
+│   │   │       │   │   │   │   └── map.md
+│   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-owin-cookie-auth/
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   ├── migrating-owin-oauth-to-jwt/
@@ -217,6 +223,29 @@ upgrade-agent/
 │   │   │       │   │   ├── migrating-webapi-cors/
 │   │   │       │   │   │   └── SKILL.md
 │   │   │       │   │   └── migrating-webapi-odata/
+│   │   │       │   │       └── SKILL.md
+│   │   │       │   ├── pwsh/
+│   │   │       │   │   ├── fixing-windows-only-modules/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── handling-removed-snapins/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-exchange-management-shell/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── migrating-wmi-to-cim/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── powershell-mechanical-fixups/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── replacing-eventlog-with-winevent/
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   ├── scanning-powershell-compatibility/
+│   │   │       │   │   │   ├── rules/
+│   │   │       │   │   │   │   └── PSCompatibilityRules.psd1
+│   │   │       │   │   │   ├── scripts/
+│   │   │       │   │   │   │   ├── Get-PSCompatibilityScan.ps1
+│   │   │       │   │   │   │   ├── Invoke-PSSACompatibilityScan.ps1
+│   │   │       │   │   │   │   └── New-PSSACompatibilityProfile.ps1
+│   │   │       │   │   │   └── SKILL.md
+│   │   │       │   │   └── triaging-powershell-analyzer-findings/
 │   │   │       │   │       └── SKILL.md
 │   │   │       │   ├── testing/
 │   │   │       │   │   ├── generating-upgrade-test-baseline/
@@ -386,6 +415,12 @@ upgrade-agent/
 │   │   │           │   ├── execution.md
 │   │   │           │   ├── planning.md
 │   │   │           │   └── SKILL.md
+│   │   │           ├── powershell-5.1-to-7-upgrade/
+│   │   │           │   ├── assessment.md
+│   │   │           │   ├── execution.md
+│   │   │           │   ├── planning.md
+│   │   │           │   ├── SKILL.md
+│   │   │           │   └── validation-ladder.md
 │   │   │           ├── sdk-style-conversion/
 │   │   │           │   └── SKILL.md
 │   │   │           ├── semantic-kernel-to-agents-framework/
@@ -407,37 +442,45 @@ upgrade-agent/
 │   └── upgrade-typescript/
 │       ├── upgrade/
 │       │   └── skills/
-│       │       ├── create-eval-plan/
-│       │       │   ├── output-contains.md
-│       │       │   ├── per-project-type.md
-│       │       │   ├── plan-schema.md
-│       │       │   ├── recording.md
-│       │       │   ├── SKILL.md
-│       │       │   └── tests-assertion.md
+│       │       ├── framework-migration/
+│       │       │   ├── migrations/
+│       │       │   │   └── jasmine-karma-to-vitest.md
+│       │       │   └── SKILL.md
 │       │       ├── typescript-compiler-upgrade/
 │       │       │   ├── 4to5.md
 │       │       │   ├── 5to6.md
 │       │       │   ├── 6to7.md
 │       │       │   ├── compiler-upgrade.md
 │       │       │   └── SKILL.md
-│       │       └── typescript-dependencies-upgrade/
-│       │           ├── react/
-│       │           │   ├── 17.md
-│       │           │   ├── 18.md
-│       │           │   └── 19.md
-│       │           ├── angular.md
-│       │           ├── generate-plan.md
-│       │           ├── i18next.md
-│       │           ├── karma-jasmine.md
-│       │           ├── monorepo.md
-│       │           ├── mui.md
-│       │           ├── peer-dependencies.md
-│       │           ├── radix.md
-│       │           ├── react.md
-│       │           ├── runtime-validation.md
+│       │       ├── typescript-dependencies-upgrade/
+│       │       │   ├── react/
+│       │       │   │   ├── 17.md
+│       │       │   │   ├── 18.md
+│       │       │   │   └── 19.md
+│       │       │   ├── angular.md
+│       │       │   ├── generate-plan.md
+│       │       │   ├── i18next.md
+│       │       │   ├── karma-jasmine.md
+│       │       │   ├── monorepo.md
+│       │       │   ├── mui.md
+│       │       │   ├── peer-dependencies.md
+│       │       │   ├── radix.md
+│       │       │   ├── react-hook-form.md
+│       │       │   ├── react.md
+│       │       │   ├── repair-validation-failures.md
+│       │       │   ├── SKILL.md
+│       │       │   ├── tanstack.md
+│       │       │   └── upgrade-packages.md
+│       │       └── typescript-runtime-validation/
+│       │           ├── output-contains.md
+│       │           ├── per-project-type.md
+│       │           ├── plan-authoring.md
+│       │           ├── plan-schema.md
+│       │           ├── recording.md
 │       │           ├── SKILL.md
-│       │           ├── tanstack.md
-│       │           └── upgrade-packages.md
+│       │           ├── standalone-workflow.md
+│       │           ├── tests-assertion.md
+│       │           └── upgrade-workflow.md
 │       └── upgrade-extension.json
 ├── extensions/
 │   └── upgrade-agent-dashboard/

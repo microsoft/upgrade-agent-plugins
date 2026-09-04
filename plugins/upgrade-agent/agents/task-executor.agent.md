@@ -180,15 +180,34 @@ is **not** sufficient:
    Definition of done. **No-change short-circuit:** if you produced no file modifications,
    skip the build (a prior green build is still valid) and only re-run tests if you're unsure
    they already passed this session.
+   **Every command is single-line, shell-neutral, bounded, and observable.** You run in
+   whatever shell the *user* configured — often Git Bash or WSL, not PowerShell — so a
+   trailing `` ` `` or `^` continuation, or a `%VAR%` reference, breaks or (worse) exits 0
+   having run nothing. To run a `.ps1`, invoke it explicitly:
+   `powershell -NoProfile -ExecutionPolicy Bypass -File <script> -Arg value`. Never
+   background a command or leave its output uncaptured, and treat a command that has emitted
+   nothing for several minutes as **stuck, not slow** — stop it and report. After a
+   scaffolding or generation command, **verify the artifact exists** rather than trusting the
+   exit code.
+   **A failure you did not cause is not yours to fix.** If your dispatch supplied a **build baseline
+   path**, `read` it before chasing an error. A project recorded there as `failed` is pre-existing
+   only when **every** error code you are seeing is already in its `codes` — then record it in
+   `progress-details.md` and move on. **One code that is not in that list makes the failure yours**,
+   even in an already-red project. So does a project the baseline never built. Use the supplied path
+   verbatim rather than guessing a default location — a repo with a custom output path keeps the
+   baseline elsewhere, and a guess that reads nothing turns every pre-existing failure into work.
 7. **Failure handling — self-dispatch the inner loop, escalate the hard cases.**
    - **Tight inner loop (do it yourself, nested).** For an ordinary build/test failure in
      your task's scope, you may dispatch `BuildValidator` (to pin down what's broken) or
-     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool. You
-     may likewise dispatch `CodeReviewer` for a focused review of the changes you just made
-     when a quality check adds value, and `TaskBreaker` when step 4 fires. Their heavy
+     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool, and
+     `TaskBreaker` when step 4 fires. Their heavy
      diagnostic/review/planning context stays in *their* processes and returns you a distilled
      result — keeping that churn out of the Orchestrator's long-lived context. Require a
      compact return from them and fold it into your own work.
+     **Do not dispatch `CodeReviewer`.** Review is batched at the phase boundary by the
+     Orchestrator, over the whole phase's changes. You are dispatched once per task, so a
+     nested review here is a per-task review by another name — the cadence the Orchestrator
+     just moved out of its own loop, and the same cost multiplied by the task count.
    - **Escalate deep / cross-cutting failures.** If a failure spans beyond your task
      (touches other projects/tasks, needs a scope or plan change), or you've tried the same
      fix 3+ times and a nested `ErrorFixer` didn't clear it, **stop and report it** — the

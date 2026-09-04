@@ -4,8 +4,9 @@
     "PostToolUse": [
       {
         "type": "command",
-        "bash": "bash hooks/scripts/track-telemetry.sh",
-        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File hooks/scripts/track-telemetry.ps1"
+        "matcher": "read_file|view|Read",
+        "bash": "if [ -n \"${PLUGIN_ROOT:-}\" ] && [ -f \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\" ]; then bash \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\"; else echo '{\"continue\":true}'; fi",
+        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"if(([Environment]::GetEnvironmentVariable('PLUGIN_ROOT')) -and [IO.File]::Exists([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1'))){& ([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1'))}else{Write-Output ('{'+[char]34+'continue'+[char]34+':true}')}\""
       }
     ]
   }

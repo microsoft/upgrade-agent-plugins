@@ -45,6 +45,7 @@ Upgrade .NET projects from their current target framework to a newer version of 
 Run these stages in order:
 
 0. **Pre-Initialization** — Confirm target framework + source-control + flow parameters, then set up source control, call `initialize_scenario`, and write `scenario-instructions.md`. Consumed during pre-initialization by the dedicated `DotnetVersionScenarioInitializer` gatherer. Tool: `get_dotnet_upgrade_options`.
+0.5. **Build Baseline** — Record what already builds and what is already broken, before any change. Owned by the orchestrator's Build Baseline stage; unconditional and not tied to any upgrade option. Creates `.github/upgrades/build-baseline.json` at repo scope.
 1. **Assessment** — Analyze the solution and identify risks. Creates `assessment.md`.
 2. **Planning** — Create the upgrade plan based on the assessment. Creates `plan.md`.
 3. **Execution** — Execute tasks and validate changes. Creates `tasks/*/task.md`. Uses the executor's execution steps.

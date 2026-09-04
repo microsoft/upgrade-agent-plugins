@@ -265,29 +265,83 @@ When the decision is `msbuild.exe`, the agent must locate it reliably.
 
 ### On Windows
 
+> **Write every command on one line, and never assume a shell.** The commands below run in
+> the *user's* shell, which is frequently Git Bash or WSL rather than PowerShell or cmd.
+> `%VAR%` stays a literal string under bash, a trailing `^` is not a line continuation, and a
+> trailing backtick opens command substitution — see **Shell portability** below before
+> adapting any of these.
+
 **Priority 1 — `VSINSTALLDIR` environment variable:**
 If the agent is running inside Visual Studio or was launched from a VS Developer Command
 Prompt, the `VSINSTALLDIR` environment variable is already set and points to the correct
-VS installation. Use it directly:
+VS installation. Read it in a way the active shell understands:
 
-```cmd
-"%VSINSTALLDIR%\MSBuild\Current\Bin\MSBuild.exe"
-```
+| Shell | How to read it |
+|---|---|
+| cmd | `"%VSINSTALLDIR%\MSBuild\Current\Bin\MSBuild.exe"` |
+| PowerShell | `& "$env:VSINSTALLDIR\MSBuild\Current\Bin\MSBuild.exe"` |
+| bash | `"$VSINSTALLDIR/MSBuild/Current/Bin/MSBuild.exe"` |
 
 This is the preferred approach — it matches the user's active VS context and avoids
-picking a different installation than the one they're working with.
+picking a different installation than the one they're working with. If the variable expands
+to nothing (it is unset outside a VS context), fall through to Priority 2 rather than
+building a path from an empty value.
 
 **Priority 2 — `vswhere.exe`:**
-If `VSINSTALLDIR` is not set (agent running outside VS), use `vswhere.exe`:
+If `VSINSTALLDIR` is not set (agent running outside VS), use `vswhere.exe`. Keep it on one
+line — no `^`, no backtick, no backslash continuations — and pick the form for your shell.
+**A quoted path is not a command in PowerShell**: it is just a string expression, so the next
+token fails with `Unexpected token '-latest'`. PowerShell needs the call operator `&`:
 
-```cmd
-"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" ^
-  -latest -requires Microsoft.Component.MSBuild ^
-  -find MSBuild\**\Bin\MSBuild.exe
-```
+| Shell | Command |
+|---|---|
+| PowerShell | `& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe` |
+| cmd | `"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe` |
+| bash | `"/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild/**/Bin/MSBuild.exe` |
+
+The same `&` rule applies to any quoted executable path you invoke from PowerShell, including
+the `powershell -File` form used elsewhere in these skills.
 
 **Priority 3 — well-known paths:**
 If neither is available, fall back to well-known paths under `Program Files`.
+
+### Shell portability (read before writing any command)
+
+The `execute` tool runs in the shell the **user** configured, and nothing detects which one
+it is. A command written for one shell fails — sometimes silently — in another.
+
+| Construct | cmd | PowerShell | bash (Git Bash / WSL) |
+|---|---|---|---|
+| `%VAR%` | expands | literal | **literal** |
+| `$env:VAR` | literal | expands | literal |
+| `$VAR` | literal | **expands to a PowerShell variable — empty unless you set one** (env vars need `$env:VAR`) | expands |
+| `^` at end of line | continuation | literal | **not a continuation — command fragments** |
+| `` ` `` at end of line | literal | continuation | **opens command substitution** |
+
+Note the `$VAR` row: in PowerShell it does **not** stay literal, and it does **not** read the
+environment. It resolves to an unset PowerShell variable and expands to **nothing**, so
+`$VSINSTALLDIR/MSBuild/...` silently becomes `/MSBuild/...` — a broken path with no error,
+which is the failure this section exists to prevent.
+
+The backtick case is the dangerous one and it is **parity-dependent**:
+
+- An **odd** number of trailing backticks fails loudly — `unexpected EOF while looking for
+  matching`, exit 2.
+- An **even** number pairs up, the arguments run as commands, the intended program never
+  runs, and the shell **exits 0**. A build/test verdict that trusts the exit code will report
+  success for work that never happened.
+
+**Rules:**
+
+1. Write every command on a single line. If it is too long to read, keep it long — a wrapped
+   command that breaks in the user's shell is worse than an unwrapped one.
+2. To run a shipped `.ps1`, invoke PowerShell explicitly rather than relying on the shell to
+   execute it by path — this works from any shell:
+   `powershell -NoProfile -ExecutionPolicy Bypass -File <script.ps1> -Arg value`
+   (use `pwsh` instead of `powershell` on non-Windows hosts).
+3. Never leave a command running in the background or without captured output. A child that
+   inherits stdin (for example `powershell -Command -`) blocks forever emitting nothing, and
+   there is no timeout that will rescue it.
 
 ### On CI / Linux / macOS
 

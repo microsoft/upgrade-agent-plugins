@@ -14,8 +14,13 @@ bundles the same allowlisted subset into the local orchestrator plugin by
 default (`-SkipCanvasExtension` opts out).
 
 Once shipped, the CLI runtime discovers it as
-`plugin:upgrade-agent:upgrade-agent-dashboard` and loads it **only where the host
-enables the `EXTENSIONS` feature flag**. The generator ships an allowlisted
+`plugin:upgrade-agent:upgrade-agent-dashboard` and loads it for **every**
+Copilot App user. It was gated behind the host's `EXTENSIONS` feature flag until
+2026-08-05, when github-app [#10702](https://github.com/github/github-app/pull/10702)
+("Ungate project Canvas extensions") replaced the experiment check with an
+unconditional `request_extensions = Some(true)`; the surviving `agent_extensions`
+experiment now only controls the Extensions tab in Customize. Treat the audience
+as everyone, not an opt-in subset. The generator ships an allowlisted
 subset (generated `dist/extension.mjs`, flattened to root `extension.mjs`, plus
 `README.md` and `canvas/app/`) and a sanitized
 `package.json`; `test/`, `bin/`, `node_modules`, `install-local.*`, and
@@ -28,9 +33,17 @@ at runtime, so no `node_modules` ships.
 You'll need the following installed before running or installing this extension:
 
 - **The GitHub Copilot App (desktop)** — this extension surfaces as a *canvas*
-  in the side panel of the GitHub App. It will not load in the standalone
-  Copilot CLI or in VS / VS Code. Make sure you're on a build that supports
-  the canvas extension API.
+  in the side panel of the GitHub App, which is the surface it is built and
+  tested against. It does not load in VS or VS Code. It **may** load in the
+  standalone Copilot CLI: that host gained canvas support in
+  copilot-agent-runtime [#12532](https://github.com/github/copilot-agent-runtime/pull/12532)
+  (2026-07-14), which renders URL-based extension canvases in a native webview
+  window — exactly the shape `open()` returns here. Whether a given CLI build
+  ships that optional webview module varies, and we neither document nor test
+  that surface, so treat it as unsupported-but-possible rather than blocked.
+  Nothing breaks either way: the session-dependent actions (`switch_mode`,
+  `push_context`, `open_markdown_editor`) already guard for a missing host API.
+  Make sure you're on a build that supports the canvas extension API.
 - **Node.js 20 or newer** — the extension uses TypeScript, React, and ES modules. `node --test`
   is used for unit tests, so 20+ is required. Verify with `node --version`.
 - **npm 10 or newer** — ships with Node 20. Used to install peer dependencies
@@ -41,16 +54,22 @@ You'll need the following installed before running or installing this extension:
 - **PowerShell 5.1+ or `cmd.exe`** — for running `install-local.ps1` /
   `install-local.cmd`. The cmd variant exists specifically so you don't
   need PowerShell.
-- **Playwright browsers** (only if you'll run E2E tests) — `npm run test:e2e`
-  will prompt to install Chromium on first run, or run `npx playwright install
-  chromium` explicitly.
+- **Microsoft Edge** (only if you'll run E2E tests) — the Playwright suite runs
+  against the Edge already installed on the machine (`channel: "msedge"`), so
+  there is no browser to download. Set `PLAYWRIGHT_EXECUTABLE_PATH` to override
+  it with a specific Chromium or Edge build.
 - **A repo with `.github/upgrades/scenarios/...` artifacts** — the dashboard
   is read-only; it surfaces files produced by the .NET upgrade agent. To
   see anything meaningful, point it at a repo that has already run through
   (or is in the middle of) an upgrade session. An empty repo will
   render a "no active scenario" empty state.
 
-The standalone CLI command (`upgrade-agent-dashboard`) only needs Node + a
+Two different things in this README are called "standalone", so they are named
+apart throughout: **the standalone Copilot CLI** is GitHub's own CLI host (the
+bullet above), while **standalone dashboard mode** is our `upgrade-agent-dashboard`
+binary described here.
+
+The `upgrade-agent-dashboard` command only needs Node + a
 target repo — the GitHub Copilot App is not required for that mode. Its source
 is `bin/upgrade-agent-dashboard.ts`; `npm run build` emits the executable
 `dist/upgrade-agent-dashboard.mjs`.
@@ -127,19 +146,37 @@ survives as an Execution sub-view; **Scenario** was removed outright (#668) and
 `scenario` is not a valid panel in any form. `lib/panels.ts` is the authority
 for all of this.
 
-### Diagnostics (debug only, hidden)
+### Diagnostics (debug only, hidden by default)
 
 Path probes, repo-root resolution source, and env-var echoes are still built
-into the snapshot and rendered into an overlay, but **nothing in the UI opens
-it** — there is no tab and no icon. It is reachable only by:
+into the snapshot and rendered into an overlay, but by default **nothing in the
+UI opens it** — there is no tab and no icon. It is always reachable by:
 
 - the `set_panel` canvas action with `{ panel: "diagnostics" }` (i.e. asking
   the agent to open the diagnostics panel), or
-- `?panel=diagnostics` on the URL in standalone CLI mode
+- `?panel=diagnostics` on the URL in standalone dashboard mode
   (`upgrade-agent-dashboard --panel diagnostics`).
 
 This keeps a support/debugging affordance available without shipping it as
 part of the product surface.
+
+Setting `UPGRADE_AGENT_DASHBOARD_DIAGNOSTICS=1` additionally offers a footer
+button that opens the same overlay (#786) — useful when you are debugging the
+dashboard yourself and don't want to route through the agent. Exactly `1`
+enables it; every other value, including `true`, leaves it hidden. The two entry
+points above work either way.
+
+Because the canvas is hosted by the desktop app rather than launched from your
+shell, the variable has to be set for the app's own process:
+
+```cmd
+setx UPGRADE_AGENT_DASHBOARD_DIAGNOSTICS 1
+```
+
+Then restart the host app — `setx` writes the user environment, and only
+processes started afterwards inherit it. An already-running Explorer may not
+propagate the change to newly launched apps either; sign out and back in if the
+button doesn't appear.
 
 Data is served from a loopback HTTP server on `127.0.0.1:0`. The webview pulls
 state via `GET /api/state` and subscribes to `GET /events` (Server-Sent Events)
@@ -147,21 +184,24 @@ for live updates as the activity log grows.
 
 ## Frontend development
 
-The canvas uses an incremental React-island architecture. The existing shell,
-SSE subscription, and panels not yet migrated remain in `canvas/index.html`. The
-global stylesheet lives in `canvas/src/dashboard.css`, linked from the shell's
-`<head>` (Vite bundles and hashes it into `canvas/app/assets/`).
-`canvas/src/Overview.tsx` owns only Overview and is
-rendered from the existing `render(state)` flow. Its IDs and classes intentionally
-match the previous DOM renderer so the browser tests remain the contract.
-Overview-specific static styles live beside it in `canvas/src/Overview.css`;
-Vite extracts those rules into a hashed CSS asset during the build.
+The canvas is one React application rooted at `canvas/src/main.tsx`.
+`canvas/index.html` is only the static Vite entry with one `#root`; `App` owns
+the shell, SSE subscription, actions, overlays, and every panel. Panels remain
+mounted and toggle with `hidden`, preserving component-local state while their
+snapshot caches update independently. Existing IDs and classes remain the
+browser-test contract.
 
-The topbar carries the product mark as **inline SVG** in `canvas/index.html`
-(`.topbar-logo`), not as an image file. The bot silhouette is
-`fill="currentColor"` so it inverts with the host theme — a hard-coded colour
-would vanish against either the light host theme or the standalone dark
-fallback — while the arrow keeps a fixed brand gradient that reads on both.
+The global stylesheet lives in `canvas/src/dashboard.css` and is imported by
+`main.tsx`. Component-specific static styles live beside their components (for
+example, `Overview.tsx` imports `Overview.css`). Vite extracts both into a
+hashed CSS asset during the build.
+
+The topbar product mark is the `ProductMark` React component in
+`canvas/src/overview/icons.tsx`. It renders inline SVG with
+`fill="currentColor"` on the bot silhouette so it inverts with the host theme —
+a hard-coded colour would vanish against either the light host theme or the
+standalone dark fallback — while the arrow keeps a fixed brand gradient that
+reads on both.
 Keeping it inline also means it ships automatically: the plugin generator's
 canvas allowlist copies `canvas/app/` wholesale, so no new asset path has to be
 added to it.
@@ -222,15 +262,15 @@ to pick it up.
 - `extensionId`: `user:upgrade-agent-dashboard` (or `project:upgrade-agent-dashboard` for project-scope installs)
 - `canvasId`: `dashboard`
 - `displayName`: `Upgrade Agent Dashboard`
-- Open input: optional `{ panel?: "overview" | "assessment" | "plan" | "options" | "execution" | "activity" | "assessment:summary" | "assessment:issues" | "assessment:projects" | "assessment:dependencies" | "assessment:features" | "tasks" | "builds" | "repository" | "diagnostics" }` — unknown values fall back to `overview`. The `assessment:<sub>` forms deep-link to a specific Assessment sub-tab (the old `projects` / `dependencies` panels are now sub-tabs of Assessment); a sub-tab hidden for lack of data is ignored rather than landing you on an empty section. `tasks`, `builds` and `repository` open Execution on the corresponding sub-view (`tasks` was a top-level tab until issues #512 / #513 merged it into Execution). `diagnostics` is a debug-only overlay with no UI affordance (see [Diagnostics](#diagnostics-debug-only-hidden)). The authoritative list is `lib/panels.ts`.
+- Open input: optional `{ panel?: "overview" | "assessment" | "plan" | "options" | "execution" | "activity" | "assessment:summary" | "assessment:issues" | "assessment:projects" | "assessment:dependencies" | "assessment:features" | "tasks" | "builds" | "repository" | "diagnostics" }` — unknown values fall back to `overview`. The `assessment:<sub>` forms deep-link to a specific Assessment sub-tab (the old `projects` / `dependencies` panels are now sub-tabs of Assessment); a sub-tab hidden for lack of data is ignored rather than landing you on an empty section. `tasks`, `builds` and `repository` open Execution on the corresponding sub-view (`tasks` was a top-level tab until issues #512 / #513 merged it into Execution). `diagnostics` is a debug-only overlay with no UI affordance unless `UPGRADE_AGENT_DASHBOARD_DIAGNOSTICS=1` (see [Diagnostics](#diagnostics-debug-only-hidden-by-default)). The authoritative list is `lib/panels.ts`.
 - Actions:
   - `refresh` — force-reload artifact state from disk.
   - `set_panel` — agent-driven tab switch (input: `{ panel: <one of the above> }`).
   - `switch_mode` — relay a request to switch flow mode (input: `{ mode: "guided" | "automatic" }`); posted as a chat message to the host agent.
   - `explain_dependency` — relay a request to explain a dependency / version drift (input: `{ packageName: string }`).
-  - `open_markdown_editor` — open a markdown artifact in the built-in `editor` canvas (input: `{ path: string }`). The extension calls `session.rpc.canvas.open` directly, so this costs no agent turn; re-opening the same document focuses the existing panel. The path must be a `.md` file that resolves — symlinks followed — to a real file inside the repo root; anything else is rejected. Unavailable in standalone CLI mode (there is no canvas host).
+  - `open_markdown_editor` — open a markdown artifact in the built-in `editor` canvas (input: `{ path: string }`). The extension calls `session.rpc.canvas.open` directly, so this costs no agent turn; re-opening the same document focuses the existing panel. The path must be a `.md` file that resolves — symlinks followed — to a real file inside the repo root; anything else is rejected. Unavailable in standalone dashboard mode (there is no canvas host).
   - `push_context` — hand the agent a summary of what the user is currently looking at in the canvas.
-  - `open_feedback_issue` — open a prefilled "send feedback" issue on `microsoft/upgrade-agent-plugins` in the user's **OS default browser** (no input). Backs the footer's "Feedback" button, which first opens an in-canvas dialog disclosing that the issue is public, which repo it lands in, and that a personal GitHub.com account is required. The dialog has no compose box: the canvas holds no GitHub token (`gitHubAuth.getStatus()` returns auth state but not a token), so the handoff to github.com is unavoidable and the report belongs in GitHub's editor, which has markdown preview, draft recovery and image paste. Prefill only pre-populates the GitHub form; nothing is submitted until the user presses Create, and the auto-filled environment table (plugin version, host, host version, scenario id, target framework, phase) deliberately excludes repo path, repo name, project names, and package names — as well as OS and Node. The destination is a hardcoded constant in `lib/feedback.ts`, never read from `plugin.json`. The built-in `browser` canvas is *not* used: it carries no GitHub session, so the new-issue URL lands on a login page. When no URL handler exists (headless hosts, containers) the action returns `{ ok: false, url }` and the canvas copies the link to the clipboard instead. Available in standalone CLI mode — it needs no Copilot session.
+  - `open_feedback_issue` — open a prefilled "send feedback" issue on `microsoft/upgrade-agent-plugins` in the user's **OS default browser** (no input). Backs the footer's "Feedback" button, which first opens an in-canvas dialog disclosing that the issue is public, which repo it lands in, and that a personal GitHub.com account is required. The dialog has no compose box: the canvas holds no GitHub token (`gitHubAuth.getStatus()` returns auth state but not a token), so the handoff to github.com is unavoidable and the report belongs in GitHub's editor, which has markdown preview, draft recovery and image paste. Prefill only pre-populates the GitHub form; nothing is submitted until the user presses Create, and the auto-filled environment table (plugin version, host, host version, scenario id, target framework, phase) deliberately excludes repo path, repo name, project names, and package names — as well as OS and Node. The destination is a hardcoded constant in `lib/feedback.ts`, never read from `plugin.json`. The built-in `browser` canvas is *not* used: it carries no GitHub session, so the new-issue URL lands on a login page. When no URL handler exists (headless hosts, containers) the action returns `{ ok: false, url }` and the canvas copies the link to the clipboard instead. Available in standalone dashboard mode — it needs no Copilot session.
 
 ## Limitations vs. the Blazor dashboard
 

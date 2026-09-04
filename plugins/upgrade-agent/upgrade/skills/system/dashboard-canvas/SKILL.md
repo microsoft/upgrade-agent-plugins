@@ -9,8 +9,7 @@ metadata:
 
 Only load this skill on a host that actually has the canvas — an `open_canvas` tool **and** an
 Upgrade Dashboard (`canvasId: dashboard`) in its available canvases. On plain CLI, Visual Studio and
-VS Code the canvas does not exist; skip it silently there and use `open_dashboard` and the
-`show_scenario_links` chips instead.
+VS Code the canvas does not exist; skip it silently there and use `open_dashboard` instead.
 
 The dashboard is a live side-panel view of the active scenario's progress, assessment, dependency
 health, tasks and activity. Open it *for* the user — they should never have to add it by hand
@@ -61,7 +60,7 @@ immediately loses a race it did not need to enter — and the failure surfaces t
 card you cannot suppress afterwards.
 
 Let the scenario work happen first (finish the initialize/resume step, write
-`scenario-instructions.md`, emit `show_scenario_links`), then open the canvas. By then registration
+`scenario-instructions.md`), then open the canvas. By then registration
 has long since completed.
 
 ## When the open fails
@@ -88,7 +87,3 @@ Never surface the canvas failure itself to the user as an error.
 - **`open_dashboard`** launches the Blazor web dashboard on a local URL. Do not call it *instead of*
   opening the canvas when the canvas is available — only as the fallback above, after a canvas open
   has actually failed.
-- **`show_scenario_links`** emits progress chips. It does not launch a dashboard and is never a
-  substitute for the canvas. Nothing here relaxes the **MANDATORY** `show_scenario_links` calls in
-  the task-execution flow — emit every one of them exactly as specified, whether or not the canvas
-  is open.

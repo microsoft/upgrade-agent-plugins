@@ -18,7 +18,7 @@ metadata:
 
 Migrate OAuth bearer token authentication from OWIN (`Microsoft.Owin.Security.OAuth`) to ASP.NET Core JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`). ASP.NET Core has no built-in equivalent to OWIN's `OAuthAuthorizationServerProvider` for issuing tokens — token issuance must move to an external identity provider such as Duende IdentityServer or Azure AD / Microsoft Entra ID. Token validation is handled by `AddJwtBearer()` with `TokenValidationParameters`.
 
-> **Related skills:** For OWIN cookie authentication migration, see `migrating-owin-cookie-auth`. For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For Azure AD authentication library migration, see `migrating-adal-to-msal`.
+> **Related skills:** For OWIN cookie authentication migration, see `migrating-owin-cookie-auth`. For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For Azure AD authentication library migration, see `migrating-adal-to-msal`. For a token scheme the application implemented itself by deriving from the Katana `AuthenticationHandler<TOptions>` rather than calling `UseOAuthBearerAuthentication`, see `migrating-owin-authentication-handler-to-core`.
 
 ## Package Reference Changes
 

@@ -108,7 +108,7 @@ Official sources:
   for this dependency upgrade. If the existing test/build/runtime path is unavailable because of
   environment or credentials, record the validation as blocked or inconclusive instead of adding
   unrelated test tooling and lockfile churn.
-- Call `typescript_validate_runtime`. These libraries manage asynchronous state and UI behavior;
+- Invoke the `typescript-runtime-validation` skill in upgrade mode. These libraries manage asynchronous state and UI behavior;
   compile success alone cannot detect stale Query transitions, broken Table interactions, or
   Router navigation and generated-route regressions.
 - For Router, confirm the generated route tree is clean after a fresh generation and that no
