@@ -18,7 +18,7 @@ metadata:
 
 Migrate cookie-based authentication from OWIN (`Microsoft.Owin.Security.Cookies`) to ASP.NET Core's built-in cookie authentication. The core change is replacing the OWIN middleware pipeline (`IAppBuilder.UseCookieAuthentication()`) with ASP.NET Core's service-based model (`AddAuthentication().AddCookie()`). Most cookie options map directly, but the provider/callback model is replaced by an events pattern.
 
-> **Related skills:** For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For OAuth bearer token migration, see `migrating-owin-oauth-to-jwt`.
+> **Related skills:** For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For OAuth bearer token migration, see `migrating-owin-oauth-to-jwt`. For a cookie scheme the application implemented itself by deriving from the Katana `AuthenticationHandler<TOptions>` rather than calling `UseCookieAuthentication`, see `migrating-owin-authentication-handler-to-core`.
 
 ## Package Reference Changes
 

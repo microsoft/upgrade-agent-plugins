@@ -4,9 +4,19 @@
 
 Call `typescript_scan_dependencies` with:
 - `rootDirectory` — the repository root.
-- `packageDirectory` — optional; provide if upgrading a specific package in a monorepo.
-- `requestedPackages` — REQUIRED. The explicit list of packages the user named (e.g., `["react", "axios"]`). Pass `[]` (empty array) when the user asked to upgrade everything. Omit only if intent is genuinely unknown.
+- `requestedPackages` — REQUIRED npm dependency scope. Pass the explicit npm package names the user requested (e.g., `["react", "axios"]`), or `[]` when the user asked to upgrade all outdated dependencies. Omit only if intent is genuinely unknown.
+- `packageDirectory` — optional package-project/workspace scope, independent of `requestedPackages`. Omit it to discover packages repository-wide. Set it only when the user explicitly names a workspace/path, or after repository discovery deliberately narrows the workflow to one package project. Supplying it targets exactly that project; `packageDirectory` equal to `rootDirectory` means the root package only.
 - `skill` — REQUIRED. Pass `"typescript-dependencies-upgrade"`.
+
+**A named npm dependency does not imply a package-project scope.** For a repository-level request such as “upgrade React in this repository,” the initial scan MUST pass `requestedPackages: ["react"]` and omit `packageDirectory`, so React can be discovered in any root or nested package. Do not copy `rootDirectory` into `packageDirectory` by default.
+
+Examples (paths are illustrative):
+
+| User scope | Scan arguments |
+|---|---|
+| Upgrade React in this repository | `rootDirectory: "/repo"`, `requestedPackages: ["react"]`; omit `packageDirectory` |
+| Upgrade only the root package | `rootDirectory: "/repo"`, `packageDirectory: "/repo"`, `requestedPackages: [...]` |
+| Upgrade the explicitly named website workspace | `rootDirectory: "/repo"`, `packageDirectory: "/repo/website"`, `requestedPackages: [...]` |
 
 Review the scan results. The tool returns structured JSON including:
 - `packageManager` — npm, yarn, or pnpm
@@ -37,6 +47,6 @@ Before making any changes, verify the project works:
 1. Call `typescript_install_dependencies` with `rootDirectory` and `packageDirectory`. If it fails or hangs because of a package-manager/toolchain problem (missing or wrong-versioned `npm`/`yarn`/`pnpm`/`corepack`, lockfile/integrity mismatch), stop and report the blocker via `typescript_write_upgrade_summary` — do not try to repair the toolchain (see Key Principle #9 in [SKILL.md](./SKILL.md)).
 2. Call `typescript_compile_package` with `rootDirectory` and `packageDirectory`.
 3. If `validateBundlerChanges` is true and **any dependency group has `containsBundlers: true`**, call `typescript_build_package` with `rootDirectory` and `packageDirectory` to establish a bundler build baseline.
-4. Establish a runtime baseline — REQUIRED, do not skip. Read [runtime-validation.md](./runtime-validation.md).
+4. Establish a runtime baseline — REQUIRED, do not skip. Invoke the `typescript-runtime-validation` skill in upgrade mode as directed by [SKILL.md](./SKILL.md).
 
 Record the baseline: install success, number of pre-existing build errors, test pass/fail counts.

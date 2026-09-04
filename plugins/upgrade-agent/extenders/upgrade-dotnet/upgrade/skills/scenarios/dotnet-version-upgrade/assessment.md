@@ -25,6 +25,8 @@ Analyze the target projects to create a comprehensive assessment for the upgrade
 - If git repo: source control set up — on the correct working branch
 - `initialize_scenario` already called — working folder exists at `.github/upgrades/{scenarioId}/`
 - Upgrade parameters confirmed and saved in `scenario-instructions.md` (target framework, and source/working branch if git repo)
+- Build baseline settled — captured, reused, or explicitly accepted by the user. A repository that
+  does not build before any change must not reach this stage silently.
 
 ## Exit Criteria
 

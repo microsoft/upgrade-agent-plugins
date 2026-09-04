@@ -227,66 +227,79 @@ variable substitutions (`$TargetFramework$`, `$ProjectName$`, `$OldAppUrl$`, etc
 adds the project to the solution, links the old project via `_MigrateToProjectGuid`,
 and verifies the build.
 
-```powershell
-{skill_path}/scaffold-project.ps1 `
-  -OldProjectPath "{OLD_PROJECT_PATH}" `
-  -SolutionPath "{SOLUTION_PATH}" `
-  -TargetFramework "{TFM}" `
-  -NewProjectName "{NEW_PROJECT_NAME}" `
-  -ProjectType "{MVC|WebAPI}" `
-  -OldAppUrl "{OLD_APP_URL}" `
-  -SystemWebAdaptersVersion "{VERSION}" `
-  -YarpVersion "{VERSION}"
+> **Invoke PowerShell explicitly, on one line, with `-Command` and the call operator.** The
+> `execute` tool runs in the *user's* shell, which is often Git Bash or WSL rather than
+> PowerShell. Running the `.ps1` by bare path only works if the shell happens to be
+> PowerShell, and a PowerShell backtick continuation is **command substitution** in bash: an
+> odd number of trailing backticks aborts with `unexpected EOF while looking for matching`,
+> and an even number pairs up so the parameters run as commands, the script never runs, and
+> the shell still **exits 0**. Never split this command across lines with backticks. Use
+> `pwsh` instead of `powershell` on non-Windows hosts.
+>
+> **Use `-Command "& '<script>' …"`, not `-File`.** `-File` passes arguments as native
+> strings, so an array parameter never receives more than one element: `-TrustedProxies
+> "10.0.0.5","10.0.0.6"` binds as the single value `10.0.0.5,10.0.0.6`, the script writes one
+> invalid address, and the generated `Program.cs` silently falls back to loopback **while the
+> command reports success**. `-Command` makes PowerShell parse the arguments, so arrays bind
+> correctly. Measured from PowerShell, cmd and Git Bash.
+
+```text
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\path\to\scaffold-project.ps1' -OldProjectPath '{OLD_PROJECT_PATH}' -SolutionPath '{SOLUTION_PATH}' -TargetFramework '{TFM}' -NewProjectName '{NEW_PROJECT_NAME}' -ProjectType '{MVC|WebAPI}' -OldAppUrl '{OLD_APP_URL}' -SystemWebAdaptersVersion '{VERSION}' -YarpVersion '{VERSION}'"
 ```
+
+Use a **Windows** path for the script even from Git Bash (`C:\…`, not `/c/…`) — Windows
+PowerShell cannot resolve a POSIX path.
 
 To trust real proxy addresses at scaffold time (instead of the fail-closed loopback
 defaults), also pass `-TrustedProxies` and/or `-TrustedNetworks`. To let the proxy set the
 request host, pass `-AllowedForwardedHosts` — without it, `X-Forwarded-Host` is ignored
 (see the spoofing footgun under **Production hardening**). These write the
-`ForwardedHeaders` section of the generated `appsettings.json`:
+`ForwardedHeaders` section of the generated `appsettings.json`.
 
-```powershell
-  -TrustedProxies "10.0.0.5","10.0.0.6" `
-  -TrustedNetworks "10.0.0.0/8","::1/128" `
-  -AllowedForwardedHosts "www.example.com"
+Append to the same single-line command (single-quoted, comma-separated — `-Command` parses
+these as a real array):
+
+```text
+-TrustedProxies '10.0.0.5','10.0.0.6' -TrustedNetworks '10.0.0.0/8','::1/128' -AllowedForwardedHosts 'www.example.com'
 ```
 
 When omitted, the template keeps its secure defaults — loopback-only trust, and no
 forwarded host honored — and an operator opts in later by editing `appsettings.json`.
 
-To pre-wire authentication interop, add **one** of the following groups. Passing both
-groups, or any companion without its switch, is rejected.
+To pre-wire authentication interop, append **one** of the following groups to the same
+single-line command. Passing both groups, or any companion without its switch, is rejected.
 
-```powershell
-  # Shared cookie: both apps read the same encrypted cookie.
-  # Filesystem key ring (the default) -- a directory both hosts can read.
-  -EnableSharedCookieAuth `
-  -SharedKeyRingPath "\\fileserver\keyring" `
-  -SharedCertificateThumbprint "A1B2C3..." `
-  -SharedApplicationName "MyLegacyApp" `
-  -SharedCookieName ".AspNet.ApplicationCookie" `
-  -SharedCookieScheme "ApplicationCookie"
+Shared cookie — both apps read the same encrypted cookie. Filesystem key ring (the default),
+a directory both hosts can read:
+
+```text
+-EnableSharedCookieAuth -SharedKeyRingPath '//fileserver/keyring' -SharedCertificateThumbprint 'A1B2C3...' -SharedApplicationName 'MyLegacyApp' -SharedCookieName '.AspNet.ApplicationCookie' -SharedCookieScheme 'ApplicationCookie'
 ```
 
-```powershell
-  # Shared cookie, Azure key ring -- when the old app already persists its keys to blob
-  # storage, or the two hosts share no filesystem. Adds two Azure NuGet packages.
-  -EnableSharedCookieAuth `
-  -SharedKeyRingProvider azureblob `
-  -SharedKeyRingUri "https://acct.blob.core.windows.net/dataprotection/keys.xml" `
-  -SharedKeyVaultKeyId "https://myvault.vault.azure.net/keys/dp-key/abc123" `
-  -SharedApplicationName "MyLegacyApp" `
-  -SharedCookieName ".AspNet.ApplicationCookie" `
-  -SharedCookieScheme "ApplicationCookie"
+> **Write a UNC key-ring path with forward slashes** (`//fileserver/keyring`), not
+> `\\fileserver\keyring`. Git Bash collapses the leading `\\` to a single `\` before
+> PowerShell ever sees it, producing a path that is not a UNC share — silently, with a
+> successful exit. Windows resolves the forward-slash form identically, and it survives all
+> three shells unchanged. Verified from PowerShell, cmd and Git Bash.
+
+Shared cookie, Azure key ring — when the old app already persists its keys to blob storage,
+or the two hosts share no filesystem. Adds two Azure NuGet packages:
+
+```text
+-EnableSharedCookieAuth -SharedKeyRingProvider azureblob -SharedKeyRingUri 'https://acct.blob.core.windows.net/dataprotection/keys.xml' -SharedKeyVaultKeyId 'https://myvault.vault.azure.net/keys/dp-key/abc123' -SharedApplicationName 'MyLegacyApp' -SharedCookieName '.AspNet.ApplicationCookie' -SharedCookieScheme 'ApplicationCookie'
 ```
 
-```powershell
-  # Remote auth: the new app asks the old app who the user is.
-  -EnableRemoteAuth `
-  -RemoteAppApiKey "11111111-2222-3333-4444-555555555555"
+Remote auth — the new app asks the old app who the user is:
+
+```text
+-EnableRemoteAuth -RemoteAppApiKey '11111111-2222-3333-4444-555555555555'
 ```
 
 Add `-SkipBuild` to generate files without running `dotnet build`.
+
+**Verify the script actually ran** before trusting the result: confirm the new project
+directory and `Program.cs` exist. A shell-mangled invocation can exit 0 having created
+nothing.
 
 After either group, **tell the user the scaffold is only half the work** and point them at
 the `README.SHAREDCOOKIE.md` / `README.REMOTEAUTH.md` the script wrote into the new project.

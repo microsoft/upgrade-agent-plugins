@@ -7,7 +7,10 @@ description: >
   classes, or SignalR 2.x hubs mapped via OWIN. Triggers for "migrate OWIN", "remove OWIN",
   "replace OWIN middleware", "convert OWIN pipeline", "migrate Katana", "convert OWIN auth",
   "upgrade SignalR", "replace OWIN startup", or when assessment signals include UsesOwin,
-  UsesKatana, UsesOwinAuth, UsesOwinMiddleware, or UsesAppBuilder.
+  UsesKatana, UsesOwinAuth, UsesOwinMiddleware, or UsesAppBuilder. Does not cover
+  application-defined authentication handler subclasses built on the OWIN AuthenticationHandler
+  and AuthenticationMiddleware base classes; those route to
+  migrating-owin-authentication-handler-to-core.
 metadata:
   traits: .NET|CSharp|VisualBasic|DotNetCore
   discovery: lazy
@@ -17,7 +20,7 @@ metadata:
 
 ## Overview
 
-Migrate ASP.NET MVC applications that rely on OWIN/Katana for middleware hosting, authentication, and SignalR from the Katana pipeline to native ASP.NET Core middleware. Katana (`Microsoft.Owin.Host.SystemWeb`) ran an OWIN pipeline inside IIS before the MVC pipeline — ASP.NET Core unifies both into a single middleware pipeline, making the OWIN layer unnecessary. Covers all OWIN middleware patterns: custom `OwinMiddleware` subclasses, `IAppBuilder` pipeline configuration, OWIN authentication schemes, and SignalR 2.x hub migration.
+Migrate ASP.NET MVC applications that rely on OWIN/Katana for middleware hosting, authentication, and SignalR from the Katana pipeline to native ASP.NET Core middleware. Katana (`Microsoft.Owin.Host.SystemWeb`) ran an OWIN pipeline inside IIS before the MVC pipeline — ASP.NET Core unifies both into a single middleware pipeline, making the OWIN layer unnecessary. Covers custom `OwinMiddleware` subclasses, `IAppBuilder` pipeline configuration, the stock OWIN authentication schemes, and SignalR 2.x hub migration. Application-defined authentication schemes — a custom `AuthenticationHandler<TOptions>` subclass with its own `AuthenticationMiddleware<TOptions>` — are the one OWIN shape this skill does not convert; they are ported by `migrating-owin-authentication-handler-to-core`.
 
 ## Workflow
 
@@ -98,6 +101,12 @@ Remove the `[assembly: OwinStartup]` attribute and the old `Startup` class once 
 ### Step 3: Convert OWIN Authentication to Core Auth
 
 OWIN authentication middleware registers inline on `IAppBuilder`. ASP.NET Core splits authentication into service registration (`builder.Services`) and middleware (`app.Use*`). Convert each OWIN auth scheme:
+
+The conversions below cover the *stock* Katana schemes. A scheme implemented by the application
+itself — a type deriving from `Microsoft.Owin.Security.Infrastructure.AuthenticationHandler<TOptions>`,
+usually with its own `AuthenticationMiddleware<TOptions>` and `IAppBuilder.Use...` extension — has no
+`Add*` counterpart to convert to. Route it to `migrating-owin-authentication-handler-to-core`, which
+covers deriving from the Core `AuthenticationHandler<TOptions>` and registering it with `AddScheme`.
 
 #### Cookie Authentication
 
@@ -301,6 +310,23 @@ The auto-generated `/signalr/hubs` proxy no longer exists. Client method names a
 
 ### Step 5: Convert Custom OWIN Middleware
 
+**Stop before converting an authentication middleware.** `AuthenticationMiddleware<TOptions>` derives
+from `OwinMiddleware`, so a custom authentication scheme looks exactly like the middleware this step
+converts — and wrapping it as `UseMiddleware<T>()` compiles, runs, and never authenticates anything,
+because `[Authorize]` resolves schemes from the authentication scheme registry rather than from the
+pipeline. When any of the following hold, stop converting the type here, load the
+`migrating-owin-authentication-handler-to-core` skill, and port it by following that skill:
+
+- The type derives from `Microsoft.Owin.Security.Infrastructure.AuthenticationMiddleware<TOptions>`
+  rather than from `OwinMiddleware` directly.
+- It is paired with a type deriving from
+  `Microsoft.Owin.Security.Infrastructure.AuthenticationHandler<TOptions>`.
+- Its options type derives from `Microsoft.Owin.Security.AuthenticationOptions`.
+
+Such a type becomes an authentication scheme registered with `AddScheme`, not a middleware
+registration. Do not leave it unported — porting it is that skill's job, not a step to skip.
+Everything below applies only to genuine pipeline middleware.
+
 For each custom `OwinMiddleware` subclass, convert to ASP.NET Core middleware. The core pattern change is constructor injection of `RequestDelegate` replacing the `OwinMiddleware` base class:
 
 **Before** — OWIN middleware:
@@ -366,6 +392,7 @@ Register in `Program.cs` with `app.UseMiddleware<RequestTimingMiddleware>();`.
 | `IAppBuilder` | `IApplicationBuilder` (via `WebApplication`) |
 | `app.Use()` (OWIN delegate) | `app.Use()` (Core delegate) or `app.UseMiddleware<T>()` |
 | `OwinMiddleware` | Middleware class with `RequestDelegate` |
+| `AuthenticationHandler<TOptions>` / `AuthenticationMiddleware<TOptions>` (custom scheme) | `AuthenticationHandler<TOptions>` + `AddScheme<TOptions, THandler>()` — see `migrating-owin-authentication-handler-to-core` |
 | `IOwinContext` | `HttpContext` |
 | `Startup.Configuration(IAppBuilder)` | `Program.cs` pipeline |
 | `[assembly: OwinStartup]` | Not needed — `Program.cs` is the entry point |
@@ -383,8 +410,9 @@ Register in `Program.cs` with `app.UseMiddleware<RequestTimingMiddleware>();`.
 - No `Microsoft.Owin.*`, `Owin`, or `Microsoft.AspNet.SignalR` package references remain
 - No `IAppBuilder`, `IOwinContext`, `OwinMiddleware`, or `OwinStartup` references in code
 - Authentication uses ASP.NET Core `AddAuthentication()` service pattern
+- Every custom `AuthenticationHandler<TOptions>` / `AuthenticationMiddleware<TOptions>` pair was routed to `migrating-owin-authentication-handler-to-core` and registered with `AddScheme`, not converted here into a `UseMiddleware<T>()` call
 - SignalR hubs use `Microsoft.AspNetCore.SignalR` with `SendAsync` pattern
 - SignalR client uses `@microsoft/signalr` instead of `jquery.signalR`
-- Custom middleware uses `RequestDelegate` and `InvokeAsync(HttpContext)` pattern
+- Every remaining pipeline middleware — that is, every `OwinMiddleware` subclass other than the authentication ones routed away above — uses `RequestDelegate` and `InvokeAsync(HttpContext)`
 - All middleware is registered in `Program.cs`
 - Project builds without errors

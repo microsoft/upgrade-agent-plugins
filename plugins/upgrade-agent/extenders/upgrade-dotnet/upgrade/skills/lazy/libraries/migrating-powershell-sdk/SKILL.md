@@ -6,9 +6,13 @@ description: >
   PowerShell Reference Assemblies or GAC references with the cross-platform
   System.Management.Automation NuGet package. Use ONLY when the legacy Windows PowerShell SDK
   has been flagged as obsolete or deprecated and must be replaced — not for version-bump
-  scenarios where existing PowerShell packages are still supported. Triggers for "migrate
-  PowerShell SDK", "upgrade cmdlet project", "PowerShellStandard.Library", project files
-  (.csproj, .vbproj, .fsproj) with PowerShell references, and .psd1 module manifests.
+  scenarios where existing PowerShell packages are still supported. Scope is binary cmdlet
+  projects: this skill retargets a compiled project and does NOT edit PowerShell script files.
+  Loose .ps1/.psm1 scripts, and the 5.1-to-7 script breaks they contain, belong to the
+  powershell-5.1-to-7-upgrade scenario instead. Triggers for "migrate PowerShell SDK",
+  "upgrade cmdlet project", "PowerShellStandard.Library", project files
+  (.csproj, .vbproj, .fsproj) with PowerShell references, and .psd1 module manifests that
+  ship alongside such a project.
 metadata:
   discovery: lazy
   traits: .NET|CSharp|VisualBasic|DotNetCore
@@ -19,6 +23,8 @@ metadata:
 ## Overview
 
 Migrate PowerShell cmdlet projects from .NET Framework (Windows PowerShell 5.1) to modern .NET (.NET 6+). The core change is replacing the Windows PowerShell reference assembly with the cross-platform `System.Management.Automation` NuGet package. Most code remains unchanged because the SDK types (`PSCmdlet`, `Cmdlet`, `PSObject`, attributes) are identical across both packages.
+
+**Scope.** This skill retargets the *project*. It does not read or edit `.ps1`/`.psm1` files, so it will not find the script-level 5.1 → 7 breaks — removed cmdlets, snap-ins, WMI, encoding defaults. If the repository also carries loose PowerShell scripts that must run on PowerShell 7, those are the `powershell-5.1-to-7-upgrade` scenario's work, not this skill's.
 
 ## Package Reference Changes
 

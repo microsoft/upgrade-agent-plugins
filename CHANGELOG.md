@@ -4,6 +4,37 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.485] - 2026-09-03
+
+### Added
+
+- New PowerShell 5.1 to 7 upgrade scenario, backed by eight new skills covering compatibility scanning, analyzer-finding triage, Windows-only modules, removed snap-ins, WMI to CIM, Exchange Management Shell, event log to `Get-WinEvent`, and mechanical fixups.
+- New `migrating-owin-authentication-handler-to-core` skill for porting custom OWIN authentication handlers to ASP.NET Core.
+- The agent now captures a build baseline before assessment, so pre-existing build failures are no longer attributed to the upgrade.
+- The PowerShell 5.1 to 7 scenario is now listed on the VS Code Marketplace listing.
+
+### Changed
+
+- Updated the embedded skills: shell-neutral command snippets and clearer NETSDK1045 guidance, a refreshed .NET version upgrade scenario, updates to the OWIN cookie, OAuth-to-JWT, and OpenID Connect migration skills, refreshed PowerShell SDK and MVC guidance, and clearer project build and SDK-style conversion steps.
+- The Upgrade Dashboard now renders from a single React root, and its primary tab strip implements the full ARIA tabs pattern.
+- Batched review and the solution sweep now run outside the per-task loop.
+- Worker command execution is now bounded, and the orchestrator no longer re-waits indefinitely.
+- The PostToolUse hook now matches only read tools.
+- Updated the bundled TypeScript extender to 0.1.11 and the GitHub Copilot SDK to 1.0.11.
+
+### Removed
+
+- The `show_scenario_links` MCP App.
+
+### Fixed
+
+- Internal LLM calls now work in the GitHub Copilot App, so task start, scenario discovery, and skill ranking behave correctly there.
+- Package-backed DLL references are now detected when the reference path is supplied through an MSBuild property indirection.
+- packages.config to PackageReference conversion now preserves package consumption semantics.
+- Task progress now counts every row in `tasks.md`, not just leaf rows.
+- The Overview's task-breakdown note no longer reappears once a run has finished.
+- The plugin PostToolUse hook no longer fires against a relative path outside the CLI.
+
 ## [1.1.441] - 2026-08-20
 
 ### Added

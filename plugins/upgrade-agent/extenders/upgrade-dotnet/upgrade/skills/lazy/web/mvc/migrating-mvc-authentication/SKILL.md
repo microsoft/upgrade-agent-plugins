@@ -153,6 +153,7 @@ Categorize findings into one or more paths:
 | OWIN OAuth/JWT middleware | → See `migrating-owin-oauth-to-jwt` |
 | OWIN cookie middleware | → See `migrating-owin-cookie-auth` |
 | OWIN OpenID Connect | → See `migrating-owin-openid-connect` |
+| Custom OWIN authentication scheme (a type deriving from the Katana `AuthenticationHandler<TOptions>`, usually with its own `AuthenticationMiddleware<TOptions>` and `IAppBuilder` extension) | → See `migrating-owin-authentication-handler-to-core` |
 | ASP.NET Identity (IdentityDbContext, UserManager) | → See `migrating-aspnet-identity` |
 
 Projects often combine multiple mechanisms (e.g., Forms Auth + Membership + Role Provider). Apply each relevant path.

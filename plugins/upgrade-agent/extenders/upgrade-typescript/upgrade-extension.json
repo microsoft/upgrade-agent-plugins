@@ -1,7 +1,7 @@
 {
   "id": "upgrade-typescript",
   "displayName": "TypeScript / JavaScript Upgrade",
-  "version": "0.1.6",
+  "version": "0.1.11",
   "mcp": {
     "command": "npx",
     "args": [

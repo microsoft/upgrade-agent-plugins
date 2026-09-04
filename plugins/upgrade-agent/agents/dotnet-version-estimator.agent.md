@@ -49,7 +49,7 @@ predict_token_usage(model_ids: ["claude-opus-4.6",       // compare several mode
 ```
 
 Use the canonical lower-cased `<family>-<version>` id (the family keeps any `mini` / `codex` /
-`pro` variant suffix), e.g. `claude-opus-4.6`, `claude-sonnet-4.5`, `gpt-5.4`. When the
+`pro` variant suffix), e.g. `claude-opus-4.6`, `claude-sonnet-5`, `gpt-5.4`. When the
 Orchestrator passed model ids, forward them. When it did not, omit `model_ids` — the two
 reference models (`claude-opus-4.6` + `gpt-5.4`) are forecast so the user gets a side-by-side
 comparison.

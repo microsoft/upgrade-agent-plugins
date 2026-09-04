@@ -1160,6 +1160,11 @@ async function computeSnapshot(repoRoot, resolution, force = false) {
     tasks,
     plan,
     diagnostics,
+    // Read inline rather than via a module-level const, matching the
+    // UPGRADE_AGENT_DASHBOARD_REPO / _EXTENSION_PATH / _SESSION_ID reads in
+    // buildDiagnostics. Exactly "1" — anything else leaves the affordance off,
+    // so a stray "true" or "0" cannot switch on a debug surface (#786).
+    diagnosticsEnabled: process.env.UPGRADE_AGENT_DASHBOARD_DIAGNOSTICS === "1",
     scenarioInstructions,
     generatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
@@ -1802,6 +1807,7 @@ data: ${JSON.stringify(data)}
     res.writeHead(404);
     res.end("not found");
   }
+  let listening = null;
   const server = http.createServer((req, res) => {
     handleRequest(req, res).catch((err) => {
       try {
@@ -1818,16 +1824,19 @@ data: ${JSON.stringify(data)}
     sendEventToInstance,
     closeInstance,
     stopPolling,
-    async listen() {
-      await new Promise((resolve) => server.listen(port, host, () => resolve()));
-      const addr = server.address();
-      const resolvedPort = typeof addr === "object" && addr ? addr.port : port;
-      return {
-        port: resolvedPort,
-        url: `http://${host}:${resolvedPort}`
-      };
+    listen() {
+      listening ??= new Promise((resolve) => server.listen(port, host, () => resolve())).then(() => {
+        const addr = server.address();
+        const resolvedPort = typeof addr === "object" && addr ? addr.port : port;
+        return {
+          port: resolvedPort,
+          url: `http://${host}:${resolvedPort}`
+        };
+      });
+      return listening;
     },
     async close() {
+      listening = null;
       stopPolling();
       for (const subs of instanceSubscribers.values()) {
         for (const res of subs) {
@@ -2541,7 +2550,6 @@ var dashboardServer = createDashboardServer({
     });
   }
 });
-var { url: baseUrl } = await dashboardServer.listen();
 var canvas = createCanvas({
   id: "dashboard",
   displayName: "Upgrade Agent Dashboard",
@@ -2612,6 +2620,7 @@ var canvas = createCanvas({
   ],
   async open(context) {
     const { instanceId, input } = context;
+    const { url: baseUrl } = await dashboardServer.listen();
     await ensureResolvedRepo(context.session?.workingDirectory);
     const fields = inputFields(input);
     const initialPanel = isValidPanel(fields?.panel) ? fields.panel : "overview";
