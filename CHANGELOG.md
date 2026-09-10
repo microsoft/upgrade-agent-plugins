@@ -4,6 +4,31 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.514] - 2026-09-09
+
+### Added
+
+- Extenders can now extend a scenario they do not own, by contributing `scenarioExtension` skills to it.
+- Extender sub-agents now ship inside the CLI plugin and the VS Code extension, so extender-contributed workers are available without a separate install.
+
+### Changed
+
+- Refreshed bundled front-end and tooling dependencies across the VS Code extension and the dashboard.
+
+### Fixed
+
+- MCP sampling is now bounded, so a host that never answers no longer stalls the request indefinitely.
+- Cache-root failures are now attributed correctly when locating the Copilot CLI.
+- Inputs to the dependency explanation relay are now validated.
+- The YARP scaffold now uses aligned package versions and initializes its launch settings correctly.
+- Plugin version lookup now works for the Agency plugin layout.
+- Arrow-key handling in the dashboard's canvas sub-tabs now works as expected.
+
+### Removed
+
+- Reverted the pre-assessment build baseline added in 1.1.485; pre-existing build failures are no longer separated from upgrade failures.
+- Reverted running batched review and the solution sweep outside the per-task loop; both run inside the loop again.
+
 ## [1.1.485] - 2026-09-03
 
 ### Added

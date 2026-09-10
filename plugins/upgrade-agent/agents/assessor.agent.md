@@ -45,11 +45,15 @@ you need; do not assume prior conversation.
    resolving each path against the skill root. Also read `scenario-instructions.md` if
    present. If you need domain guidance not covered there, load it with
    `get_instructions(kind='skill', query='...')`.
-2. **Run the analysis tools** the assessment skill prescribes — the language/scenario
+2. **Load extension guidance** with
+   `get_instructions(kind='scenario-extension', query='Assessment')` — **every run**; it
+   returns "none apply" when there are none. Fold what it returns into the assessment you
+   write rather than reporting it separately.
+3. **Run the analysis tools** the assessment skill prescribes — the language/scenario
    assessment tool, dependency-ordering and project-dependency tools, dependency-version
    lookups, targeted symbol/API-shape analysis, and toolchain validation — whichever the
    skill names. Follow the skill's tool ordering — it is binding, not advisory.
-3. **Write the assessment artifact** the skill specifies (typically
+4. **Write the assessment artifact** the skill specifies (typically
    `{workflow_folder}/assessment.md`) with `edit`. Keep the artifact format exactly as
    the skill defines it — the artifacts contract is unchanged.
 

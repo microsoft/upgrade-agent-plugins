@@ -2105,12 +2105,18 @@ function isRecord6(value) {
 function readPluginVersion(startDir, readFile = (p) => readFileSync2(p, "utf8")) {
   let dir = startDir;
   for (let depth = 0; depth < MAX_MANIFEST_LOOKUP_DEPTH; depth += 1) {
-    try {
-      const parsed = JSON.parse(readFile(path6.join(dir, "plugin.json")));
-      if (isRecord6(parsed) && typeof parsed.version === "string" && parsed.version.trim() !== "") {
-        return parsed.version.trim();
+    const manifests = [
+      path6.join(dir, ".claude-plugin", "plugin.json"),
+      path6.join(dir, "plugin.json")
+    ];
+    for (const manifest of manifests) {
+      try {
+        const parsed = JSON.parse(readFile(manifest));
+        if (isRecord6(parsed) && typeof parsed.version === "string" && parsed.version.trim() !== "") {
+          return parsed.version.trim();
+        }
+      } catch {
       }
-    } catch {
     }
     const parent = path6.dirname(dir);
     if (parent === dir) {
@@ -2339,6 +2345,40 @@ function derivePhase(state) {
   return null;
 }
 
+// lib/explain-dependency.ts
+var forbiddenPackageNameCharacters = /[^A-Za-z0-9._-]/;
+function isRelayIdentifier(value, forbiddenCharacters) {
+  return typeof value === "string" && value.length > 0 && !forbiddenCharacters.test(value);
+}
+function validateDependencyPackageName(packageName) {
+  if (!isRelayIdentifier(packageName, forbiddenPackageNameCharacters)) {
+    return { ok: false, code: "invalid_package", message: "packageName must be a nonempty package identifier containing only ASCII letters, digits, dots, underscores, or hyphens." };
+  }
+  return { ok: true, packageName };
+}
+function buildDependencyExplanation(packageName, dependencies) {
+  const selection = validateDependencyPackageName(packageName);
+  if (!selection.ok) {
+    return selection;
+  }
+  if (!dependencies) {
+    return { ok: false, code: "dependency_report_unavailable", message: "No dependency report is available. Refresh the dashboard and try again." };
+  }
+  const normalizedName = selection.packageName.toLowerCase();
+  const dependency = dependencies.packages.find((candidate) => isRelayIdentifier(candidate.name, forbiddenPackageNameCharacters) && candidate.name.toLowerCase() === normalizedName);
+  if (!dependency) {
+    return { ok: false, code: "dependency_not_found", message: "The selected package is no longer in the dependency report. Refresh the dashboard and try again." };
+  }
+  const targetFramework = isRelayIdentifier(dependencies.targetFramework, /[^A-Za-z0-9._+,=-]/) ? dependencies.targetFramework : "(unknown)";
+  const compatibility = dependency.isCompatible === false ? "incompatible" : dependency.isCompatible === true ? "compatible" : "unknown";
+  const recommendation = isRelayIdentifier(dependency.recommendedVersion, /[^A-Za-z0-9.+-]/) ? ` Recommended version: ${dependency.recommendedVersion}.` : "";
+  return {
+    ok: true,
+    packageName: dependency.name,
+    prompt: `Explain why the NuGet package \`${dependency.name}\` is reported as ${compatibility} for target framework \`${targetFramework}\` in the upgrade dependency report.${recommendation} Suggest concrete steps to upgrade or replace it. (Requested from the Upgrade Agent Dashboard canvas.)`
+  };
+}
+
 // extension.ts
 var INDEX_HTML_PATH = resolveCanvasIndexHtml(import.meta.url);
 function inputFields(input) {
@@ -2423,19 +2463,17 @@ actionHandlers.set("switch_mode", async ({ input }) => {
 });
 actionHandlers.set("explain_dependency", async (context) => {
   const currentSession = requireSendSession();
-  const packageName = (inputFields(context.input)?.packageName ?? "").toString().trim();
-  if (!packageName) {
-    throw new CanvasError("invalid_package", "packageName is required.");
+  const selection = validateDependencyPackageName(inputFields(context.input)?.packageName);
+  if (!selection.ok) {
+    throw new CanvasError(selection.code, selection.message);
   }
   const state = await getSnapshotForResolution(context);
-  const dependency = state.dependencies?.packages?.find((candidate) => candidate.name === packageName);
-  const targetFramework = state.dependencies?.targetFramework ?? "(unknown)";
-  const compatibility = dependency?.isCompatible === false ? "incompatible" : dependency?.isCompatible === true ? "compatible" : "unknown";
-  const recommendation = dependency?.recommendedVersion ? ` Recommended version: ${dependency.recommendedVersion}.` : "";
-  await currentSession.send(
-    `Explain why the NuGet package \`${packageName}\` is reported as ${compatibility} for target framework \`${targetFramework}\` in the upgrade dependency report.${recommendation} Suggest concrete steps to upgrade or replace it. (Requested from the Upgrade Agent Dashboard canvas.)`
-  );
-  return { ok: true, status: `Asked the agent to explain ${packageName}.` };
+  const explanation = buildDependencyExplanation(selection.packageName, state.dependencies);
+  if (!explanation.ok) {
+    throw new CanvasError(explanation.code, explanation.message);
+  }
+  await currentSession.send(explanation.prompt);
+  return { ok: true, status: `Asked the agent to explain ${explanation.packageName}.` };
 });
 actionHandlers.set("open_markdown_editor", async (context) => {
   const currentSession = requireSession();

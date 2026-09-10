@@ -75,6 +75,9 @@ Want me to scan your solution for other modernization opportunities?
 ```
 
 **Formatting rules:**
+- If the user accepts the report offer, **dispatch the ReportGenerator worker** — do not write the
+  report yourself and do not load a report skill. Pass the scenario folder, scenario name, and the
+  detected signals. Relay the path it returns.
 - If the user accepts the discovery offer, dispatch the **ScenarioDiscovery** worker and present its cards verbatim
 - Each suggestion gets a relevant emoji, bold title, description paragraph, and a CTA question
 - Separate items with `---`

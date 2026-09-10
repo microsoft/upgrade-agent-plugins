@@ -56,9 +56,9 @@ uncommitted work.
 
 The repo path, the path to `scenario-instructions.md`, and the **build command for this
 stack**. The Orchestrator may also pass a known `behind` count (it pre-checks divergence in
-the commit dispatch), whether this is the last task, the **build baseline path**, and — on an
-on-demand sync — a user override such as "sync with rebase". A supplied `behind` count tells you a
-sync is worth running; still run step 3 yourself to establish `compare_ref` and `base`.
+the commit dispatch), whether this is the last task, and — on an on-demand sync — a user
+override such as "sync with rebase". A supplied `behind` count tells you a sync is worth
+running; still run step 3 yourself to establish `compare_ref` and `base`.
 
 **Rehydrate from disk.** Read the `## Source Control` block of `scenario-instructions.md`
 yourself for `Source Branch`, `Source Type`, `Working Branch`, `Branch Sync` (strategy),
@@ -189,20 +189,10 @@ After a clean working tree, validate before declaring success.
    merged/rebased) into the `## Source Control` block of `scenario-instructions.md`, then
    report success.
 3. **Fail** → the source branch likely introduced code needing the same upgrade pattern.
-   First rule out a failure that predates everything: if your dispatch supplied a **build baseline
-   path**, `read` it. A project recorded there as `failed` is **pre-existing** only when **every**
-   error code you are seeing is already in its `codes` — the sync did not cause it, so it must not
-   trigger a fix or a rollback. One code that is not in that list, or a project the baseline never
-   built, is a failure you must treat as caused by the sync.
-   **Use the supplied path verbatim and never guess a default.** A repo with a custom output path
-   does not keep the baseline at `.github/upgrades/`, and a read that finds nothing looks identical
-   to "no baseline" — which sends you down the rollback path in step 7 and discards a cleanly merged
-   source branch over a failure that predates it. If no path was supplied, say so in your return
-   message so the Orchestrator can see why the failure was attributed to the sync.
-   Then make **one** focused attempt to fix it (e.g. update a target-framework/runtime reference,
-   adapt to a renamed API). If that single attempt succeeds, commit it on top with the message
-   `sync: fix build after merging {source_branch}`, update `Last Sync Commit`, and report success.
-   If it fails, or would require open-ended work, go to step 7.
+   Make **one** focused attempt to fix it (e.g. update a target-framework/runtime reference,
+   adapt to a renamed API). If that single attempt succeeds, commit it on top with the
+   message `sync: fix build after merging {source_branch}`, update `Last Sync Commit`, and
+   report success. If it fails, or would require open-ended work, go to step 7.
 
 Never iterate fixes. One attempt, then rollback.
 
