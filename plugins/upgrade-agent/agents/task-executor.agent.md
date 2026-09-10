@@ -96,8 +96,11 @@ is **not** sufficient:
 1. **Read the forwarded skills first.** Be generous: if a skill covers ANY part of your
    change, read its `skill.md` before touching code. Skill guidance (tool choice, patterns,
    **ordering**, build/test commands for this stack) is **binding** — follow it as a
-   checklist, don't execute from memory. If you hit something the loaded skills don't cover
-   (an unanticipated technology, or repeated failures a basic fix won't clear),
+   checklist, don't execute from memory. Also call
+   `get_instructions(kind='scenario-extension', query='Execution')` on **every task**; it
+   returns "none apply" when there are none. Apply what it returns like skill guidance.
+   Separately, if you hit something the loaded skills don't cover (an unanticipated
+   technology, or repeated failures a basic fix won't clear),
    `get_instructions(kind='skill', query='<topic>')` mid-task.
 2. **Research → enrich `task.md` — HARD GATE.** Before editing any code, investigate scope
    (affected units, dependencies current → target, patterns) and write your findings into
@@ -189,25 +192,15 @@ is **not** sufficient:
    nothing for several minutes as **stuck, not slow** — stop it and report. After a
    scaffolding or generation command, **verify the artifact exists** rather than trusting the
    exit code.
-   **A failure you did not cause is not yours to fix.** If your dispatch supplied a **build baseline
-   path**, `read` it before chasing an error. A project recorded there as `failed` is pre-existing
-   only when **every** error code you are seeing is already in its `codes` — then record it in
-   `progress-details.md` and move on. **One code that is not in that list makes the failure yours**,
-   even in an already-red project. So does a project the baseline never built. Use the supplied path
-   verbatim rather than guessing a default location — a repo with a custom output path keeps the
-   baseline elsewhere, and a guess that reads nothing turns every pre-existing failure into work.
 7. **Failure handling — self-dispatch the inner loop, escalate the hard cases.**
    - **Tight inner loop (do it yourself, nested).** For an ordinary build/test failure in
      your task's scope, you may dispatch `BuildValidator` (to pin down what's broken) or
-     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool, and
-     `TaskBreaker` when step 4 fires. Their heavy
+     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool. You
+     may likewise dispatch `CodeReviewer` for a focused review of the changes you just made
+     when a quality check adds value, and `TaskBreaker` when step 4 fires. Their heavy
      diagnostic/review/planning context stays in *their* processes and returns you a distilled
      result — keeping that churn out of the Orchestrator's long-lived context. Require a
      compact return from them and fold it into your own work.
-     **Do not dispatch `CodeReviewer`.** Review is batched at the phase boundary by the
-     Orchestrator, over the whole phase's changes. You are dispatched once per task, so a
-     nested review here is a per-task review by another name — the cadence the Orchestrator
-     just moved out of its own loop, and the same cost multiplied by the task count.
    - **Escalate deep / cross-cutting failures.** If a failure spans beyond your task
      (touches other projects/tasks, needs a scope or plan change), or you've tried the same
      fix 3+ times and a nested `ErrorFixer` didn't clear it, **stop and report it** — the

@@ -53,18 +53,11 @@ the files already changed, `scenario-instructions.md`, and any relevant skill pa
 
 ## What to do
 
-0. **Check whether the failure predates the upgrade.** If your dispatch supplied a **build baseline
-   path**, `read` it first. A project recorded there as `failed` counts as pre-existing only when
-   **every** error code you are seeing is already in its `codes` — then return `STATUS: ready`
-   reporting it as pre-existing and fix nothing. This is the cheapest possible outcome and the one
-   this worker most often gets wrong. **A single code that is not in that list makes the failure
-   yours**, even in an already-red project — the upgrade can break a broken project further. A
-   project the baseline never built, or no baseline path in your dispatch, is also yours.
-   Use the supplied path verbatim and do not fall back to a guessed one: the baseline is repo-scoped
-   but a repo with a custom output path does not keep it at the default location, so a guess reads
-   nothing and silently turns every pre-existing failure into work.
 1. **Read** the forwarded context + skills. Load domain guidance as needed with
-   `get_instructions(kind='skill', query='...')`.
+   `get_instructions(kind='skill', query='...')`. Once a failure is yours, also call
+   `get_instructions(kind='scenario-extension', query='Execution')` — it returns "none apply"
+   when there are none. Call it before diagnosing: whether a missing type is a typo or a
+   replaced API is often exactly what it tells you.
 2. **Diagnose** using the broader read tools: dependency-graph analysis (what references
    the broken symbol/unit), symbol/API-shape analysis, assessment queries (known flags),
    and dependency-version lookups (version conflicts). Use feed authentication for
@@ -72,9 +65,8 @@ the files already changed, `scenario-instructions.md`, and any relevant skill pa
 3. **Fix** with `edit`, targeting the root cause. Prefer the pattern the relevant skill
    prescribes over ad-hoc guesses.
 4. **Re-validate** with `execute` (run the stack's build/test command on affected units).
-   Iterate until green — or until only pre-existing failures remain — or until you hit a genuine
-   blocker that needs an Orchestrator/user decision. Fix all warnings you touch; never suppress
-   without recorded approval.
+   Iterate until green or until you hit a genuine blocker that needs an Orchestrator/user
+   decision. Fix all warnings you touch; never suppress without recorded approval.
 5. **Append to `progress-details.md`** — the fix, root cause, and re-validation result.
 
 ## What to return (compact, structured)

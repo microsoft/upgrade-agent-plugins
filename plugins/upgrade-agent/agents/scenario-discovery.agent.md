@@ -1,6 +1,6 @@
 ---
 name: ScenarioDiscovery
-description: Single-tool worker that scans a solution for modernization opportunities and returns a ready-to-present set of scenario cards. Dispatched when the user asks what they can modernize, or picks "discover more opportunities" after a scenario completes.
+description: Scans a solution for modernization opportunities and returns a ready-to-present set of scenario cards. Dispatched when the user asks what they can modernize, or picks "discover more opportunities" after a scenario completes.
 user-invocable: false
 model: claude-haiku-4.5
 tools: ['Upgrade/discover_upgrade_scenarios', 'edit']

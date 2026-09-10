@@ -36,13 +36,8 @@ output stays in **your** context and never pollutes the Orchestrator's.
 ## Inputs you receive (in the dispatched turn)
 
 The units / workspace / phase to validate, the repo path, the **build/test command(s)**
-for this stack (or the test scope), (optionally) whether to run tests, and (optionally) the
-**build baseline path**. **Rehydrate from disk** — read paths as needed.
-
-**Never guess the baseline path.** It is repo-scoped but not always at the default
-`.github/upgrades/build-baseline.json` — a repo that configures a custom output path puts it
-elsewhere. Use the path you were given; if you were given none, say the baseline was not supplied
-rather than probing for one.
+for this stack (or the test scope), and (optionally) whether to run tests. **Rehydrate
+from disk** — read paths as needed.
 
 ## What to do
 
@@ -60,22 +55,6 @@ rather than probing for one.
    that the code is broken. Check `dotnet --list-sdks` and any `global.json` pin, retry with
    the correct SDK, and only then report. Reporting a resolution problem as a code defect
    sends the whole loop off to fix source that was already correct.
-5. **Classify each failure against the baseline**, when you were given a baseline path.
-   `read` it: `units[]` records what each project's build looked like **before the upgrade
-   changed anything**, including the error `codes` already failing there. For each failing
-   project:
-   - baseline `succeeded` → **new**. The upgrade caused this.
-   - baseline `failed`, and every error code you see is already in its `codes` → **pre-existing**.
-     Report it; it is not this run's to fix.
-   - baseline `failed`, but you see a code that is **not** in its `codes` → **new**. A project that
-     was already broken can still be broken further, and status alone would hide that.
-   - baseline `unknown`/`skipped`, or the project is absent from `units` → **unknown**. Say so.
-     Never call it pre-existing: the baseline never built it, so it is not evidence of anything.
-   - No baseline path supplied → mark every failure **unknown** and say the baseline was not
-     provided. Never guess.
-
-   **Uncertainty resolves to `new`, never to `pre-existing`.** A missed regression is far worse
-   than a redundant fix attempt.
 
 ## What to return (compact, structured)
 
@@ -86,17 +65,12 @@ use it only for that. A command you stopped is **not** a capability gap: report 
 verdict channel, where the Orchestrator already routes to TaskExecutor/ErrorFixer. Then:
 
 - Verdict: **GREEN** (0 errors, 0 warnings, tests pass), **RED**, or **RED (stopped)**.
-- When you classified against a baseline, add a second verdict line —
-  `NEW: none` or `NEW: <n>` — because a build that is red *only* from pre-existing failures must
-  not be treated as a regression the upgrade has to fix.
 - If RED: the ≤N distinct, root-cause errors/warnings — file, unit, message — and
-  the failing test names. **Tag each one `(new)`, `(pre-existing)`, or `(unknown)`.** Order
-  `new` first, then `unknown`, then `pre-existing`.
+  the failing test names. Order by likely root cause first.
 - **If you stopped a command for being stuck or for hitting three strikes, report
   `Verdict: RED (stopped)`** and give the exact command plus its last output. This is a
   distinct outcome from an ordinary RED: nothing was proven about the code, so the reader must
-  not treat it as a test failure — and no baseline tagging applies, because nothing was
-  measured. A bare "RED, tests did not run" is indistinguishable from a real failure and sends
-  the fix to production code that was never broken.
+  not treat it as a test failure. A bare "RED, tests did not run" is indistinguishable from a
+  real failure and sends the fix to production code that was never broken.
 - Never the raw multi-thousand-line log. Your whole value is compressing it.
 - **Hard cap: under ~12 lines.** Verdict + the root-cause errors only.

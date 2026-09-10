@@ -1,6 +1,6 @@
 ---
 name: TaskBreaker
-description: Decides how to split one task that is too coarse to execute in a single pass, and registers the subtasks itself. Nested by TaskExecutor mid-execution, or dispatched by the Orchestrator when the user asks for a specific task to be split.
+description: Decides how to split one task that is too coarse to execute in a single pass, and registers the subtasks itself. Dispatched mid-execution when a task proves too coarse, or when the user asks for a specific task to be split.
 user-invocable: false
 tools: ['Upgrade/*', 'read', 'search', 'edit']
 ---
@@ -68,6 +68,11 @@ without it, and you will be deciding on core triggers alone.
 
 ## Step 1 — Validate the request
 
+**First, load extension breakdown rules** with
+`get_instructions(kind='scenario-extension', query='TaskBreakdown')` — **every run**; it returns
+"none apply" when there are none. Load it before judging atomicity: it can both force a split and
+forbid one.
+
 Your caller decides *whether to ask*; you decide *whether it was right*. Run the task through
 every trigger below — **any one firing means the task is not atomic**. Complexity alone is not
 a trigger: a complex but well-scoped single-unit change is atomic.
@@ -89,7 +94,11 @@ a trigger: a complex but well-scoped single-unit change is atomic.
    verification point is a task boundary.
 7. **Context isolation** — two pieces need completely different deep context (different
    projects or stacks); separate tasks keep execution focused.
-8. **Skill-contributed / user hint** — see the hint protocol below.
+8. **Skill-contributed / user hint** — see the hint protocol below. An extension rule that a
+   unit "must move on its own" counts here.
+
+An extension rule that two units **must not be separated** outranks the triggers above: keep them
+in one task and return `STATUS: atomic` even if another trigger fired.
 
 If no trigger holds, return `STATUS: atomic` with one line on why the request doesn't stand.
 That is a legitimate, useful outcome — nested, the executor resumes with its research intact;
@@ -143,7 +152,8 @@ Created lazily on first task execution; persists across tasks:
 
 Check all skill sources for domain-specific strategies before falling back to the core ones:
 the scenario skill, the task's `<task_related_skills>`, and any other loaded skill with a
-`## Breakdown Strategies` or `## Decomposition Rules` section.
+`## Breakdown Strategies` or `## Decomposition Rules` section. Extension rules from Step 1 rank
+with skill-contributed strategies.
 
 **Core strategies** (always available):
 

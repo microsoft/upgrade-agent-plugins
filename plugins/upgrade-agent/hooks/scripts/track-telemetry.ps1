@@ -37,10 +37,11 @@ if ($inputJson) {
             
             # Match SKILL.md paths in known layouts:
             # 1) VS Code extension: .../extensions/ms-dotnettools.upgrade-agent-*/skills/**/SKILL.md
-            # 2) VS Code extension extender: .../extensions/ms-dotnettools.upgrade-agent-*/extenders/*/skills/**/SKILL.md
-            # 3) Plugin: .../upgrade/skills/**/SKILL.md
-            # 4) Plugin extender: .../extenders/*/upgrade/skills/**/SKILL.md
-            if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/(?:extenders/[^/]+/)?skills/.*/|/(?:extenders/[^/]+/)?upgrade/skills/.*/)[^/]+/SKILL\.md$') {
+            # 2) Plugin: .../upgrade/skills/**/SKILL.md
+            # 3) Either host's extenders: .../upgrade/*/skills/**/SKILL.md
+            #    (both hosts stage extenders under the same `upgrade`
+            #    prefix, so one alternative covers the VSIX and the CLI plugin)
+            if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/.*/|/upgrade/(?:[^/]+/)?skills/.*/)[^/]+/SKILL\.md$') {
                 # Extract skill name from the parent directory of SKILL.md
                 $skillName = Split-Path -Leaf (Split-Path -Parent $filePathNormalized)
                 

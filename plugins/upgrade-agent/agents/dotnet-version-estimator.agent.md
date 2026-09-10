@@ -1,6 +1,6 @@
 ---
 name: DotnetVersionEstimator
-description: Single-tool token-budget worker for the dotnet-version-upgrade scenario. Runs predict_token_usage once and returns a ready-to-present budget block. Dispatched only when the user explicitly asks for an estimate.
+description: Estimates the token budget for the dotnet-version-upgrade scenario and returns a ready-to-present budget block. Dispatched only when the user explicitly asks for an estimate.
 user-invocable: false
 model: claude-haiku-4.5
 tools: ['Upgrade/predict_token_usage']

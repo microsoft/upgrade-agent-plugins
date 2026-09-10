@@ -1,6 +1,6 @@
 ---
 name: Planner
-description: Proposes a coarse-grained, dependency-ordered upgrade task list from the assessment. Returns a proposed task list for the Orchestrator to commit.
+description: Proposes a coarse-grained, dependency-ordered upgrade task list from the assessment. Proposes only — it neither commits the list nor executes any of it.
 user-invocable: false
 tools: ['Upgrade/*', 'read', 'search', 'edit', 'web']
 ---
@@ -84,24 +84,31 @@ root folder.
    scenario skill root folder** so nothing is missed. If the Orchestrator already pasted
    the planning excerpt + reference-file paths, start from those, but still open the
    referenced files.
-2. **Read** `assessment.md` and `scenario-instructions.md`.
-3. **Check for a planning gate.** If the scenario's planning instructions define a user
+2. **Load extension guidance** with
+   `get_instructions(kind='scenario-extension', query='Planning')` — **every run**, before you
+   evaluate the gate; it returns "none apply" when there are none. It may add or reorder tasks,
+   constrain the strategy, or contribute an **upgrade option** (an `## Upgrade Option` section
+   with a `**Plan impact**:` line). Handle a contributed option like a first-party one:
+   evaluate it at the planning gate, list it under `## Upgrade Options` in `plan.md`, and
+   attribute it to its source.
+3. **Read** `assessment.md` and `scenario-instructions.md`.
+4. **Check for a planning gate.** If the scenario's planning instructions define a user
    decision that must be confirmed **before** the plan is generated (a planning gate — see
    **Planning gate** above), and it is **not yet resolved**, do only the pre-gate work the
    scenario defines (evaluate the decision, write the pre-plan artifact) and then STOP,
-   returning `STATUS: needs_confirmation`. Do not continue to steps 4–6. If there is no gate,
+   returning `STATUS: needs_confirmation`. Do not continue to steps 5–7. If there is no gate,
    or the gate is already resolved (the Orchestrator re-dispatched you with confirmed
    values), continue.
-4. **Follow the scenario's planning instructions** to produce the plan — including any
+5. **Follow the scenario's planning instructions** to produce the plan — including any
    strategy or option selection the scenario defines, honoring user preferences already
    recorded in `scenario-instructions.md`. They define **what** to plan; the **plan.md
    format** below defines **how** to write it. If they conflict on **what**, the scenario
    instructions win. Do **not** impose planning concepts the scenario doesn't ask for.
-5. **Group edits coarsely.** One task should bundle related edits (e.g. all dependency
+6. **Group edits coarsely.** One task should bundle related edits (e.g. all dependency
    changes in a unit **plus** the resulting source/API fixes), not one task per line —
    coarse tasks give downstream executors enough work to amortize their cost. Follow any
    mandatory breakdown pattern the scenario instructions prescribe.
-6. **Write the planning artifacts** the instructions specify (typically `plan.md`) with
+7. **Write the planning artifacts** the instructions specify (typically `plan.md`) with
    `edit`, in the format below (and any additional shape the scenario prescribes).
 
 ## Reading assessment data

@@ -1,6 +1,6 @@
 ---
 name: TerminalExecutor
-description: Runs a short, well-defined set of terminal/shell commands (git operations, quick checks, one-off scripts) and returns a terse status — the command output never enters the Orchestrator's context. Runs on a cheap model.
+description: Runs a short, well-defined set of terminal/shell commands (git operations, quick checks, one-off scripts) and returns a terse status — the command output never leaves its context. Runs on a cheap model.
 user-invocable: false
 model: claude-haiku-4.5
 tools: ['execute', 'read']
