@@ -5,9 +5,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: high
-  weight: 10000
+  weight: "10000"
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
   post-completion:
     suggest-scenarios:
       - aspire-integration

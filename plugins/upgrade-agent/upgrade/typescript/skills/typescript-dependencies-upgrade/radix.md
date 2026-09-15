@@ -197,10 +197,9 @@ apply only when crossing that `@radix-ui/themes` major.
 - The standard Phase 3 `typescript_compile_package` call still applies — do not skip it.
 - Re-run the `npm ls` dedupe check from step 5 after the final install. A single version of each
   shared internal is the signal that the cluster is coherent.
-- Call `typescript_validate_runtime` — REQUIRED. Radix is a headless UI
+- Invoke the `typescript-runtime-validation` skill in upgrade mode — REQUIRED. Radix is a headless UI
   library: focus management, dismiss/escape behavior, portal mounting, and the Themes token renames
-  regress at runtime with no compile error. Follow the Phase 3 rules in [SKILL.md](./SKILL.md) and
-  [runtime-validation.md](./runtime-validation.md).
+  regress at runtime with no compile error. Follow the Phase 3 rules in [SKILL.md](./SKILL.md).
 
 ## Telemetry
 

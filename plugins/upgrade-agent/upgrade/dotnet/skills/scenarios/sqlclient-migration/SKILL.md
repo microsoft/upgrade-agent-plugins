@@ -9,7 +9,7 @@ metadata:
   discovery: scenario
   importance: low
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # SqlClient Migration

@@ -83,7 +83,7 @@ npx ng build
 
 ### 4. After all Angular hops complete
 
-1. ⛔ **Runtime validation — REQUIRED.** Run runtime validation now (read [runtime-validation.md](./runtime-validation.md)). Do NOT return to the main workflow until runtime validation passes. Fix any errors before proceeding.
+1. ⛔ **Runtime validation — REQUIRED.** Invoke the `typescript-runtime-validation` skill in upgrade mode now. Do NOT return to the main workflow until runtime validation passes. Fix any errors before proceeding.
 
 2. **Return to the calling workflow** (SKILL.md) to continue with the remaining upgrade phases (TypeScript migration, non-Angular packages, etc.). When upgrading non-Angular dependency groups, **exclude** any groups that contain `@angular/*` or `@angular-devkit/*` packages — those are already upgraded.
 

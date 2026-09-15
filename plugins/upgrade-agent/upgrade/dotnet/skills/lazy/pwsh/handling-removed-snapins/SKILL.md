@@ -5,7 +5,7 @@ description: >
   do not exist in PowerShell 7.x. Provides the decision tree between module
   replacement, implicit remoting into a Windows PowerShell endpoint, and the
   Windows PowerShell compatibility layer. Use during the
-  powershell-5.1-to-7-upgrade scenario for the PSSnapin blocker bucket. For the
+  powershell-51-to-7-upgrade scenario for the PSSnapin blocker bucket. For the
   Exchange snap-in specifically, see migrating-exchange-management-shell.
 metadata:
   discovery: lazy

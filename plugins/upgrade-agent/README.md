@@ -43,6 +43,8 @@ upgrade-agent/
 │   ├── dotnet-version-estimator.agent.md
 │   ├── dotnet-version-scenario-initializer.agent.md
 │   ├── error-fixer.agent.md
+│   ├── jsts-dependabot-validation.agent.md
+│   ├── jsts-playwright-spec-author.agent.md
 │   ├── planner.agent.md
 │   ├── report-generator.agent.md
 │   ├── scenario-discovery.agent.md
@@ -53,8 +55,9 @@ upgrade-agent/
 │   └── upgrade.agent.md
 ├── assets/
 │   └── preview.png
-├── extensions/
-│   └── upgrade-agent-dashboard/
+├── com.github.copilot/
+│   └── extensions/
+│       └── upgrade-agent-dashboard/
 ├── hooks/
 │   └── scripts/
 │       ├── track-telemetry.ps1
@@ -177,11 +180,13 @@ upgrade-agent/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-autofac-to-dotnet-di/
 │   │   │   │   │   │   └── SKILL.md
-│   │   │   │   │   ├── migrating-azure-keyvault/
-│   │   │   │   │   │   └── SKILL.md
-│   │   │   │   │   ├── migrating-azure-servicebus/
-│   │   │   │   │   │   └── SKILL.md
-│   │   │   │   │   ├── migrating-azure-storage/
+│   │   │   │   │   ├── migrating-azure-sdk-to-track2/
+│   │   │   │   │   │   ├── ref/
+│   │   │   │   │   │   │   ├── authentication.md
+│   │   │   │   │   │   │   ├── behavior-audit.md
+│   │   │   │   │   │   │   ├── management-plane.md
+│   │   │   │   │   │   │   ├── package-catalog.md
+│   │   │   │   │   │   │   └── track2-contract.md
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-bond-interfaces/
 │   │   │   │   │   │   └── SKILL.md
@@ -197,6 +202,11 @@ upgrade-agent/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-documentdb-to-cosmos/
 │   │   │   │   │   │   └── SKILL.md
+│   │   │   │   │   ├── migrating-federated-oidc-token-exchange/
+│   │   │   │   │   │   ├── ref/
+│   │   │   │   │   │   │   ├── providers.md
+│   │   │   │   │   │   │   └── worked-example.md
+│   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-newtonsoft-to-system-text-json/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-owin-authentication-handler-to-core/
@@ -207,6 +217,8 @@ upgrade-agent/
 │   │   │   │   │   ├── migrating-owin-cookie-auth/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-owin-oauth-to-jwt/
+│   │   │   │   │   │   ├── ref/
+│   │   │   │   │   │   │   └── entra-validation.md
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-owin-openid-connect/
 │   │   │   │   │   │   └── SKILL.md
@@ -243,6 +255,8 @@ upgrade-agent/
 │   │   │   │   │   ├── replacing-eventlog-with-winevent/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── scanning-powershell-compatibility/
+│   │   │   │   │   │   ├── ref/
+│   │   │   │   │   │   │   └── custom-rules.md
 │   │   │   │   │   │   ├── rules/
 │   │   │   │   │   │   │   └── PSCompatibilityRules.psd1
 │   │   │   │   │   │   ├── scripts/
@@ -268,6 +282,8 @@ upgrade-agent/
 │   │   │   │       │   ├── migrating-aspnet-identity/
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-authentication/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   └── membership.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-bundling/
 │   │   │   │       │   │   └── SKILL.md
@@ -286,6 +302,8 @@ upgrade-agent/
 │   │   │   │       │   ├── migrating-mvc-httpcontext/
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-logging/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   └── correlation-ids.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-model-binding/
 │   │   │   │       │   │   └── SKILL.md
@@ -304,6 +322,12 @@ upgrade-agent/
 │   │   │   │       │   ├── migrating-owin-to-aspnet-core/
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── scaffolding-yarp-proxy-project/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   ├── auth-setup.md
+│   │   │   │       │   │   │   ├── framework-headers.md
+│   │   │   │       │   │   │   ├── manual-scaffold.md
+│   │   │   │       │   │   │   ├── older-targets.md
+│   │   │   │       │   │   │   └── troubleshooting.md
 │   │   │   │       │   │   ├── tmpl/
 │   │   │   │       │   │   │   ├── auth/
 │   │   │   │       │   │   │   │   ├── README.REMOTEAUTH.md
@@ -420,7 +444,7 @@ upgrade-agent/
 │   │   │       │   ├── execution.md
 │   │   │       │   ├── planning.md
 │   │   │       │   └── SKILL.md
-│   │   │       ├── powershell-5.1-to-7-upgrade/
+│   │   │       ├── powershell-51-to-7-upgrade/
 │   │   │       │   ├── assessment.md
 │   │   │       │   ├── execution.md
 │   │   │       │   ├── planning.md
@@ -464,37 +488,48 @@ upgrade-agent/
 │   │           └── SKILL.md
 │   └── typescript/
 │       ├── skills/
-│       │   ├── create-eval-plan/
-│       │   │   ├── output-contains.md
-│       │   │   ├── per-project-type.md
-│       │   │   ├── plan-schema.md
-│       │   │   ├── recording.md
-│       │   │   ├── SKILL.md
-│       │   │   └── tests-assertion.md
+│       │   ├── framework-migration/
+│       │   │   ├── migrations/
+│       │   │   │   └── jasmine-karma-to-vitest.md
+│       │   │   └── SKILL.md
+│       │   ├── scenarios/
+│       │   │   └── jsts-dependabot/
+│       │   │       └── SKILL.md
 │       │   ├── typescript-compiler-upgrade/
 │       │   │   ├── 4to5.md
 │       │   │   ├── 5to6.md
 │       │   │   ├── 6to7.md
 │       │   │   ├── compiler-upgrade.md
 │       │   │   └── SKILL.md
-│       │   └── typescript-dependencies-upgrade/
-│       │       ├── react/
-│       │       │   ├── 17.md
-│       │       │   ├── 18.md
-│       │       │   └── 19.md
-│       │       ├── angular.md
-│       │       ├── generate-plan.md
-│       │       ├── i18next.md
-│       │       ├── karma-jasmine.md
-│       │       ├── monorepo.md
-│       │       ├── mui.md
-│       │       ├── peer-dependencies.md
-│       │       ├── radix.md
-│       │       ├── react.md
-│       │       ├── runtime-validation.md
+│       │   ├── typescript-dependencies-upgrade/
+│       │   │   ├── react/
+│       │   │   │   ├── 17.md
+│       │   │   │   ├── 18.md
+│       │   │   │   └── 19.md
+│       │   │   ├── angular.md
+│       │   │   ├── generate-plan.md
+│       │   │   ├── i18next.md
+│       │   │   ├── karma-jasmine.md
+│       │   │   ├── monorepo.md
+│       │   │   ├── mui.md
+│       │   │   ├── peer-dependencies.md
+│       │   │   ├── radix.md
+│       │   │   ├── react-hook-form.md
+│       │   │   ├── react.md
+│       │   │   ├── repair-validation-failures.md
+│       │   │   ├── SKILL.md
+│       │   │   ├── tanstack.md
+│       │   │   └── upgrade-packages.md
+│       │   └── typescript-runtime-validation/
+│       │       ├── output-contains.md
+│       │       ├── per-project-type.md
+│       │       ├── plan-authoring.md
+│       │       ├── plan-schema.md
+│       │       ├── recording.md
 │       │       ├── SKILL.md
-│       │       ├── tanstack.md
-│       │       └── upgrade-packages.md
+│       │       ├── standalone-workflow.md
+│       │       ├── tests-assertion.md
+│       │       └── upgrade-workflow.md
 │       └── upgrade-extension.json
 ├── hooks.json
 └── plugin.json

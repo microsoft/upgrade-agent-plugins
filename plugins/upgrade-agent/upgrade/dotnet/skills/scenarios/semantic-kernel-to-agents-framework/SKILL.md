@@ -9,7 +9,7 @@ metadata:
   discovery: scenario
   importance: medium
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # Semantic Kernel to Agents Framework Migration

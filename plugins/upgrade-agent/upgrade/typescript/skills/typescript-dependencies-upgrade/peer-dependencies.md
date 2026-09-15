@@ -79,6 +79,18 @@ upgrade is requested; do not silently expand a Query-only request into a tRPC ma
 
 **Bound the required group to Radix members only.** Because `dependencyGroups` are built from peer relationships, the group containing a `@radix-ui/*` package also contains `react`, `react-dom`, `@types/react`, and the rest of the React ecosystem (`next`, `lucide-react`, …). Intersect that group down to the `@radix-ui/*` members plus `radix-ui` before treating it as required; **everything else in the group follows the normal opt-in flow above**. Radix declares `react` as `^16.8 || ^17.0 || ^18.0 || ^19.0`, so a Radix upgrade never requires a React major bump.
 
+### React Hook Form and resolvers are a compatibility group
+
+**Exception:** if `applicableGuidance` includes `react-hook-form.md`, recommend upgrading
+`react-hook-form` and every `@hookform/*` package present in the manifest together, while resolving
+each package to its own latest compatible version. In particular, `@hookform/resolvers` v5 requires
+`react-hook-form` 7.55.0 or newer and changes resolver typing to distinguish form input from
+validated output. Leaving React Hook Form stale can fail installation; upgrading only the resolver
+can also expose TypeScript errors where schema transforms/defaults make input and output differ.
+Include the resolver's validation-library peer (`zod`, `yup`, `joi`, and so on) when its installed
+version does not satisfy the target resolver's peer range. See
+[react-hook-form.md](./react-hook-form.md).
+
 ## Step 4: Organize into Upgrade Groups
 
 The final package list may span multiple dependency groups. Preserve the group structure from the scan results:

@@ -10,9 +10,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: default
-  weight: 0
+  weight: "0"
   traits: (.NET|CSharp|VisualBasic)&DotNetFramework
-  scenarioTraitsSet: [.NET, DotNetFramework]
+  scenarioTraitsSet: ".NET|DotNetFramework"
 ---
 
 # .NET Framework Version Upgrade Scenario

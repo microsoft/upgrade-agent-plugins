@@ -349,12 +349,20 @@ or `@Styles.Render` references remain.
 
 ### Cleanup and Verification
 
-- Remove all `#if NETFRAMEWORK` conditional blocks
+- Remove `#if NETFRAMEWORK` blocks **only** — leave every other conditional-compilation
+  symbol in place. One guarding a test-mode authentication bypass is a security control,
+  not scaffolding, and does not become dead when the Framework target does; if a symbol's
+  purpose is not obvious, leave it and say so in the summary (see the note below)
 - Remove remaining `System.Web` references if any remain (there should be none)
 - Remove `WebApiConfig.cs`, `RouteConfig.cs`, `FilterConfig.cs`, `BundleConfig.cs`
   from old project's code that was copied to new project
 - Remove `packages.config` if not already done
 - Remove unused compatibility shims or adapter layers added during migration
+
+> **Why the exception exists.** The shape is an `#if` whose body disables validation and
+> whose `#else` branch carries the real validation, so removing the directive while
+> keeping the `#if` body ships the bypass as the only code path — and the result compiles
+> and passes tests. For the authentication case see `migrating-owin-oauth-to-jwt`.
 
 > **Do NOT delete the old Framework project.** In side-by-side mode, the old
 > project stays in the solution. Physical removal is a post-upgrade step for

@@ -9,7 +9,7 @@ description: >
   and other behavioral changes, parameter values, type accelerators, module
   availability, COM, and deprecated-but-present cmdlets. Produces
   scan-findings.csv keyed by rule id, which seeds the assessment, the plan, and
-  the execution re-scan gate. Use during the powershell-5.1-to-7-upgrade
+  the execution re-scan gate. Use during the powershell-51-to-7-upgrade
   scenario, or any time you need a reproducible inventory of PowerShell
   compatibility blockers.
   DO NOT USE FOR: scanning C#/.NET code, PSScriptAnalyzer style rules, or
@@ -140,13 +140,15 @@ pwsh -NoProfile -File <skill>/scripts/New-PSSACompatibilityProfile.ps1 -OutputPa
 ```
 
 `-TargetPlatform` and `-TargetPSVersion` do **not** change what is generated —
-a profile only ever describes the interpreter it ran under. They exist to make a
-mismatch audible, because both failure modes are silent and both point the same
-way: a host that is *newer* or *richer* than the target inventories things the
-target does not have, suppressing exactly the findings the migration exists to
-surface. Generating on a host older than the target can only over-report and is
-noted rather than warned about. Run this under the `pwsh` the user is actually
-migrating to.
+a profile only ever describes the interpreter it ran under. A platform mismatch
+or a host that is newer than the target makes validation **`FAIL`**: the generator
+exits 1 and the scan wrapper refuses the profile. These profiles can inventory
+capabilities absent from the target, suppressing real findings. Version checks
+compare major/minor, not patch versions. A host older than the target can only
+over-report from the version difference; that direction is noted and does not
+itself fail validation. Run this under the `pwsh` the user is actually migrating
+to: for the example above, use PowerShell 7.4 on Windows, not 7.5/7.6 with
+`-TargetPSVersion 7.4`.
 
 The script does three things:
 
@@ -167,13 +169,28 @@ The script does three things:
 |---|---|---|
 | `PASS` | Sentinels agree with the host | Use it |
 | `WARN` | Items resolve on the host but were dropped from the profile | Use it, and carry `MissingCommands`/`MissingTypes` as a known-false-positive ledger |
-| `FAIL` | Removed cmdlets are present in the profile | **Do not use it.** Regenerate in a clean session |
+| `FAIL` | Contamination, an unpinned module newer than the pin, platform mismatch, or the generating host is newer than the target | **Do not use it.** Correct every cause recorded in the sidecar and regenerate |
 
-`FAIL` means contamination: if `WindowsCompatibility` or an implicit remoting
+All four `FAIL` causes can suppress real findings. A sidecar recording `FAIL`
+is always refused: the wrapper reports its recorded causes and has no override
+for that verdict. A missing sidecar only produces a warning before scanning,
+with `profileValidation: 'not-found'`. `-SkipValidation` does not write a new
+sidecar; it does not remove an existing one either. Never skip validation or
+delete a sidecar to claim a clean compatibility result, and never treat a scan
+without validation as clean.
+
+| Sidecar field | Cause and remedy |
+|---|---|
+| `Validation.Contamination` | Removed commands were inventoried through compatibility proxies. Regenerate in a clean session with no `WindowsCompatibility` or implicit remoting. |
+| `Validation.UnpinnedModules` | Module versions newer than the pin reached the profile. Remove those versions from the generating host's `PSModulePath` and regenerate with the requested pins. |
+| `Host.Mismatch` | The generating platform differs from the target. Generate on the target platform. |
+| `Host.VersionMismatch` | The generating host is newer than `-TargetPSVersion`. Generate on the target PowerShell major/minor version. |
+
+A clean session alone does not fix module, platform, or version mismatches.
+For contamination specifically, if `WindowsCompatibility` or an implicit remoting
 session was loaded during generation, its proxy functions for `Get-WmiObject` and
 `Get-EventLog` get inventoried as real commands, and the analyzer then goes
-**silent on every WMI site in the estate**. That is a false *pass* — strictly
-worse than any false positive, which is why it is fatal rather than a warning.
+**silent on every WMI site in the estate**. That is a false *pass*.
 The check distinguishes them by `CommandType`: native commands are `Cmdlet`,
 compatibility shims are `Function`.
 
@@ -291,7 +308,7 @@ Useful parameters:
 |---|---|
 | `-Path` | One or more files or directories. Accepts a partial selection directly — no need to scan the whole repo. |
 | `-OutputPath` | Where the findings CSV lands. |
-| `-AdditionalRulesPath` | One or more extra catalogs merged onto the shipped rules. See *Extending the catalog*. |
+| `-AdditionalRulesPath` | One or more extra catalogs merged onto the shipped rules. When adding or changing rules, read [Custom rules](ref/custom-rules.md). |
 | `-RulesPath` | Replace the shipped catalog outright. Rarely what you want. |
 | `-Include` | File patterns. Default `*.ps1, *.psm1, *.psd1`. |
 | `-ExcludeDirectory` | Directory names skipped at any depth. Default `.git, node_modules, bin, obj, packages, .vs`. Pruned directories are listed in the summary and in `coverage.excludedDirs` — the defaults are .NET build-output names, and a PowerShell estate is free to keep production scripts in a folder called `bin`. Check that notice before reading a low finding count as a clean tree. |
@@ -429,186 +446,25 @@ The first four are the ones you cannot dismiss with "our data is all ASCII".
 
 ## Extending the catalog
 
-The rules live in `rules/PSCompatibilityRules.psd1` as **data**, loaded with
-`Import-PowerShellDataFile`, which parses restricted data-language literals and
-never evaluates code. A rule file therefore cannot execute anything — keep it
-that way. If a rule needs behaviour, it needs a new `Kind` implemented in the
-script, not code smuggled into the data.
-
-There are two ways in, and they are not equivalent:
-
-| | Use when |
-|---|---|
-| `-AdditionalRulesPath <file>` | You want the shipped rules **plus** your own. Merged on top of the base catalog: a rule whose `Id` matches a shipped one replaces it, anything else is added. This is almost always what you want. |
-| `-RulesPath <file>` | You want to replace the catalog outright. You then own a fork that will not pick up new shipped rules. |
-
-Never edit the shipped file inside a customer repo.
-
-A rule is:
-
-```powershell
-@{
-    Id          = 'contoso-legacy-module'
-    Kind        = 'Module'
-    Match       = @('Contoso.Legacy.Admin')
-    Category    = 'InternalModule'
-    Severity    = 'Blocker'
-    Remediation = 'Contoso.Legacy.Admin is .NET Framework only. Use Contoso.Admin 3.x.'
-    Skill       = 'fixing-windows-only-modules'
-}
-```
-
-Available `Kind` values, and what each matches:
-
-| Kind | Matches |
-|---|---|
-| `Command` | A name in command position — cmdlet, function, or alias. Aliases must be listed explicitly (`gwmi` alongside `Get-WmiObject`). |
-| `Keyword` | A language keyword, e.g. `workflow`. |
-| `Type` | A type literal. `MatchMode = 'Exact'` compares the accelerator (`wmi`); `'Contains'` compares the full name (`System.Windows.Forms`). Also covers the type argument of `New-Object`, in both positional and `-TypeName` form. |
-| `StringLiteral` | A substring of a string constant. Context-blind by design: it also matches prose, log messages and test data, so it suits high-recall rules that are triaged manually, not `AutoFix` ones. Prefer `CommandArgument` or `MemberAccess` where the shape is known. |
-| `CommandArgument` | A literal passed as an argument to one of `OnCommand`. Anchored, so `Add-PSSnapin Foo` matches but `Write-Host 'Foo'` does not. |
-| `MemberAccess` | A property or method name in `$x.Member` position. Only literal member names are checked; a computed `$x.$name` is skipped rather than guessed at. |
-| `StaticMember` | A static member together with its owning type, written `Text.Encoding::Default`. `Match` is a dotted suffix, so it fires on both `[System.Text.Encoding]::Default` and `[Text.Encoding]::Default` without matching an unrelated `MyText.Encoding`. Use it instead of `MemberAccess` when the member name alone is too common to be meaningful — `::Default` on its own would match anything. |
-| `Parameter` | A named parameter present on one of `OnCommand`. Prefixes resolve. |
-| `ParameterValue` | `OnParameter` set to one of `Match`, on one of `OnCommand`. |
-| `MissingParameter` | One of `OnCommand` invoked *without* the parameter. Splatted calls are never reported. |
-| `Module` | A module name in `Import-Module`, `using module`, or `#Requires -Modules`. |
-| `RequiresEdition` | `#Requires -PSEdition <value>`. |
-| `RequiresVersion` | `#Requires -Version <major>`. |
-| `NullComparison` | Structural: `-eq`/`-ne` with `$null` on the right. |
-| `FileRedirection` | Structural: a `>` or `>>` redirection to a file. `Match` selects the operators. Stream merges (`2>&1`) are a different AST type and never match; `> $null` is excluded explicitly. Any stream that writes a file — including `2>` — is reported. |
-
-`Supersedes` suppresses a more general rule when a specific one fires on the
-same line — `exchange-snapin` supersedes `snapin`, so
-`Add-PSSnapin Microsoft.Exchange.Management.PowerShell.E2010` is one finding,
-not two. This is *intra-catalog*: both rules belong to this scan.
-
-`SupersededBy` is the opposite direction and crosses tools. It names a
-PSScriptAnalyzer rule that was **measured** to report the same sites, and it
-takes the rule out of detection entirely: the rule no longer runs and emits
-nothing. Its body becomes a knowledge record that
-`Invoke-PSSACompatibilityScan.ps1` joins onto the analyzer's own findings, and a
-source of profile contamination sentinels. Do not set it by guesswork — probe the
-rule's targets against a validated profile first, with `-IncludeRule`, and only
-tag what comes back fully covered. Tagging a rule PSSA does *not* report silently
-deletes a detector.
-
-`Skill` names the remediation skill to load for that bucket. The planner emits
-it as a `#skill:` marker on the task.
+When adding or overriding rules, read [Custom rules and snap-in maps](ref/custom-rules.md).
+Never edit the shipped catalog in a customer repo; keep rules as restricted data, not code.
 
 ## Organisation knowledge: contributed rules and snap-in maps
 
-Writing a `.psd1` is fine for someone who has read this file. It is the wrong
-ask for the person who actually knows the answer — the owner of an internal
-snap-in. So a user contributes knowledge the same way they contribute anything
-else in this product: **a skill in `.github/skills/`**, discovered
-automatically. No flag to pass, nothing to tell the agent.
+**Before running the scan**, check Available Skills for
+`provides: powershell-compatibility-rules` and check for mappings the user gave in
+conversation. If either exists, read [Custom rules and snap-in maps](ref/custom-rules.md)
+before projecting that knowledge into `contributed-rules.psd1` and passing it as
+`-AdditionalRulesPath`.
 
-This mirrors the existing `upgrade-option:` and `provides: task-breakdown-hints`
-conventions.
+Precedence is shipped catalog, then contribution skills, then conversation mappings.
+Keep projected rules in `.github/upgrades/<scenarioId>/contributed-rules.psd1`, per operation,
+and name any contribution skill the user's mapping overrides.
 
-A contribution skill declares `provides: powershell-compatibility-rules` in its
-description:
-
-```markdown
----
-name: contoso-powershell-map
-description: >
-  Contoso snap-in and module inventory for the PowerShell 5.1 → 7 migration.
-  provides: powershell-compatibility-rules
-metadata:
-  discovery: lazy
-  traits: PowerShell
----
-
-## Snapin Module Map
-
-| Snap-in | Replacement module | Notes |
-|---|---|---|
-| Contoso.Foo.Snapin | Contoso.Foo.Management | 3.x or later |
-| Contoso.Bar.Snapin | — | No module. Use implicit remoting. |
-```
-
-**Before running the scan**, check Available Skills for that marker. For each
-matching skill, read its `## Snapin Module Map` and project every row into a
-rule, then pass the projected file as `-AdditionalRulesPath`:
-
-```powershell
-@{
-    Id          = 'contoso-foo-snapin'          # stable, derived from the snap-in name
-    Kind        = 'StringLiteral'
-    Match       = @('Contoso.Foo.Snapin')
-    MatchMode   = 'Contains'
-    Category    = 'PSSnapin'
-    Severity    = 'Blocker'
-    Supersedes  = @('snapin')                   # so the generic rule does not double-count
-    Remediation = 'Replace Add-PSSnapin Contoso.Foo.Snapin with Import-Module Contoso.Foo.Management (3.x or later).'
-    Skill       = 'handling-removed-snapins'
-}
-```
-
-Write the projected catalog to the operation folder
-(`.github/upgrades/<scenarioId>/contributed-rules.psd1`), not into the source
-tree.
-
-A `—`, `none`, or empty Replacement column is **meaningful, not missing**: it
-says a module replacement was looked for and does not exist. Project it with a
-remediation naming implicit remoting or the Windows PowerShell compatibility
-layer rather than telling the migrator to go find a module. This is the main
-thing the shipped catalog cannot express — it only knows that *some* snap-in was
-loaded, never which one or what replaces it.
-
-A snap-in with no row falls through to the generic `snapin` rule, which is the
-correct outcome: it is still reported as a Blocker, just without a specific
-remediation.
-
-Other sections a contribution skill may carry:
-
-- `## Compatibility Rules` — a fenced `powershell` block containing raw rule
-  hashtables, for knowledge that is not a snap-in mapping. Pass it through as-is.
-
-Use the same `Id` as a shipped rule to correct one in place — severity, wording,
-or an internal policy call. The scan reports what was added and what was
-overridden, so a merged catalog never silently changes the result.
-
-### A mapping given in conversation
-
-A skill is the right shape for an inventory an organisation maintains. It is
-overkill for someone who knows two snap-ins and wants to say so. If the user
-states a mapping in conversation — "`Contoso.Foo.Snapin` is `ContosoFoo` now",
-"`Contoso.Legacy.Snapin` has no replacement" — project it into the **same**
-`contributed-rules.psd1` and pass it the same way.
-
-Do this rather than just remembering it. A mapping that only lives in the
-conversation changes how you *remediate* but not what the scan *reports*, so the
-CSV still says `snapin`, the assessment still counts an unnamed blocker, and the
-execution re-scan gate compares against a baseline that disagrees with what the
-user told you. Every artifact must reflect the same knowledge.
-
-Precedence, most specific last: shipped catalog → contribution skills → what the
-user said in this conversation. The user is in front of you and knows their
-estate; if they contradict a contributed skill, they win — but say that you are
-overriding it, and name the skill.
-
-Conversation-sourced rules are **per operation**, not permanent: they live in the
-operation folder and a fresh clone starts without them. When the user gives you
-one, offer once to promote it into a `provides: powershell-compatibility-rules`
-skill so it survives. Do not nag — offer, and drop it if declined.
-
-### Asking for the mappings you are missing
-
-Do not expect the user to know upfront which snap-ins matter. Let the scan find
-out, then ask.
-
-After the scan, if there are generic `snapin` findings, pull the distinct
-snap-in names out of their `Snippet` column and present that list. It is short,
-concrete, and it is the one question in this whole assessment where the user
-holds information you cannot derive. Ask for a replacement module or an explicit
-"no replacement" for each, project the answers, and re-run the scan so the
-findings carry the specific rule ids.
-
-Re-run only if you actually received mappings — a re-scan that changes nothing
-is pure cost on a large estate.
+After a scan reports generic `snapin` findings, ask for a replacement module or explicit
+"no replacement" for each distinct snap-in in `Snippet`. If mappings are supplied, read the
+reference, project them and re-run so the findings and remediation agree. Re-run only when
+new mappings were actually received.
 
 ## Stability contract
 

@@ -4,6 +4,25 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.539] - 2026-09-15
+
+### Added
+
+- New library migration skills: moving Azure SDK code from Track 1 to Track 2, and migrating to federated OIDC token exchange.
+- The .NET assessment now writes a discoverable `assessment/` folder alongside a bounded index, so a large assessment stays navigable instead of collapsing into one oversized document.
+
+### Changed
+
+- Updated the bundled TypeScript extender to 0.1.12.
+- Oversized skills now load their deeper guidance from conditional reference files, so the up-front instructions stay small and the detail is pulled in only when it applies.
+- The OWIN OAuth-to-JWT skill now covers Entra ID token validation and preserving bypass guards.
+- Clarified the Current task file footer in the dashboard activity view.
+
+### Fixed
+
+- The PowerShell 5.1-to-7 upgrade scenario now resolves correctly as a skill.
+- PowerShell compatibility scans now report accurate diagnostics and guidance when a PSSA profile fails.
+
 ## [1.1.514] - 2026-09-09
 
 ### Added

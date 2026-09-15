@@ -10,7 +10,7 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   traits: .NET|CSharp|VisualStudio|VSSDK
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # VSSDK SDK-Style Conversion

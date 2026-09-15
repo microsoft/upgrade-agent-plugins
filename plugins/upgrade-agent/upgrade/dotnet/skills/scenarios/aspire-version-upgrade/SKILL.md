@@ -9,9 +9,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: medium
-  weight: 9500
+  weight: "9500"
   traits: .NET|CSharp|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # Aspire Version Upgrade Scenario

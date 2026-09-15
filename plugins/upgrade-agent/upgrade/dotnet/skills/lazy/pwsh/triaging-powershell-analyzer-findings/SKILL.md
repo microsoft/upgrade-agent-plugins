@@ -7,7 +7,7 @@ description: >
   prefix such as '-fore', a symbol the compatibility profile dropped during
   generation, or a provider dynamic parameter such as 'Set-ItemProperty -Type'.
   Each class has a mechanical test that settles it. Use during the
-  powershell-5.1-to-7-upgrade scenario's execution stage, before editing any file
+  powershell-51-to-7-upgrade scenario's execution stage, before editing any file
   the analyzer flagged.
 metadata:
   discovery: lazy

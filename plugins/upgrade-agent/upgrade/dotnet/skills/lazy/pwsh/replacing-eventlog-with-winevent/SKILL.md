@@ -4,7 +4,7 @@ description: >
   Replace the removed *-EventLog cmdlets (Get-EventLog, Write-EventLog,
   New-EventLog, Clear-EventLog, Limit-EventLog, Show-EventLog, Remove-EventLog)
   with Get-WinEvent / New-WinEvent or System.Diagnostics.EventLog in PowerShell
-  7.x. Use during the powershell-5.1-to-7-upgrade scenario for the EventLog
+  7.x. Use during the powershell-51-to-7-upgrade scenario for the EventLog
   blocker bucket.
 metadata:
   discovery: lazy

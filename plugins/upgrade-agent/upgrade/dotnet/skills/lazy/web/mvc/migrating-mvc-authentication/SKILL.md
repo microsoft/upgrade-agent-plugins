@@ -19,7 +19,7 @@ metadata:
 
 Migrate authentication and authorization from ASP.NET MVC/Web API to ASP.NET Core. This is the highest-risk area of any ASP.NET migration because wrong decisions produce security vulnerabilities, not compiler errors. Multiple migration paths exist depending on the authentication mechanism used — assess first, then apply the correct path.
 
-> **Related skills:** For side-by-side Katana/ASP.NET Core shared cookies, see `sharing-authentication-cookies-katana-interop`. For ASP.NET Identity (UserManager, SignInManager, IdentityDbContext), see `migrating-aspnet-identity`. For OWIN cookie auth, see `migrating-owin-cookie-auth`. For OWIN OAuth/JWT, see `migrating-owin-oauth-to-jwt`. For OWIN OpenID Connect, see `migrating-owin-openid-connect`. For ADAL to MSAL, see `migrating-adal-to-msal`.
+> **Related skills:** For side-by-side Katana/ASP.NET Core shared cookies, see `sharing-authentication-cookies-katana-interop`. For ASP.NET Identity (UserManager, SignInManager, IdentityDbContext), see `migrating-aspnet-identity`. For OWIN cookie auth, see `migrating-owin-cookie-auth`. For OWIN OAuth/JWT, see `migrating-owin-oauth-to-jwt`. For OWIN OpenID Connect, see `migrating-owin-openid-connect`. For an endpoint that trades an external workload OIDC token for a short-lived application credential, see `migrating-federated-oidc-token-exchange`. For ADAL to MSAL, see `migrating-adal-to-msal`.
 
 ## Workflow
 
@@ -151,6 +151,7 @@ Categorize findings into one or more paths:
 | `SqlMembershipProvider`, `SimpleMembership`, custom `MembershipProvider` | → ASP.NET Core Identity (Step 4) |
 | `<authentication mode="Windows">` | → Negotiate Authentication (Step 2B) |
 | OWIN OAuth/JWT middleware | → See `migrating-owin-oauth-to-jwt` |
+| An endpoint that trades a caller-supplied external OIDC token (a CI or workload identity token) for a short-lived application credential, after matching its claims against a stored trust policy | → See `migrating-federated-oidc-token-exchange` |
 | OWIN cookie middleware | → See `migrating-owin-cookie-auth` |
 | OWIN OpenID Connect | → See `migrating-owin-openid-connect` |
 | Custom OWIN authentication scheme (a type deriving from the Katana `AuthenticationHandler<TOptions>`, usually with its own `AuthenticationMiddleware<TOptions>` and `IAppBuilder` extension) | → See `migrating-owin-authentication-handler-to-core` |
@@ -158,7 +159,7 @@ Categorize findings into one or more paths:
 
 Projects often combine multiple mechanisms (e.g., Forms Auth + Membership + Role Provider). Apply each relevant path.
 
-Under the side-by-side gate above, no route may leave the Core host issuing its own authentication cookie. Cookie Authentication (Step 2A) and the OWIN cookie route do not apply at all — the Framework host keeps issuing the cookie. Two routes in the table apply only in part, and the skip list above says which part: **Identity** migrates the user store and model only (`AddIdentityCore()`), never the cookie schemes or the Framework login controllers and `SignInManager` sign-in calls; **OpenID Connect** leaves the challenge, the callback and the session cookie on the Framework host. The remaining table routes — OAuth/JWT, Negotiate and Membership — are fully unchanged, since they concern bearer tokens, the user store or access rules rather than the browser cookie. The gate is not limited to this table: `migrating-owin-to-aspnet-core` is reached from the OWIN pipeline work rather than from a signal here, and the same rule applies to it — its pipeline conversion is fine, its cookie and external-sign-in conversions are not.
+Under the side-by-side gate above, no route may leave the Core host issuing its own authentication cookie. Cookie Authentication (Step 2A) and the OWIN cookie route do not apply at all — the Framework host keeps issuing the cookie. Two routes in the table apply only in part, and the skip list above says which part: **Identity** migrates the user store and model only (`AddIdentityCore()`), never the cookie schemes or the Framework login controllers and `SignInManager` sign-in calls; **OpenID Connect** leaves the challenge, the callback and the session cookie on the Framework host. The remaining table routes — OAuth/JWT, federated token exchange, Negotiate and Membership — are fully unchanged, since they concern bearer tokens, the user store or access rules rather than the browser cookie. The gate is not limited to this table: `migrating-owin-to-aspnet-core` is reached from the OWIN pipeline work rather than from a signal here, and the same rule applies to it — its pipeline conversion is fine, its cookie and external-sign-in conversions are not.
 
 ### Step 2: Migrate Authentication Configuration
 
@@ -269,77 +270,12 @@ Replace `FormsAuthenticationTicket` custom data with additional claims on the `C
 
 ### Step 4: Migrate Membership and User Stores
 
-#### SqlMembershipProvider / SimpleMembership → ASP.NET Core Identity
-
-If the project uses `SqlMembershipProvider` or `SimpleMembership`, migrate to ASP.NET Core Identity. For detailed Identity migration (DbContext, UserManager, SignInManager), see `migrating-aspnet-identity`.
-
-**Password hashing change:** ASP.NET Membership uses SHA-1 or SHA-256 hashed passwords. ASP.NET Core Identity uses PBKDF2 with HMAC-SHA256. Existing password hashes are incompatible. Implement a compatibility hasher that verifies old hashes and re-hashes on successful login:
-
-```csharp
-public class MembershipPasswordHasher : IPasswordHasher<ApplicationUser>
-{
-    private readonly PasswordHasher<ApplicationUser> _coreHasher = new();
-
-    public string HashPassword(ApplicationUser user, string password)
-    {
-        return _coreHasher.HashPassword(user, password);
-    }
-
-    public PasswordVerificationResult VerifyHashedPassword(
-        ApplicationUser user, string hashedPassword, string providedPassword)
-    {
-        // Try ASP.NET Core format first
-        var result = _coreHasher.VerifyHashedPassword(user, hashedPassword, providedPassword);
-        if (result != PasswordVerificationResult.Failed)
-            return result;
-
-        // Fall back to legacy Membership hash verification
-        if (VerifyLegacyHash(hashedPassword, providedPassword))
-            return PasswordVerificationResult.SuccessRehashNeeded;
-
-        return PasswordVerificationResult.Failed;
-    }
-
-    private bool VerifyLegacyHash(string hashedPassword, string providedPassword)
-    {
-        // Implement legacy hash verification matching the old provider's algorithm
-        // (SHA-1, SHA-256, or custom — check the old <membership> config for hashAlgorithmType)
-        throw new NotImplementedException("Match the old provider's hash algorithm");
-    }
-}
-```
-
-Register the custom hasher:
-
-```csharp
-builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, MembershipPasswordHasher>();
-```
-
-**⚠️ Security note:** The `VerifyLegacyHash` implementation must match the exact algorithm from the old `<membership>` configuration, including salt handling. Get this wrong and either all logins fail or password verification is insecure.
-
-#### Custom MembershipProvider → Custom UserStore
-
-If the project uses a custom `MembershipProvider`, implement `IUserStore<TUser>` and optionally `IUserPasswordStore<TUser>`:
-
-```csharp
-public class LegacyUserStore : IUserStore<ApplicationUser>, IUserPasswordStore<ApplicationUser>
-{
-    // Map old MembershipProvider methods to UserStore interface
-    // GetUser → FindByIdAsync / FindByNameAsync
-    // ValidateUser → handled by IPasswordHasher
-    // CreateUser → CreateAsync
-}
-```
-
-Replace `Roles.IsUserInRole(username, role)` with:
-
-```csharp
-// In a controller (synchronous check via ClaimsPrincipal):
-User.IsInRole("Admin")
-
-// Via UserManager (async):
-await userManager.IsInRoleAsync(user, "Admin")
-```
+When Step 1 finds `SqlMembershipProvider`, `SimpleMembership`, a custom `MembershipProvider`,
+or `Roles` usage, read [Membership and user stores](ref/membership.md) before migrating them.
+Legacy password verification must match the old provider's exact hash algorithm, salt and
+encoding, then rehash on successful login. Under the side-by-side gate, migrate the user
+store with `AddIdentityCore()`, not cookie-issuing `AddIdentity()`; keep identity endpoints
+on the Framework host.
 
 ### Step 5: Migrate Authorization Rules
 

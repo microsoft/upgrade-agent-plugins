@@ -475,20 +475,8 @@ public class RequestTimingMiddleware
 }
 ```
 
-### Scoped Logging with Correlation IDs
-
-Framework apps that used `HttpContext.Current.Items` to store correlation IDs should switch to `ILogger` scopes:
-
-```csharp
-using (_logger.BeginScope(new Dictionary<string, object>
-{
-    ["CorrelationId"] = context.Request.Headers["X-Correlation-Id"].FirstOrDefault()
-        ?? Guid.NewGuid().ToString()
-}))
-{
-    await _next(context);
-}
-```
+When the app stores correlation IDs in `HttpContext.Current.Items`, read
+[Scoped logging with correlation IDs](ref/correlation-ids.md) to migrate them to `ILogger` scopes.
 
 ## Troubleshooting
 

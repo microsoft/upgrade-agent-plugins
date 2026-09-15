@@ -11,9 +11,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: medium
-  weight: 6000
+  weight: "6000"
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
   post-completion:
     suggest-actions:
       - generate-report

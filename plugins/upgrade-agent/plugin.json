@@ -1,6 +1,6 @@
 {
   "name": "upgrade-agent",
-  "version": "1.1.514",
+  "version": "1.1.539",
   "description": "AI-powered upgrade assistant for upgrading and migrating applications. Helps modernize legacy code and upgrade .NET applications to current frameworks.",
   "author": {
     "name": "Microsoft"
@@ -15,6 +15,7 @@
   "repository": "https://github.com/microsoft/upgrade-agent-plugins",
   "homepage": "https://github.com/microsoft/upgrade-agent-plugins",
   "license": "MIT",
+  "extensions": "./com.github.copilot/extensions",
   "logo": "assets/preview.png",
   "hooks": "hooks.json"
 }

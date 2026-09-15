@@ -19,7 +19,7 @@ metadata:
 
 Migrate OWIN-based OpenID Connect authentication to ASP.NET Core. The main change is replacing OWIN middleware registration and notification callbacks with the ASP.NET Core `AddOpenIdConnect()` builder pattern and strongly-typed events. Cookie authentication must be explicitly paired because ASP.NET Core does not implicitly manage session cookies for OpenID Connect.
 
-> **Related skills:** For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For the paired cookie scheme, see `migrating-owin-cookie-auth`. For an OpenID Connect scheme the application implemented itself by deriving from the Katana `AuthenticationHandler<TOptions>` rather than calling `UseOpenIdConnectAuthentication`, see `migrating-owin-authentication-handler-to-core`.
+> **Related skills:** For general OWIN middleware migration, see `migrating-owin-to-aspnet-core`. For the paired cookie scheme, see `migrating-owin-cookie-auth`. For an OpenID Connect scheme the application implemented itself by deriving from the Katana `AuthenticationHandler<TOptions>` rather than calling `UseOpenIdConnectAuthentication`, see `migrating-owin-authentication-handler-to-core`. For an endpoint that accepts an external workload OIDC token and trades it for a short-lived application credential rather than signing a user in, see `migrating-federated-oidc-token-exchange`.
 
 ## Package Reference Changes
 

@@ -376,6 +376,7 @@ For each task:
      *only*:
      - the task id and objective;
      - the workflow folder, scenario-instructions.md, and the task.md + progress-details.md paths;
+     - the `assessment.md` path — its research starts there;
      - the **scenario skill root** — its Execution stage holds the decomposition rules and
        breakdown hints, and this is the executor's only route to them;
      - the `<task_related_skills>` block **verbatim** — MANDATORY, copy the whole block. It is the

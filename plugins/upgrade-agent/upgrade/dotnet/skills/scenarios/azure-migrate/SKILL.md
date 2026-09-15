@@ -9,9 +9,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: high
-  weight: 10000
+  weight: "10000"
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [MigrateToAzure, .NET, DotNetCore]
+  scenarioTraitsSet: "MigrateToAzure|.NET|DotNetCore"
 ---
 
 # Azure Migration Scenario

@@ -13,7 +13,7 @@ description: >
 metadata:
   traits: .NET|CSharp|VisualBasic|DotNetCore
   discovery: lazy
-  autoMatch: true
+  autoMatch: "true"
 ---
 
 # Building Projects

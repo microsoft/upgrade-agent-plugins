@@ -115,9 +115,9 @@ if (-not (Test-Path -LiteralPath $ProfilePath)) {
 $resolvedProfile = (Resolve-Path -LiteralPath $ProfilePath).Path
 
 # The generator writes a sibling validation file recording whether the profile
-# is trustworthy. A contaminated profile inventories commands that do not exist
-# on the target, so scanning against one returns passes for code that is broken.
-# This refuses to scan rather than produce that result.
+# is trustworthy. Contamination, unpinned modules, or a mismatched host can
+# inventory capabilities absent from the target and return false passes.
+# Refuse every FAIL, reporting its recorded causes rather than guessing one.
 $validationPath = [System.IO.Path]::ChangeExtension($resolvedProfile, $null).TrimEnd('.') + '.validation.json'
 $validationStatus = 'not-found'
 $validationLedger = [ordered]@{ MissingCommands = @(); MissingTypes = @() }
@@ -134,14 +134,30 @@ if (Test-Path -LiteralPath $validationPath) {
     if ($null -ne $vr.MissingCommands) { $validationLedger.MissingCommands = @($vr.MissingCommands) }
     if ($null -ne $vr.MissingTypes) { $validationLedger.MissingTypes = @($vr.MissingTypes) }
     if ($validationStatus -eq 'FAIL') {
-        throw "Target profile failed validation ($validationPath). It is contaminated and will report false passes -- code that is broken will be reported clean. Regenerate it from a clean PowerShell session (no WindowsCompatibility, no implicit remoting) before scanning."
+        $reasons = @()
+        if ($vr.Contamination.Count -gt 0) {
+            $reasons += "Contamination: removed commands are present in the profile: $($vr.Contamination -join ', '). Regenerate in a clean PowerShell session (no WindowsCompatibility, no implicit remoting)."
+        }
+        if ($vr.UnpinnedModules.Count -gt 0) {
+            $reasons += "Unpinned modules newer than the pin reached the profile: $($vr.UnpinnedModules -join ', '). Remove the newer module versions from the generating host's PSModulePath and regenerate with the requested pins."
+        }
+        if ($v.Host.Mismatch) {
+            $reasons += "Platform mismatch: profile generated on '$($v.Host.Platform)' but the target is '$($v.Host.Target)'. Generate on the target platform."
+        }
+        if ($v.Host.VersionMismatch) {
+            $reasons += "The generating host is newer than the requested target PowerShell version: host '$($v.Host.PSVersion)', target '$($v.Host.TargetPSVersion)'. Generate on the target PowerShell version."
+        }
+        if ($reasons.Count -eq 0) {
+            $reasons += "No recognised failure details were recorded. Inspect the validation sidecar and generator output before regenerating."
+        }
+        throw "Target profile failed validation ($validationPath). Refusing to scan because this profile can suppress real findings. $($reasons -join ' ')"
     }
     if ($validationStatus -ne 'PASS' -and $validationStatus -ne 'WARN') {
         throw "Target profile validation status is '$validationStatus', which this script does not recognise. Refusing to scan rather than guess whether the profile is trustworthy."
     }
 }
 else {
-    Write-Warning "No validation file beside the profile ($validationPath). Cannot confirm the profile is uncontaminated; a contaminated profile reports false passes."
+    Write-Warning "No validation file beside the profile ($validationPath). Cannot confirm the profile is trustworthy; an invalid profile can suppress real findings."
 }
 
 # --- knowledge index ----------------------------------------------------------

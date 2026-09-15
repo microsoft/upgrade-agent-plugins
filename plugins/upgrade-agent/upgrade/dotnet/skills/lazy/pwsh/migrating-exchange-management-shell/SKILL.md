@@ -6,7 +6,7 @@ description: >
   PowerShell 5.1 to PowerShell 7.x, using implicit remoting
   (New-PSSession -ConfigurationName Microsoft.Exchange) for on-prem Exchange or
   the Exchange Online (EXO) REST-based module for Exchange Online. Use during the
-  powershell-5.1-to-7-upgrade scenario for the Exchange snap-in bucket.
+  powershell-51-to-7-upgrade scenario for the Exchange snap-in bucket.
 metadata:
   discovery: lazy
   traits: PowerShell

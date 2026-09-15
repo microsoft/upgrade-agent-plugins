@@ -82,7 +82,7 @@ When summarizing the generated assessment, include any reported issues and use t
 
 ## Step 2: Create Assessment Document
 
-The tool writes `assessment.md` in the workflow folder and also creates machine-readable assessment artifacts. Follow the generated content. If additional scenario framing is needed, append or summarize around the generated assessment without changing the reported issue list.
+The tool writes `assessment.md` in the workflow folder — a bounded index whose detail lives in the sibling `assessment/` folder it links — and also creates machine-readable assessment artifacts. Follow the generated content. If additional scenario framing is needed, append or summarize around the generated assessment without changing the reported issue list.
 
 The assessment summary should include:
 

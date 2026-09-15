@@ -61,7 +61,10 @@ escalated**; on a user-initiated dispatch you get the user's reason instead.
 findings as established scope; research further only where the split decision needs something
 they don't cover. You do have full freedom to research — that is the whole point of doing this
 in a disposable context — but do not redo work the executor already did for you. With no
-findings forwarded, establish the scope yourself before deciding.
+findings forwarded, establish the scope yourself before deciding — start from
+`{workflow_folder}/assessment.md`, the index into the assessment documents. Where the
+scenario provides an assessment query tool, use it for the counts and groupings a split
+turns on, not per-file depth.
 
 If no scenario skill root was forwarded, say so in your return: scenario hints cannot fire
 without it, and you will be deciding on core triggers alone.

@@ -9,7 +9,7 @@ metadata:
   discovery: scenario
   importance: medium
   traits: .NET|CSharp|VisualBasic|DotNetCore
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # Azure Functions Upgrade Scenario

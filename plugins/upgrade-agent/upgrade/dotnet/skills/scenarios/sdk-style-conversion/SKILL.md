@@ -8,7 +8,7 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   traits: .NET|CSharp|VisualBasic|DotNetCore|DotNetFramework
-  scenarioTraitsSet: [.NET]
+  scenarioTraitsSet: ".NET"
 ---
 
 # SDK-style Project Conversion

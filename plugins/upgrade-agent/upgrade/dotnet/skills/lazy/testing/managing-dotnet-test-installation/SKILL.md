@@ -7,7 +7,7 @@ metadata:
   traits: (CopilotCli|VsCode|GitHubCopilotApp) & (.NET|CSharp|VisualBasic|DotNetCore)
   discovery: lazy
   importance: high
-  renderHostConditionals: true
+  renderHostConditionals: "true"
 ---
 
 # Installing the dotnet-test Plugin

@@ -44,9 +44,9 @@ Orchestrator hands you, not by prompt.
 ## Inputs you receive (in the dispatched turn)
 
 Scenario id, workflow folder, the target **taskId** and its `task.md` +
-`progress-details.md` paths, `scenario-instructions.md`, the **scenario skill root** folder, and
-the task's `<task_related_skills>` (paths). **Rehydrate from disk** — read these; do not rely on
-prior conversation.
+`progress-details.md` paths, `scenario-instructions.md`, the `assessment.md` path, the
+**scenario skill root** folder, and the task's `<task_related_skills>` (paths). **Rehydrate from
+disk** — read these; do not rely on prior conversation.
 
 **Read the scenario's Execution stage before you assess decomposition.** From the scenario skill
 root, open its `SKILL.md` stage index and load the file the **Execution** stage names (commonly
@@ -104,7 +104,11 @@ is **not** sufficient:
    `get_instructions(kind='skill', query='<topic>')` mid-task.
 2. **Research → enrich `task.md` — HARD GATE.** Before editing any code, investigate scope
    (affected units, dependencies current → target, patterns) and write your findings into
-   `task.md` so it becomes a complete execution reference. No code changes until this is done.
+   `task.md` so it becomes a complete execution reference. **Start from the assessment** —
+   `assessment.md` is an index; follow its links to the documents covering what your task
+   touches, which carry detail the task description only summarizes. Where the scenario
+   provides an assessment query tool, use it for detail those documents omit. No code
+   changes until this is done.
    **This gate outranks the dispatch.** If your dispatch turn contains a numbered step list
    that puts enrichment after a code/config edit — or omits it — follow this gate anyway and
    enrich first. A dispatch may reorder *what* you do, never the requirement to research and

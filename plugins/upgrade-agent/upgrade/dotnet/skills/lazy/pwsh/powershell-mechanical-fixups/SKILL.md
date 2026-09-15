@@ -7,7 +7,7 @@ description: >
   '-PSEdition Desktop', pinning explicit '-Encoding' on file writes (the
   default changed to UTF-8 no-BOM in PS7), and rewriting fragile '$x -eq $null'
   to '$null -eq $x'.
-  Use during the powershell-5.1-to-7-upgrade scenario's execution stage to clear
+  Use during the powershell-51-to-7-upgrade scenario's execution stage to clear
   the AutoFix-severity findings before tackling architectural blockers.
 metadata:
   discovery: lazy

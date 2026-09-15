@@ -7,7 +7,7 @@ Supplements the executor's core task-execution steps — does not replace them.
 >
 > | # | Section | Key Content |
 > |---|---------|-------------|
-> | 0 | Assessment Consultation | Querying per-project assessment data during task research |
+> | 0 | Assessment Consultation | Reading and querying per-project assessment data during task research |
 > | 1 | SDK-Style Conversion | Converting old-style csproj projects before TFM upgrade |
 > | 2 | Stub Marker Format | Consistent comment format for all generated stubs |
 > | 3 | Decomposition Rules | Stub discovery, stub resolution, package replacement research |
@@ -20,9 +20,16 @@ Supplements the executor's core task-execution steps — does not replace them.
 ## Section 0: Assessment Consultation
 
 During the **Research** step (research and enrich task.md, before making code changes),
-query the assessment for each project in the task's scope. The task description
+consult the assessment for each project in the task's scope. The task description
 contains a summary, but it does not contain the full per-project issue and
 feature data. You must retrieve this yourself.
+
+The assessment does not stop being useful when planning ends, and it has two surfaces you
+may need together. Follow `assessment.md` to the project's own document under
+`assessment/projects/` (on a large repository the root reaches these through the project
+inventory) for its narrative: current and proposed TFM, packages, API issues, and the
+reasoning behind them. Call `query_dotnet_assessment` for the detail no document carries —
+every rule instance with its file, line, and snippet, filtered by the scope you name.
 
 ### When to query
 
@@ -64,7 +71,7 @@ Enrich `task.md` with per-project findings:
 
 The task description gives research *starting points* — the assessment gives
 the *complete inventory* of what needs to change in each project. Without
-querying it, you'll miss issues that weren't mentioned in the plan summary
+consulting it, you'll miss issues that weren't mentioned in the plan summary
 and discover them only when builds fail.
 
 ---

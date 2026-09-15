@@ -74,9 +74,8 @@ Search specs and the Karma/Jasmine config for these. Most surface at test time, 
 - Run `typescript_compile_package`. The compiler will not catch most Jasmine breaks (config
   renames, deep-equality `toContain`, `forbidDuplicateNames`, async `Env#execute`); those fail at
   test time.
-- Call `typescript_validate_runtime` (REQUIRED) — a green compile with
-  a red `ng test` is the expected failure mode here. Follow [SKILL.md](./SKILL.md) and
-  [runtime-validation.md](./runtime-validation.md).
+- Invoke the `typescript-runtime-validation` skill in upgrade mode (REQUIRED) — a green compile with
+  a red `ng test` is the expected failure mode here. Follow [SKILL.md](./SKILL.md).
 
 ## Telemetry
 

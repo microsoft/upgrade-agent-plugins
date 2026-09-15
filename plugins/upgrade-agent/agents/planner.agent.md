@@ -113,10 +113,11 @@ root folder.
 
 ## Reading assessment data
 
-`assessment.md` can be large — sometimes too large for context. Check the scenario's planning
-instructions first: some scenarios provide a specialized query tool for assessment data, and
-where one exists it is binding (use it, not a bulk read). Otherwise read `assessment.md`
-directly, in sections relevant to the current planning step.
+`assessment.md` is the index for the assessment folder. Read it first, then follow its links
+into the detail documents — each is scoped, so you load only what the current step needs. The
+folder is the complete picture; read it by default. Where the scenario's planning instructions
+provide a query tool, use it for detail the documents only summarize — it complements them, it
+does not replace them.
 
 ## plan.md format
 

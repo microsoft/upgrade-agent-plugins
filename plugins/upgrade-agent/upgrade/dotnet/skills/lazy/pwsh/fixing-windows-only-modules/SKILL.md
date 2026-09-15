@@ -6,7 +6,7 @@ description: >
   ScheduledTasks, WebAdministration) that are not natively available in
   PowerShell 7.x, using Import-Module -UseWindowsPowerShell (the WinPS
   compatibility layer) or implicit remoting. Use during the
-  powershell-5.1-to-7-upgrade scenario for the Windows-only-module bucket.
+  powershell-51-to-7-upgrade scenario for the Windows-only-module bucket.
 metadata:
   discovery: lazy
   traits: PowerShell

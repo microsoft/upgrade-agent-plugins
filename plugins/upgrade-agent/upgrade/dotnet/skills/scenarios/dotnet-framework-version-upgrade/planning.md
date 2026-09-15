@@ -13,7 +13,9 @@ Create an upgrade plan for .NET Framework version upgrade to net481.
 
 ## Step 1: Extract from Assessment
 
-Read `assessment.md` from the workflow folder. Extract:
+Read `assessment.md` from the workflow folder. It is an index — for a large solution the
+per-project rows and the dependency graph live in the documents under `assessment/` that it
+links, so follow those links rather than stopping at the root. Extract:
 
 | Signal | Used For |
 |--------|----------|
@@ -24,6 +26,10 @@ Read `assessment.md` from the workflow folder. Extract:
 | Dependency graph | Task ordering for Bottom-Up strategy |
 | Package compatibility issues | Whether a NuGet update task is needed |
 | Package retargeting needs | Whether packages.config metadata, restore, reinstall, or HintPath work is needed |
+
+For per-instance detail the documents summarise — a specific project's or file's issues
+filtered by severity or line range, or full-text search across findings — call
+`query_dotnet_assessment`. It complements the documents, it does not replace them.
 
 ---
 

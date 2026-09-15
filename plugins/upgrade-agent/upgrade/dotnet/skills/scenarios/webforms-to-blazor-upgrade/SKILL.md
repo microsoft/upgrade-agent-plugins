@@ -9,7 +9,7 @@ metadata:
   discovery: scenario
   importance: high
   traits: (.NET|CSharp|VisualBasic) & DotNetFramework & WebForms
-  scenarioTraitsSet: [.NET, DotNetFramework, WebForms]
+  scenarioTraitsSet: ".NET|DotNetFramework|WebForms"
 ---
  
 # Web Forms to Blazor Upgrade Scenario

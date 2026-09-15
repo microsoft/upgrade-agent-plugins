@@ -45,7 +45,7 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 
 **Phase 1: Application upgrades** — upgrade each application to target framework. Libraries get multi-targeting added just before they're needed.
 
-**Phase 2: Library consolidation** — remove old framework targets from all libraries, clean up conditional compilation.
+**Phase 2: Library consolidation** — remove old framework targets from all libraries; clean up conditional compilation for TFM symbols only. Leave test-mode authentication bypass guards and other non-TFM symbols in place: they remain security controls or application behavior. Carry this exception into the consolidation task, and report any symbol whose purpose is unclear.
 
 **Required plan.md content:**
 
@@ -93,7 +93,10 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 
 4. **Library consolidation** (Phase 2)
    - Remove multi-targeting from all libraries
-   - Clean up conditional compilation
+   - Clean up conditional compilation — TFM symbols only. A symbol that guards
+     something other than a target-framework difference, such as a test-mode
+     authentication bypass, is not scaffolding and does not become dead when a
+     TFM is dropped. Leave it and report it.
    - Condition: all applications upgraded, no consumers need old TFM
 
 5. **Remaining projects** (if applicable)

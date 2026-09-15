@@ -53,16 +53,72 @@ you need; do not assume prior conversation.
    assessment tool, dependency-ordering and project-dependency tools, dependency-version
    lookups, targeted symbol/API-shape analysis, and toolchain validation — whichever the
    skill names. Follow the skill's tool ordering — it is binding, not advisory.
-4. **Write the assessment artifact** the skill specifies (typically
-   `{workflow_folder}/assessment.md`) with `edit`. Keep the artifact format exactly as
-   the skill defines it — the artifacts contract is unchanged.
+4. **Make sure the assessment artifact exists** at the path the skill specifies (typically
+   `{workflow_folder}/assessment.md`) — written by the skill's own tool where it prescribes
+   one, and by you with `edit` where it does not. Keep the artifact format exactly as
+   the skill defines it — the artifacts contract is unchanged. If you are writing it and
+   the findings are large enough to need splitting, see below: the split changes *where*
+   content lives, never which content the skill requires.
+
+### Splitting a large assessment
+
+`assessment.md` is the fixed entry path, always. When the findings are large enough that
+a single file would be unreadable, keep it as an **index** and put the detail in a
+sibling `assessment/` folder beside it, e.g. `{workflow_folder}/assessment/`.
+
+Splitting governs placement only. The skill still decides the content: keep its required
+headings in the root in the order it gives them, and move the bulk *under* each heading —
+the long table's rows, the per-unit prose — into a linked file, leaving a summary and
+the link behind. Never drop a heading the skill asked for because its detail moved.
+
+Three rules bind you. Inside them, shape the folder however the scenario deserves.
+
+1. **One entry point.** `assessment.md` stays where it is. Never write a file named
+   `assessment.md` anywhere inside `assessment/` — a second one makes the entry point
+   ambiguous for every reader.
+2. **No orphans.** Every file under `assessment/` must be reachable from `assessment.md`
+   by following relative links — directly, or through another file that is itself
+   reachable. Before you finish, list the folder as it exists on disk, not just the files
+   you remember writing, and walk the links from the root to confirm every one is
+   reached. A file nothing links to is a file nobody will read. If a file you own is left
+   over from an earlier run and no longer belongs, delete it rather than linking to it.
+3. **The index stands on its own.** A reader who opens only `assessment.md` must still
+   get the summary, the headline metrics, and enough of the shape of the work to decide
+   what to open next — a link list alone is not an index. Open it with
+   a contents block listing this page's own sections and every document you hand off to,
+   so the map is visible before the content; that block supplements the summary rather
+   than replacing it.
+
+Split when the assessment would exceed roughly 400 lines, and split along whichever axis
+carries the findings — that is a judgment call, not a fixed layout:
+
+- Per unit, when findings are unit-local: e.g. `assessment/projects/{name}.md`.
+- Per issue class, when a theme cuts across units: `assessment/api-issues.md`,
+  `assessment/security.md`, `assessment/blocking-dependencies.md`.
+- Per aggregate, when the data is a single large table: `assessment/dependencies.md`.
+
+Keep the root bounded as you do it. One line per unit is still one line per unit: past
+roughly 30 links the inventory itself is the thing making the root long, so move it to an
+intermediate index (`assessment/projects/index.md`) and link that once from the root.
+
+Nest further when a detail file gets large in turn — the same three rules apply at every
+level. Below the threshold, leave the assessment as one file; a small assessment is
+better read as one page, and an index pointing at three short files helps nobody.
+
+If the skill's tool wrote the assessment, **add to it, do not restructure it** — whether it
+left a single `assessment.md` or an `assessment.md` plus an `assessment/` folder. Do not
+split a flat one, however long it is, and do not reorganize a folder. That tool rewrites
+every path it wrote, the root included, on its next run, so anything of yours placed there
+is deleted without warning. Write your documents at paths it did not create, and link them
+from `assessment.md` itself as your last edit. Linking them only from an index of your own
+leaves them orphaned by rule 2 when the root is rewritten.
 
 ## What to return (compact, structured — never a raw trace)
 
 Lead with a `STATUS: ready` line (or `STATUS: blocked` + reason if you hit a capability gap),
 then a **distilled map**, not your exploration transcript:
 
-- Project/module inventory: unit → current version → target version.
+- Unit inventory: unit → current state → proposed target.
 - Dependency inventory: notable dependencies with current → supported version.
 - Flagged APIs / breaking changes discovered (grouped by unit).
 - Test projects/targets discovered.

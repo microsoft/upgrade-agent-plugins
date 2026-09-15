@@ -18,8 +18,26 @@ Create an upgrade plan: confirm options (including strategy), then generate orde
 
 ### Reading Assessment Data
 
-- **Small assessments** (<30KB): Read `assessment.md` directly
-- **Large assessments** (≥30KB): Use `query_dotnet_assessment` tool if available; otherwise read in sections
+Route by what you need, not by how big the file is:
+
+| Need | Surface |
+|------|---------|
+| Orient; executive summary; high-level metrics; strategy signals | `assessment.md` — the index. Read it first |
+| One project's narrative detail: current and proposed TFM, its packages, its API issues | `assessment/projects/{project}.md`, linked from the index |
+| Cross-cutting detail the index only previews: full API-issue list, aggregate packages, dependency graph | The other documents linked from the index's **Detailed Reports** section |
+| Every instance behind a count — its file, line, and snippet — or those issues filtered by severity or line range | `query_dotnet_assessment` |
+| Full-text search, or a summary cut no document renders (by feature, category, or rule) | `query_dotnet_assessment` |
+
+The markdown and the query tool are not two views of the same thing, and neither replaces the
+other. The assessment is knowledge for you as much as for the user, and it stays live past this
+stage — consult it during execution as readily as here. `assessment.md` is a root that opens a
+traversal: it links the detail documents, and the folders under `assessment/` link further
+still. `query_dotnet_assessment` reads `assessment.json`, which holds every rule instance with
+its file, line, and snippet — detail no document contains — reached by naming a scope and a
+filter. Route by the question in front of you, and use both when it needs both.
+
+Before your first query, run `{"query": "help", "scope": "global"}` to learn the scopes and ids
+available. Responses are capped at 20 items, so filter rather than expecting a full listing.
 
 ### Signals to Extract
 

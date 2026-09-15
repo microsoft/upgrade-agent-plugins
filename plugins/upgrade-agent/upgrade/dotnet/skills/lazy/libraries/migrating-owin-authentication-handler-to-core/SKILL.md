@@ -3,15 +3,16 @@ name: migrating-owin-authentication-handler-to-core
 description: >
   Migrates a custom Katana/OWIN authentication handler to an ASP.NET Core authentication
   scheme. Use when an application defines its own scheme by deriving from the OWIN
-  AuthenticationHandler base class in Microsoft.Owin.Security.Infrastructure — usually with
-  its own AuthenticationMiddleware subclass and IAppBuilder extension, but however it is
-  registered — and the equivalent ASP.NET Core handler must be registered with AddScheme.
-  Covers AuthenticateCoreAsync, ApplyResponseChallengeAsync, ApplyResponseGrantAsync,
-  InvokeAsync, custom AuthenticationType values, AuthenticationMode Active versus Passive,
-  and per-scheme options binding. Triggers for "custom OWIN authentication handler",
-  "custom authentication middleware", "custom authentication scheme", "port
-  AuthenticateCoreAsync", or "AuthenticationMiddleware subclass". Not for stock OWIN cookie,
-  OAuth bearer, or OpenID Connect middleware, which have their own migration paths.
+  AuthenticationHandler base class in Microsoft.Owin.Security.Infrastructure — usually with its
+  own AuthenticationMiddleware subclass and IAppBuilder extension — and the equivalent ASP.NET
+  Core handler must be registered with AddScheme. Covers AuthenticateCoreAsync,
+  ApplyResponseChallengeAsync, ApplyResponseGrantAsync, InvokeAsync, custom
+  AuthenticationType values, AuthenticationMode Active versus Passive, and per-scheme
+  options binding. Triggers for "custom OWIN authentication handler" or "custom
+  authentication middleware". Not for stock OWIN cookie, OAuth bearer, or OpenID Connect
+  middleware. Not for an endpoint that trades an external workload token for an application
+  credential — trusted publishing, workload identity federation, OIDC token exchange — even
+  behind a custom handler; use migrating-federated-oidc-token-exchange.
 metadata:
   discovery: lazy
   traits: .NET|CSharp|VisualBasic|DotNetCore
@@ -35,7 +36,7 @@ Every snippet here is C#. A Visual Basic application must translate them; the sc
 
 > **Related skills:** Use `migrating-owin-to-aspnet-core` for the rest of the Katana pipeline, startup, and SignalR — but route custom authentication handlers here rather than through its middleware conversion step. Use `migrating-owin-cookie-auth`, `migrating-owin-oauth-to-jwt`, or `migrating-owin-openid-connect` when the scheme is stock middleware that was only configured, not subclassed. Use `sharing-authentication-cookies-katana-interop` when both hosts must accept one cookie during an incremental migration. Use `migrating-mvc-filters` for `AuthorizeAttribute` subclasses and authorization filters; porting a handler does not migrate the gates that consume it.
 >
-> **Out of scope — credential issuance.** This skill ports a handler that *validates* an inbound credential. A handler that also **mints** one — exchanging a caller-supplied external OIDC token for an application credential after matching it against a stored trust policy — is a token-exchange endpoint that happens to be written as a handler. Port the validation half here, and keep the exchange and issuance logic behind an explicit interface rather than inlining it into `HandleAuthenticateAsync`; the credential store, policy matching, and lifetime rules are application logic, not scheme logic. No skill covers the issuance half today.
+> **Out of scope — credential issuance.** This skill ports a handler that *validates* an inbound credential. A handler that also **mints** one — exchanging a caller-supplied external OIDC token for an application credential after matching it against a stored trust policy — is a token-exchange endpoint that happens to be written as a handler. Do **not** port half of it here. Validation, policy matching and issuance are one trust decision, and splitting them is the specific mistake that drops the controls: the validation half becomes a stock bearer scheme with a fixed authority, and the deny-list, the disclosure staging, the replay record and the bounded credential lifetime have nowhere left to live. Route the whole flow to `migrating-federated-oidc-token-exchange`, and come back here only for a host adapter that remains once that skill has classified the boundary.
 
 ## Workflow
 
@@ -96,6 +97,10 @@ The base class follows from what the Katana handler overrode.
 Getting this wrong is a compile error, not a silent failure, provided the choice is made before the members are ported. Making it afterwards means discovering that `HandleSignInAsync` does not exist on the chosen base class after the whole handler has been written.
 
 For a remote provider round trip, port the shape here and defer the token validation itself to the OAuth or OpenID Connect skill.
+
+The same split applies to a handler that validates a bearer token inline — one that builds `TokenValidationParameters`, calls `JsonWebTokenHandler` or `JwtSecurityTokenHandler`, and reads claims off the result. Port the scheme shape here; port the validation with `migrating-owin-oauth-to-jwt`, whose Step 5 covers Entra ID issuer validation, JWKS caching, and claim allow-lists, and whose Step 6 covers preserving any `#if` guard around a test-mode bypass. For such a handler the target is usually `AddJwtBearer` configured with those options rather than a hand-written `AuthenticationHandler<TOptions>`; keep a custom handler only for the parts `AddJwtBearer` genuinely cannot express.
+
+**One rule from that skill is restated here rather than referenced, because it is the rule that cannot afford a missed hand-off.** If any part of the validation sits inside a conditional-compilation directive, port `#if`, every `#elif`, `#else`, and `#endif` **as one unit**, and keep the symbol name exactly as the source spells it. The reason is the arrangement these guards actually take: the `#if` branch turns validation *off* for test builds, and the `#else` branch holds the real validation. Dropping the `#else` as dead code therefore leaves the bypass as the only code path, in a build that compiles and whose tests pass. If you cannot port the guarded code faithfully, stop and report it rather than dropping the guard.
 
 ### Step 4: Port the Handler Members
 

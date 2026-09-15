@@ -15,9 +15,9 @@ requires-extension: upgrade-dotnet
 metadata:
   discovery: scenario
   importance: medium
-  weight: 8500
+  weight: "8500"
   traits: (.NET|CSharp|VisualBasic|DotNetCore) & WindowsForms
-  scenarioTraitsSet: [.NET, WindowsForms]
+  scenarioTraitsSet: ".NET|WindowsForms"
 ---
 
 # WinForms Feature Adoption Scenario

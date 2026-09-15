@@ -35,8 +35,9 @@ The phase/project scope, the repo path, the list of changed files (or a git rang
    `get_instructions(kind='scenario-extension', query='IntegrityReview')` — **every run**; it
    returns "none apply" when there are none. Anything it raises is a normal finding: same
    severity scale, same one-line format.
-3. Cross-check against the assessment artifact on disk (`assessment.md`) for flagged
-   items the change should have addressed.
+3. Cross-check against the assessment artifact on disk for flagged items the change should
+   have addressed. `assessment.md` is an index — follow its links to the documents holding
+   the findings for the files you are reviewing, rather than reviewing against the summary.
 4. Evaluate: correctness and completeness of the migration, missed API/breaking-change
    fixes, suppressed warnings, deviations from `scenario-instructions.md`, and anything
    that will break the build or behavior. Ignore pure style/formatting.

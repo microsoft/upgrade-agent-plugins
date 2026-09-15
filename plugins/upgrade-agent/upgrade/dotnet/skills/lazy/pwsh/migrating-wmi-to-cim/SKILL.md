@@ -5,7 +5,7 @@ description: >
   Get-WmiObject → Get-CimInstance, Invoke-WmiMethod → Invoke-CimMethod,
   Remove-WmiObject → Remove-CimInstance, Register-WmiEvent → Register-CimIndicationEvent,
   and [wmi]/[wmiclass]/[wmisearcher] accelerators. Use during the
-  powershell-5.1-to-7-upgrade scenario for the WMI blocker bucket.
+  powershell-51-to-7-upgrade scenario for the WMI blocker bucket.
 metadata:
   discovery: lazy
   traits: PowerShell
