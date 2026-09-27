@@ -19,6 +19,16 @@ Migrate projects from the OData v1–v3 serialization library (`Microsoft.Data.O
 
 > **Related skills:** migrating-data-edm-to-odata, migrating-data-services-client
 
+## Wire-Contract Gate
+
+Before replacement in any server-side project or library serving Framework HTTP endpoints, first run the
+`migrating-webapi-odata` wire-compatibility gate, including non-OData responses.
+Require a scoped PASS, or evidence-backed NOT APPLICABLE from its applicability
+check for code with no affected HTTP consumers. On STOP, unknown evidence, or an
+unavailable gate, do not execute the package, serialization, or troubleshooting
+conversion instructions below. Keep dependencies needed by the live host.
+A namespace migration cannot preserve v3/Atom serialization.
+
 ## Package Reference Changes
 
 ### Old Reference (Remove)
@@ -59,7 +69,9 @@ If the project already references `Microsoft.OData.Core`, no migration is needed
 
 ### Step 2: Update Package References
 
-In the project file, replace the old package reference with the new one (see "Package Reference Changes" above). If the project uses centralized package management (`Directory.Packages.props`), update the version there instead.
+Only for the approved scope from the Wire-Contract Gate, replace the old package
+reference with the new one (see "Package Reference Changes" above). For centralized
+package management, retain old versions still required by protected projects.
 
 ### Step 3: Update Namespace Declarations
 
@@ -148,7 +160,10 @@ The batch reader state enum values are the same, but prefer the async API for ne
 
 ### Atom Format References
 
-OData v4 dropped Atom (XML) format support. If the project uses `ODataFormat.Atom` or Atom-specific serialization, switch to JSON format. The v4 library defaults to JSON.
+OData v4 does not support Atom. For an HTTP contract requiring Atom, STOP and
+follow `migrating-webapi-odata` preservation guidance; do not switch it to JSON.
+For non-serving code with a recorded NOT APPLICABLE, change an internal format
+only after confirming its consumers can change with it.
 
 ### Missing CreateODataEntryReader Method
 
@@ -156,4 +171,7 @@ This method was renamed to `CreateODataResourceReader()`. Update all call sites 
 
 ### Payload Compatibility with v3 Clients
 
-The v4 serialization format differs from v3. If backward compatibility is required, consider running both v3 and v4 endpoints during a transition period. The `ODataMessageWriterSettings` class controls format options.
+Required v3 compatibility means STOP for that endpoint, not permission to replace
+its packages. Keep the v3 endpoint intact. A separate v4 endpoint requires its
+own scoped PASS and an owner-approved plan; it never licenses cleanup of the
+v3 endpoint's dependencies. `ODataMessageWriterSettings` cannot make v4 emit v3.

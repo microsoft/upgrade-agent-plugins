@@ -4,6 +4,40 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.596] - 2026-09-27
+
+### Added
+
+- New `analyze_route_ownership` tool and cross-host route-ownership skill for side-by-side ASP.NET Framework and ASP.NET Core migrations behind a YARP proxy. It works out which host owns each route, so Framework code is only removed once ASP.NET Core provably serves that traffic.
+
+### Changed
+
+- The MVC filters skill now covers migrating custom `AuthorizeAttribute` subclasses to ASP.NET Core authorization policies and filters.
+- The Razor views skill now covers custom view-location precedence.
+- The OData and ASP.NET Framework-to-Core migration skills now check for externally consumed wire contracts before changing serialization, so clients outside the migration keep working.
+- API compatibility lookups during assessment are faster.
+- Updated the bundled TypeScript extender to 0.1.13, which renames its skills to `jsts-dependabot` and `jsts-framework-migration`.
+- Clarified the privacy disclosures; diagnostic telemetry now sends only failure IDs and exception types.
+- Refreshed bundled front-end dependencies in the dashboard and the VS Code extension.
+
+### Fixed
+
+- Under Agency, the bundled extenders and skills are now discovered when the Upgrade agent is launched with `--agent`, so .NET and TypeScript scenarios are offered.
+- Bundled extenders are now discovered from the running plugin's own folder.
+- The .NET MCP server no longer crashes at startup on machines where the ONNX runtime fails to load; the embedding model now loads on first use.
+- The .NET assessment now reports compiler-specific breaking changes only for projects written in the affected language, so F#-only issues are no longer reported against C# projects.
+- A `global.json` that pins an uninstalled .NET SDK now produces a clear error instead of a crash.
+- Route-ownership analysis is more conservative: it no longer reports a Framework route as handled by ASP.NET Core while middleware, forwarders or unproven Core builders could still send its traffic to Framework.
+- `analyze_route_ownership` no longer requires `proxyProjectPath`, and returns compact JSON.
+- The dashboard no longer hangs when a request fails, and the Current task card updates correctly after an upgrade completes.
+- The dashboard now shows loading and reconnecting states instead of a blank or stale view while live updates reconnect.
+- PowerShell compatibility validation results are no longer stale after a profile is regenerated.
+- Fixed two MCP tool-dispatch defects.
+
+### Security
+
+- The dashboard server now sanitizes request-derived values before logging them, preventing forged log entries.
+
 ## [1.1.539] - 2026-09-15
 
 ### Added

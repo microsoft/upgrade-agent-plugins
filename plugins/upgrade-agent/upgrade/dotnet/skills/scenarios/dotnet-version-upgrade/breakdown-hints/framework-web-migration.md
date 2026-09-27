@@ -9,6 +9,18 @@ to break down migration work.
 
 ---
 
+### hint: web-wire-contract-preservation
+**Applies to task types**: HTTP host project conversion or retargeting, web layer migration, response serialization, OData dependency changes, traffic cutover
+**Condition**: Framework HTTP hosts, endpoints, or their response contracts move to Core, including non-OData endpoints
+**Recommendation**: Add `#skill:migrating-webapi-odata` to every affected child
+task; pins do not propagate from its parent. Carry the scoped gate result and
+preservation decision into each child, and run the gate before project conversion
+or retargeting, package changes, formatters, serializers, or traffic. Keep STOP scopes behind YARP or create an
+owner-agreed raw MVC preservation task; do not silently convert them to OData v4.
+**Priority**: MUST
+
+---
+
 ### hint: web-controller-migration-units
 **Applies to task types**: web layer migration, controller migration
 **Condition**: Web project has controllers that need migrating to ASP.NET Core

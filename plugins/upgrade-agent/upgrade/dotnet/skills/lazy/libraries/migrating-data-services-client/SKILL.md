@@ -19,6 +19,20 @@ Migrate projects from the WCF Data Services client (`Microsoft.Data.Services.Cli
 
 > **Related skills:** migrating-data-edm-to-odata, migrating-data-odata-to-odata-core
 
+## Wire-Contract Gate
+
+Before replacement in any server-side project or library serving Framework HTTP endpoints, first run the
+`migrating-webapi-odata` wire-compatibility gate, including non-OData responses.
+Require a scoped PASS, or evidence-backed NOT APPLICABLE from its applicability
+check for code with no affected HTTP consumers. On STOP, unknown evidence, or an
+unavailable gate, do not execute the conversion instructions below or remove
+dependencies shared with protected endpoints.
+
+For client-only code, first confirm that the remote service supports OData v4.
+If it still requires v3, retain the v3 client. This client migration never
+authorizes upgrading a remote service; any server migration is a separate,
+owner-approved task subject to `migrating-webapi-odata`.
+
 ## Package Reference Changes
 
 ### Old Reference (Remove)
@@ -129,7 +143,9 @@ context.SaveChanges(SaveChangesOptions.BatchWithIndependentOperations);
 
 ### Generated Proxy Not Compiling
 
-Ensure the OData service exposes a v4-compatible `$metadata` endpoint. If the service is still OData v3, upgrade the service first or use the v3 client until the service is migrated.
+Ensure the OData service exposes a v4-compatible `$metadata` endpoint. If it is
+still OData v3, keep the v3 client; do not upgrade the service as a workaround.
+Follow the Wire-Contract Gate before any separately authorized server work.
 
 ### LINQ Queries Throwing NotSupportedException
 

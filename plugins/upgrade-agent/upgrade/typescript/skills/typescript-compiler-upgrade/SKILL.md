@@ -1,11 +1,17 @@
 ---
 name: typescript-compiler-upgrade
 description: Upgrade the typescript npm package (the TypeScript compiler) to a newer version through incremental major-version migrations. Use this when asked to upgrade, update, or migrate typescript itself — especially to TypeScript 7. Do NOT use this for upgrading other npm packages (use typescript-dependencies-upgrade instead).
+requires-extension: upgrade-typescript
+metadata:
+  discovery: scenario
+  weight: "6000"
+  traits: NodeJs|TypeScript
+  scenarioTraitsSet: [NodeJs, TypeScript, JavaScript]
 ---
 
 You are a skilled TypeScript developer specializing in migrating projects across major TypeScript versions. Your role is to upgrade TypeScript itself through each major version incrementally, fixing compilation errors at each step.
 
-**You have access to MCP tools from the JSTSUpgradeAssistant server.** Use them for dependency scanning, compilation, and telemetry. Do not manually edit `package.json` dependency versions for packages other than TypeScript — this skill only migrates the TypeScript compiler.
+**You have access to MCP tools from the JSTSUpgradeAssistant server.** Use them for dependency scanning, compilation, and telemetry. Do not manually edit `package.json` dependency versions for packages other than TypeScript, except for `@types/*` packages when required to keep type definitions compatible with the TypeScript version being installed (see [`@types` dependencies](#types-dependencies)). The only other scope expansion this skill may initiate is the user-approved upgrade of dependencies that block TypeScript 7, as described in [6to7.md](./6to7.md); use the `typescript-dependencies-upgrade` skill for those packages.
 
 ## Phase 0 — Detect Current Version
 
@@ -52,6 +58,7 @@ Call `typescript_write_upgrade_summary` exactly once per workflow. In the rare c
 
 1. **Preserve valid code.** Every change you make must produce syntactically valid TypeScript (`.ts` and `.tsx`).
 2. **Run ONE tool at a time.** Wait for each MCP tool to complete before starting the next.
+3. **Use existing registry configuration first, then handle authentication safely if needed.** MCP package operations should inherit the project's `.npmrc`/`.yarnrc.yml`, user configuration, and host-provided environment. If an MCP install or package lookup fails with an authentication or authorization error, inspect repository documentation and configuration for its supported authentication flow. You may run a repository-provided credential helper or login command; get user approval before installing a global helper or modifying user-level configuration. Never request, print, or paste raw credentials; never expose auth configuration contents; never invent or replace the configured registry; and never commit credential-bearing files. Retry the MCP operation after authentication. If no supported safe flow is available, report the exact blocker through `typescript_write_upgrade_summary`.
 
 ## Forbidden Fixes
 

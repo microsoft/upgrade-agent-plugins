@@ -257,7 +257,13 @@ Cleanup runs even after failure:
    unrelated work.
 3. Confirm no credential-bearing file or agent-authored `.npmrc` change is in
    the Git diff.
-4. Call `typescript_report_dependabot_validation` exactly once with:
+4. If this agent changed files that remain after cleanup, stay on the caller's
+   existing source branch, stage only retained compatibility repairs and
+   accepted runtime-validation artifacts created by this run, and create one
+   local commit. Do not create another branch, amend an existing commit, push,
+   or create a pull request. Record the new commit SHA. If no agent-authored
+   changes remain, leave `commitSha` null.
+5. Call `typescript_report_dependabot_validation` exactly once with:
    - the shared `sessionId`;
    - `success: true` only for `passed` or `fixed`;
    - `status`: `passed`, `fixed`, `failed`, `blocked`, or
@@ -274,14 +280,39 @@ Cleanup runs even after failure:
 If telemetry reporting itself fails, preserve the real validation outcome and
 report `telemetry_reporting_failed` alongside it.
 
-Return a concise structured result containing:
+## Output format
 
-- final status;
-- package directory;
-- standalone result path;
-- files changed;
-- dependency selections changed beyond Dependabot's starting update;
-- guidance consulted;
-- authentication outcome;
-- retry count;
-- remaining failures.
+Return exactly one JSON object and no surrounding prose:
+
+```json
+{
+  "status": "passed|fixed|failed|blocked|unsupported_invocation",
+  "packageDirectory": "<absolute package directory>",
+  "initialFailures": [
+    {
+      "kind": "install|compile|build|test|runtime",
+      "summary": "<concise failure>"
+    }
+  ],
+  "remainingFailures": [],
+  "authentication": "<outcome>",
+  "blocker": null,
+  "compatibilityRepairs": [],
+  "filesChanged": [],
+  "dependencySelectionChanged": false,
+  "dependencySelectionChanges": [],
+  "guidanceGroups": [],
+  "standaloneResultPath": null,
+  "artifactPaths": [],
+  "retryCount": 0,
+  "commitSha": null,
+  "pushed": false,
+  "pullRequestCreated": false,
+  "telemetryError": null
+}
+```
+
+Use empty arrays when a list has no entries and JSON `null` for an unavailable
+blocker, path, commit SHA, or telemetry error. When `filesChanged` is nonempty,
+`commitSha` must contain the local handoff commit created during cleanup.
+`pushed` and `pullRequestCreated` must always be `false`.

@@ -1324,8 +1324,35 @@ function thrown(value) {
 function maybeThrown(value) {
   return value;
 }
-function unvalidatedBody(value) {
-  return value;
+function requestErrorMessage(error) {
+  try {
+    const message = maybeThrown(error)?.message;
+    return typeof message === "string" ? message : "internal error";
+  } catch {
+    console.warn("[upgrade-agent-dashboard] could not read request error message");
+    return "internal error";
+  }
+}
+function handleRequestFailure(res, error) {
+  const message = requestErrorMessage(error);
+  console.warn(`[upgrade-agent-dashboard] request failed: ${message}`);
+  if (res.writableEnded || res.destroyed) {
+    return;
+  }
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  try {
+    res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+    res.end(message);
+  } catch (responseError) {
+    try {
+      console.warn(`[upgrade-agent-dashboard] error response failed: ${requestErrorMessage(responseError)}`);
+    } finally {
+      res.destroy();
+    }
+  }
 }
 var STATIC_CONTENT_TYPES = /* @__PURE__ */ new Map([
   [".css", "text/css; charset=utf-8"],
@@ -1377,6 +1404,12 @@ function isValidCommitHash(value) {
 }
 var MAX_ACTION_BODY_BYTES = 1024 * 1024;
 var MAX_TELEMETRY_BODY_BYTES = 10 * 1024;
+var MAX_LOG_FIELD_LENGTH = 200;
+function forLog(value) {
+  const text = typeof value === "string" ? value : String(value);
+  const collapsed = text.replace(/\n|\r/g, "").replace(/\s+/g, " ").trim();
+  return collapsed.length <= MAX_LOG_FIELD_LENGTH ? collapsed : `${collapsed.slice(0, MAX_LOG_FIELD_LENGTH - 1)}\u2026`;
+}
 var LOOPBACK_HOSTNAMES = /* @__PURE__ */ new Set(["127.0.0.1", "localhost", "::1"]);
 function hostnameFromAuthority(authority) {
   if (typeof authority !== "string" || authority.length === 0) {
@@ -1631,7 +1664,6 @@ data: ${JSON.stringify(data)}
       }
       meta.resolution = resolution;
       const state = await snapshot2(resolution.path, resolution);
-      meta.lastStateHash = hashState(unvalidatedRecord2(state));
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify(state));
       return;
@@ -1836,18 +1868,22 @@ data: ${JSON.stringify(data)}
             if (resolution) {
               meta.resolution = resolution;
               state = await snapshot2(resolution.path, resolution);
-              meta.lastStateHash = hashState(unvalidatedRecord2(state));
             }
           } catch (refreshError) {
             const detail = refreshError instanceof Error ? refreshError.message : String(refreshError);
-            console.warn(`[upgrade-agent-dashboard] post-action state refresh failed for "${actionName}": ${detail}`);
+            console.warn(`[upgrade-agent-dashboard] post-action state refresh failed for "${forLog(actionName)}": ${forLog(detail)}`);
             state = null;
           }
           res.writeHead(200, { "content-type": "application/json" });
           res.end(JSON.stringify({ result, state }));
         } catch (err) {
-          res.writeHead(400, { "content-type": "application/json" });
-          res.end(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }));
+          try {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }));
+          } catch (responseError) {
+            console.warn(`[upgrade-agent-dashboard] action failed: ${requestErrorMessage(err)}`);
+            handleRequestFailure(res, responseError);
+          }
         }
       });
       return;
@@ -1884,13 +1920,21 @@ data: ${JSON.stringify(data)}
   }
   let listening = null;
   const server = http.createServer((req, res) => {
-    handleRequest(req, res).catch((err) => {
+    req.on("error", (error) => {
       try {
-        res.writeHead(500);
-        res.end(unvalidatedBody(maybeThrown(err)?.message ?? "internal error"));
-      } catch {
+        console.warn(`[upgrade-agent-dashboard] request stream failed: ${requestErrorMessage(error)}`);
+      } finally {
+        res.destroy();
       }
     });
+    res.on("error", (error) => {
+      try {
+        console.warn(`[upgrade-agent-dashboard] response stream failed: ${requestErrorMessage(error)}`);
+      } finally {
+        res.destroy();
+      }
+    });
+    handleRequest(req, res).catch((err) => handleRequestFailure(res, err));
   });
   return {
     server,

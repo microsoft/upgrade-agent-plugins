@@ -18,6 +18,17 @@ metadata:
 
 Migrate ASP.NET Framework MVC and WebAPI controllers to ASP.NET Core. The return type system changed completely between frameworks — `HttpResponseMessage` is gone, status code helpers differ, and the `ApiController` vs `ControllerBase` distinction changes request processing behavior. Wrong choices produce incorrect HTTP responses that compile but fail at runtime.
 
+## Wire-Contract Gate
+
+Before any changes, load `migrating-webapi-odata` and apply its wire-contract
+gate, including non-OData endpoints and when this skill is invoked directly.
+Run its cheap applicability check first. Require a recorded scoped PASS or
+evidence-backed NOT APPLICABLE before executing the automatic workflow below.
+If the gate is unavailable or evidence is unknown, STOP.
+On STOP, follow the gate's preservation and in-place replanning instructions
+instead of rewriting controllers or responses. An approved preservation task
+is separate from this automatic conversion workflow.
+
 ## Workflow
 
 ```

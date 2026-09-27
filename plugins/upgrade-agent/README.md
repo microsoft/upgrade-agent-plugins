@@ -240,6 +240,9 @@ upgrade-agent/
 │   │   │   │   │   ├── migrating-webapi-cors/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   └── migrating-webapi-odata/
+│   │   │   │   │       ├── ref/
+│   │   │   │   │       │   ├── compatibility-examples.md
+│   │   │   │   │       │   └── v4-migration.md
 │   │   │   │   │       └── SKILL.md
 │   │   │   │   ├── pwsh/
 │   │   │   │   │   ├── fixing-windows-only-modules/
@@ -276,6 +279,10 @@ upgrade-agent/
 │   │   │   │       │   └── migrating-global-asax/
 │   │   │   │       │       └── SKILL.md
 │   │   │   │       ├── mvc/
+│   │   │   │       │   ├── analyzing-cross-host-route-ownership/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   └── pipeline-code.md
+│   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-aspnet-framework-to-core/
 │   │   │   │       │   │   ├── side-by-side.md
 │   │   │   │       │   │   └── SKILL.md
@@ -296,6 +303,9 @@ upgrade-agent/
 │   │   │   │       │   ├── migrating-mvc-dependency-injection/
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-filters/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   ├── core.cs
+│   │   │   │       │   │   │   └── worked-example.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-http-pipeline/
 │   │   │   │       │   │   └── SKILL.md
@@ -308,6 +318,8 @@ upgrade-agent/
 │   │   │   │       │   ├── migrating-mvc-model-binding/
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-razor-views/
+│   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   └── view-location-precedence.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-mvc-routing/
 │   │   │   │       │   │   └── SKILL.md
@@ -488,13 +500,12 @@ upgrade-agent/
 │   │           └── SKILL.md
 │   └── typescript/
 │       ├── skills/
-│       │   ├── framework-migration/
+│       │   ├── jsts-dependabot/
+│       │   │   └── SKILL.md
+│       │   ├── jsts-framework-migration/
 │       │   │   ├── migrations/
 │       │   │   │   └── jasmine-karma-to-vitest.md
 │       │   │   └── SKILL.md
-│       │   ├── scenarios/
-│       │   │   └── jsts-dependabot/
-│       │   │       └── SKILL.md
 │       │   ├── typescript-compiler-upgrade/
 │       │   │   ├── 4to5.md
 │       │   │   ├── 5to6.md
@@ -541,16 +552,61 @@ upgrade-agent/
 
 ## Privacy
 
-GitHub Copilot upgrade uses GitHub Copilot to help modify code in your current
-workspace. It does not retain code snippets beyond the immediate session and
-does not collect, transmit, or store your custom tasks. See the
-[Microsoft Privacy Statement](https://go.microsoft.com/fwlink/?LinkId=521839)
-for more information.
+### What is sent to GitHub Copilot
+
+This plugin works through GitHub Copilot to analyze and modify code in your
+current workspace. To do that, the upgrade agent and its tools include workspace
+content in your Copilot requests. Depending on the scenario and the step you are
+on, that content can include:
+
+- **Workspace identifiers** — file, project, and solution paths.
+- **Source code** — contents and code snippets from the files being analyzed or
+  changed, and from project and configuration files such as `.csproj`, `.sln`,
+  `package.json`, `Directory.Packages.props`, and `tsconfig.json`.
+- **Dependency and framework data** — package names and versions, project
+  references, and current and target framework versions.
+- **Build and validation output** — restore, build, analyzer, and test results,
+  including compiler errors, warnings, diagnostic IDs, and failure messages.
+- **Prompts, instructions, and upgrade workspace** — your chat prompts and
+  instructions; the generated assessment, `plan.md`, `tasks.md`, and per-task
+  files under `tasks/{taskId}/`, including any edits you make to them; and
+  preferences and instructions in `scenario-instructions.md`. These files are
+  written to your repository under `.github/upgrades/` and persist across
+  sessions. The plugin does not independently upload or store them elsewhere,
+  but the agent reads them while working and when resuming, so their contents
+  may be included in GitHub Copilot requests.
+
+This content is handled as part of your GitHub Copilot requests, subject to the
+[GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+For details on how Copilot handles prompts and retention, see the
+[GitHub Copilot Trust Center](https://copilot.github.trust.page/).
 
 ### Telemetry
 
-The upgrade tools collect telemetry about usage. Telemetry collection is on by default.
-To opt out, set the environment variable `APPMOD_DISABLE_TELEMETRY` to `true` in the environment where you run the plugin.
+The upgrade tools collect usage telemetry: session and persistent device
+identifiers, product and environment versions, the selected upgrade scenario,
+aggregate workspace metrics, upgrade progress and timing, and diagnostic
+identifiers such as error and analysis rule IDs and exception types.
+
+Telemetry does not include source code or file contents. Diagnostics are reduced
+to identifiers, counts, and exception types rather than message text. When
+collected, repository URL and name telemetry fields are hashed before they are
+sent.
+
+Telemetry collection is on by default. To opt out, set the environment variable
+`APPMOD_DISABLE_TELEMETRY` to `true` in the environment where you run the plugin.
+See the
+[Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
+for more information.
+
+### Other network activity
+
+The plugin downloads the upgrade tools from nuget.org and npmjs.com, or from the
+feeds you have configured.
+
+During .NET analysis and upgrade, the tools query your configured NuGet feeds
+(nuget.org by default) for your project's package dependencies, and may download
+those packages to inspect them.
 
 ## Links
 

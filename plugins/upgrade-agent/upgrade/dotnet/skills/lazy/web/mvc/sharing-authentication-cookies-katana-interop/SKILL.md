@@ -58,6 +58,13 @@ Record these values before editing either host:
 
 For each host, enumerate every consumed claim type and authorization gate. Confirm role, subject/name identifier, tenant, MFA, and application-specific claim URIs retain identical meaning. A decryptable cookie is not sufficient if policies interpret its claims differently. For custom authorization filters, follow `migrating-mvc-filters` and compare each migrated policy's challenge, forbid, redirect, status-code, and header behavior.
 
+Use that skill's **Custom Authorization / Preserve Claims and Inheritance** policy
+shape (`ExistingRoleRequirement` / `ExistingRoleHandler`) against this inventory:
+preserve `NameClaimType`, `RoleClaimType`, primary-identity selection and claim-value
+comparisons, not just claim presence. Its filter examples retain pre-base effects
+and inherited gates. Include the TempData producer/redirect consumer in route
+placement; sharing authentication cookies does not make their TempData interoperable.
+
 ### Step 2: Configure the Shared Key Ring
 
 Add these packages to the Framework host only. Match the project's existing package-management format before writing anything:

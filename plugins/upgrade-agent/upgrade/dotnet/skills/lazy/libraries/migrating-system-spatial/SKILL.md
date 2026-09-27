@@ -17,6 +17,17 @@ metadata:
 
 Migrate from `System.Spatial` (OData v3) to `Microsoft.Spatial` (OData v4). This is primarily a namespace change — the spatial type APIs (`GeographyPoint`, `GeometryPoint`, `GeographyLineString`, etc.) remain largely compatible. The main work is updating `using` directives and adjusting any `SpatialFormatter` or extension method references.
 
+## Wire-Contract Gate
+
+Before replacement in any server-side project or library serving Framework HTTP endpoints, first run the
+`migrating-webapi-odata` wire-compatibility gate, including non-OData responses.
+Require a scoped PASS, or evidence-backed NOT APPLICABLE from its applicability
+check for code with no affected HTTP consumers. On STOP, unknown evidence, or an
+unavailable gate, do not execute the conversion or troubleshooting instructions
+below. Retain the protected host's spatial and OData dependencies.
+For client-only code, confirm the remote service supports the proposed protocol;
+do not upgrade the server or shared dependencies to satisfy this client change.
+
 ## Package Reference Changes
 
 ### Old Reference (Remove)
@@ -52,7 +63,10 @@ Scan the project for:
 
 ### Step 2: Update Project File References
 
-Remove `System.Spatial` and add `Microsoft.Spatial` (see "Package Reference Changes" above). If the project uses OData client or server libraries, ensure they are also updated to OData v4 versions that depend on `Microsoft.Spatial`.
+Only within the approved scope from the Wire-Contract Gate, replace `System.Spatial`
+with `Microsoft.Spatial`. Check OData client/server dependency compatibility;
+do not automatically upgrade them to v4. Gate server-side changes separately
+and retain packages used by a protected endpoint.
 
 ### Step 3: Update Namespace References
 
@@ -94,11 +108,16 @@ Factory methods like `GeographyPoint.Create(latitude, longitude)` retain the sam
 
 ### Ambiguous Type References
 
-If both `System.Spatial` and `Microsoft.Spatial` are referenced (e.g., via transitive dependencies), the compiler will report ambiguous type errors. Remove the `System.Spatial` package and ensure no transitive dependency pulls it in. Use `dotnet list package --include-transitive` to check.
+Inspect `dotnet list package --include-transitive` and qualify or alias types
+when both namespaces are needed. Remove an old dependency only within the
+approved scope and only if no protected consumer still needs it.
 
 ### OData Version Mismatch
 
-`Microsoft.Spatial` is part of the OData v4 ecosystem. If other OData packages in the project still target v3 (e.g., `Microsoft.Data.OData`), they may bring in `System.Spatial` transitively. Upgrade all OData packages to v4 together.
+`Microsoft.Spatial` belongs to the OData v4 stack. V3 dependencies may still need
+`System.Spatial`; that mismatch is not authorization to upgrade all OData
+packages. For serving projects, return to `migrating-webapi-odata` before any
+server dependency change. On STOP, preserve the v3 stack or split the projects.
 
 ### Missing Extension Methods
 

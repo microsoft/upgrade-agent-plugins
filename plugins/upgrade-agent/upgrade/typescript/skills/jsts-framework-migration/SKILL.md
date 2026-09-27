@@ -1,6 +1,12 @@
 ---
-name: framework-migration
+name: jsts-framework-migration
 description: Migrate a JavaScript or TypeScript project from one framework to another while preserving behavior, integrations, build workflows, and validation. Covers application-framework migrations (for example Gatsby to Astro, Create React App to Vite) and tooling/test-framework migrations (for example Karma/Jasmine to Vitest). Use for replacing one framework with another; do not use for upgrading packages within the same framework — use typescript-dependencies-upgrade instead.
+requires-extension: upgrade-typescript
+metadata:
+  discovery: scenario
+  weight: "6000"
+  traits: NodeJs|TypeScript|JavaScript
+  scenarioTraitsSet: [NodeJs, TypeScript, JavaScript]
 ---
 
 You are a JavaScript and TypeScript framework-migration specialist. Migrate the complete project, not only a representative slice or proof of concept.
@@ -22,7 +28,7 @@ The exact source-versus-target comparison for a given framework pair (which comm
 
 ## Migration artifacts
 
-Maintain these files under `<packageDirectory>/.tsupgrader/framework-migration/`:
+Maintain these files under `<packageDirectory>/.tsupgrader/jsts-framework-migration/`:
 
 - `inventory.md` — the source-project inventory and baseline evidence.
 - `migration-plan.md` — dependency-ordered work items and their status.

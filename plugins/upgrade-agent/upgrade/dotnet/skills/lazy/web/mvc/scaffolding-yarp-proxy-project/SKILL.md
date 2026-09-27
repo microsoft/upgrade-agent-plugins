@@ -488,7 +488,7 @@ and host-allow-list guardrails, and the `web.config` registration are in **[ref/
 - [ ] appsettings.json parses as valid JSON (`dotnet build` does not check this — backslashes in a Windows path must be escaped)
 - [ ] launchSettings.json has `ProxyTo` pointing to the **verified** old app URL
 - [ ] Framework-side `X-Forwarded-*` companion (IHttpModule rewriting server variables, gated on trusted proxy IPs) is in place when the Framework app relies on scheme/host/IP
-- [ ] New project added to solution
+- [ ] New project added to solution; for C# hosts, run `analyze_route_ownership` with both project paths and load #skill:analyzing-cross-host-route-ownership to establish the initial ownership baseline before moving routes
 - [ ] Old project has `_MigrateToProjectGuid` property pointing to new project
 - [ ] New project builds with 0 errors
 

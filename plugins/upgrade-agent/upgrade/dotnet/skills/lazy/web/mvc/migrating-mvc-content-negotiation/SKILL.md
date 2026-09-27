@@ -20,6 +20,17 @@ metadata:
 
 Migrate Web API content negotiation infrastructure from ASP.NET Framework to ASP.NET Core. The formatter base classes, registration model, and default serializer all changed — custom `MediaTypeFormatter` subclasses must be rewritten against new base classes, and projects relying on XML or Newtonsoft.Json defaults need explicit opt-in.
 
+## Wire-Contract Gate
+
+Before any changes, load `migrating-webapi-odata` and apply its wire-contract
+gate, including non-OData endpoints and when this skill is invoked directly.
+Run its cheap applicability check first. Require a recorded scoped PASS or
+evidence-backed NOT APPLICABLE before executing the automatic workflow below.
+If the gate is unavailable or evidence is unknown, STOP.
+On STOP, follow the gate's preservation and in-place replanning instructions
+instead of changing formatters or serialization. An approved preservation task
+is separate from this automatic conversion workflow.
+
 ## Workflow
 
 Track progress across these steps:

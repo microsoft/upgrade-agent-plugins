@@ -14,6 +14,18 @@ metadata:
 
 # Newtonsoft.Json to System.Text.Json Migration
 
+## Wire-Contract Gate
+
+During assessment, identify Framework HTTP hosts and dependent libraries whose
+response models or serialization this change touches. Before planning replacement
+for those scopes, load `migrating-webapi-odata` and apply its compatibility gate,
+including non-OData responses. Require a scoped PASS, or evidence-backed
+NOT APPLICABLE from its applicability check for code with no affected HTTP consumers.
+On STOP, unknown evidence, or an unavailable gate, retain the original serializer
+and dependencies; do not put that scope into automatic conversion or cleanup.
+Add `#skill:migrating-webapi-odata` and the record path to affected tasks and
+their children. Direct invocation of this scenario follows the same prerequisite.
+
 ## 1. Assessment
 
 Scan the solution to build a complete picture of Newtonsoft.Json usage. Capture findings in `assessment.md`.
@@ -87,10 +99,12 @@ Projects exposing Newtonsoft types in public APIs should be migrated before thei
 
 Execute the plan task by task. For any task that involves migrating Newtonsoft.Json code or packages, apply the **migrating-newtonsoft-to-system-text-json** feature skill. It provides API mappings, package changes, code transformations, and validation steps.
 
-After completing all tasks, do a final solution-wide search for any remaining `Newtonsoft.Json` references and fix stragglers.
+After completing approved tasks, search for remaining `Newtonsoft.Json` references.
+Fix stragglers only within approved scope; report retained references in STOP
+scopes without changing them or their shared central package versions.
 
 ## 4. Validation
 
 - Build the full solution — zero errors required
-- No remaining `Newtonsoft.Json` namespace references in code
+- No remaining `Newtonsoft.Json` references in approved scope; protected scopes retain theirs
 - If the project had tests, run them and report results
