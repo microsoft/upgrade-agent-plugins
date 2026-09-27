@@ -24,6 +24,17 @@ Migrate .NET projects from `Newtonsoft.Json` to `System.Text.Json`, including pa
 - If a solution is specified, migrate all projects in the solution referencing `Newtonsoft.Json`.
 - NuGet package names, assembly names, and project names are **case-insensitive** — account for this when searching for and removing dependencies.
 
+## Wire-Contract Gate
+
+Before replacement in any server-side project or library serving Framework HTTP endpoints, first run the
+`migrating-webapi-odata` wire-compatibility gate, including non-OData responses.
+Require a scoped PASS, or evidence-backed NOT APPLICABLE from its applicability
+check for code with no affected HTTP consumers. On STOP, unknown evidence, or an
+unavailable gate, do not execute the conversion instructions below. Keep the
+original serializer, response attributes/models, and shared dependencies intact;
+preservation requires a separately agreed task, not this automatic replacement.
+Carry the scoped record into child tasks with `#skill:migrating-webapi-odata`.
+
 ## Workflow
 
 Complete all steps in order without pausing between them. Continue until the migration is finished or user input is genuinely required. Ordering matters because later steps depend on earlier ones (e.g., code updates rely on package references being correct first).
@@ -43,7 +54,7 @@ For each project with an **explicit** dependency on `Newtonsoft.Json` in the pro
 1. Remove the `Newtonsoft.Json` package reference and assembly reference from the project file.
 2. Add a `System.Text.Json` package reference with a version supporting the project's target framework. Use tools to determine the best version; fall back to manual determination if unavailable.
 3. If using Central Package Management (CPM):
-   - Remove the `Newtonsoft.Json` `PackageVersion` entry from `Directory.Packages.props`.
+   - Remove the `Newtonsoft.Json` `PackageVersion` entry from `Directory.Packages.props` only if no retained project still uses it.
    - Add `System.Text.Json` `PackageReference` without a version in project files.
    - Add a `System.Text.Json` `PackageVersion` entry to `Directory.Packages.props`.
 
@@ -63,7 +74,9 @@ Update code files in affected projects **and** projects that depend on them (tra
 
 ### Step 3: Validate Migration
 
-Search all affected projects for any remaining `Newtonsoft.Json` references. If any are found, return to Step 2. Repeat until no references remain. This loop catches references missed in large solutions where transitive dependencies can hide usages.
+Search only the approved migration scope for remaining `Newtonsoft.Json` references.
+If any are found there, return to Step 2. Do not expand cleanup into STOP scopes
+or remove shared references required by protected consumers.
 
 ### Step 4: Build Verification
 
@@ -102,6 +115,6 @@ System.Text.Json is included in:
 
 ## Success Criteria
 
-- No `Newtonsoft.Json` references remain in affected projects
+- No `Newtonsoft.Json` references remain in the approved scope; protected consumers retain theirs
 - All modified projects build without errors
 - Any unconvertible patterns or behavioral changes flagged for the user

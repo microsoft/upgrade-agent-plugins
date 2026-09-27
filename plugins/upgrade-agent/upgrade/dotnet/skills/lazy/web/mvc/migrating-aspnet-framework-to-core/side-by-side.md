@@ -105,6 +105,18 @@ auth controllers.
 
 ### Controller triage (before creating subtasks)
 
+**First, establish what is actually still on the old host.** Run
+`analyze_route_ownership(projectPath="{old .csproj}", proxyProjectPath="{new .csproj}")`
+and load #skill:analyzing-cross-host-route-ownership to read the result. Pin that skill
+on each C# route-moving wave and repeat the analysis before and after the wave. For other
+languages, use the prose/runtime baseline; the tool is C#-only. The routes
+reported as `Forwarded` and `Partial` are the candidate pool. `Terminated` is static
+coverage evidence, not unconditional permission to delete: check unresolved gaps, conflicts,
+redirect destinations, and runtime behavior as the analysis skill requires. A `Partial`
+route may have only symbolic overlap rather than a proven migrated slice.
+Triaging from `RouteConfig.cs` alone cannot tell these apart —
+after the first wave, the file lists routes that no longer serve anything.
+
 Read each controller file to assess complexity — constructor dependencies,
 auth requirements, action count, use of complex features (child actions,
 custom filters, model binders), and any other signals that indicate migration
@@ -163,6 +175,14 @@ See the main skill's Views and Static Assets section.
 - Verify solution builds with 0 errors after reference changes
 
 ### Final verification
+- Re-run `analyze_route_ownership` against both projects. Every route this wave moved
+  should have its coverage confirmed. The one expected exception is `Unknown` with
+  `OpaqueRegistrar` caused by the proxy's own pipeline code, such as the scaffold's
+  `UseSystemWebAdapters()` (the analysis skill's pipeline reference explains it): report
+  it as expected rather than as a defect in the wave, and keep the Framework route.
+  Investigate any other `Partial` and `Unknown` rather than rounding them to done.
+  `Unclaimed` is a possible routing gap to test, not proof of a
+  live 404. Even `Terminated` requires the analysis skill's deletion prerequisites.
 - Verify all endpoints against baseline
 - All tests pass (including re-pointed test projects)
 - No `System.Web` references remain in the new project

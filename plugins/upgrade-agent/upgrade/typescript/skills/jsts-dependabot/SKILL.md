@@ -9,9 +9,9 @@ requires-extension: upgrade-typescript
 metadata:
   discovery: scenario
   importance: default
-  weight: 0
+  weight: "0"
   traits: NodeJs|TypeScript|JavaScript
-  scenarioTraitsSet: [NodeJs, TypeScript, JavaScript]
+  scenarioTraitsSet: "NodeJs|TypeScript|JavaScript"
 ---
 
 # JSTS Dependabot Validation Scenario

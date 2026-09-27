@@ -124,11 +124,11 @@ The selected target runtime applies to the application dev server and target-pro
 
 | | `exit-code` | `output-contains` | `http-status` | `test-results` |
 |---|---|---|---|---|
-| `process` | ✅ exit code | ✅ stdout+stderr substring | ❌ | ✅ exit code 0; parsed test counts attached to result |
+| `process` | ✅ exit code | ✅ stdout+stderr substring | ❌ | ✅ parsed test counts; exit code 0 fallback |
 | `http-probe` | ❌ | ✅ response body substring | ✅ HTTP status | ❌ |
 | `playwright-route` | ✅ exit code of `playwright test` | ❌ | ❌ | ❌ |
 
-`test-results` is a specialization of `exit-code` for the `tests-pass` assertion: same pass criterion (exit code 0), but the runner additionally parses the test framework's output and persists `testsTotal / testsPassed / testsFailed / testsSkipped / testFramework` on the assertion result so baseline vs. post-upgrade comparisons can show the count diff. `expected` must be `"0"`. See [tests-assertion.md](./tests-assertion.md).
+`test-results` parses the test framework's output and persists `testsTotal / testsPassed / testsFailed / testsSkipped / testFramework` on the assertion result so baseline vs. post-upgrade comparisons can show the count diff. When usable counts are available, the assertion passes when at least one test passed and none failed, regardless of the process exit code. When counts cannot be parsed or no tests are discovered, it falls back to exit code 0. `expected` must be `"0"` for that fallback. See [tests-assertion.md](./tests-assertion.md).
 
 ## Naming
 

@@ -275,6 +275,12 @@ Before loading the strategy file, evaluate these rules against the assessment.
 
 #### Common rules (all project flavors)
 
+- **Wire-contract pin.** For Framework-to-Core tasks that convert or retarget
+  HTTP host projects, move HTTP endpoints, response models/serializers, OData
+  dependencies, or their traffic, add
+  `#skill:migrating-webapi-odata` to each task description, including non-OData
+  endpoints. Require its compatibility gate before changes; carry STOP results
+  as preservation work rather than automatic v4 conversion.
 - Test project work is always part of the task that caused the need,
   not standalone tasks
 - When generating migration tasks that move code between

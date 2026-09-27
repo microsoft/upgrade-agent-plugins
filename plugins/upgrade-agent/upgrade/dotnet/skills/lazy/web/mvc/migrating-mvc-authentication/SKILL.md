@@ -303,19 +303,18 @@ builder.Services.AddAuthorization(options =>
 
 #### Authorize Attribute Changes
 
-`[Authorize(Roles = "Admin")]` works in both frameworks but resolves roles from different sources. Verify the role claim type matches:
+For custom `AuthorizeAttribute` subclasses overriding `AuthorizeCore`,
+`OnAuthorization`, or `HandleUnauthorizedRequest`, use `migrating-mvc-filters`
+before replacing the attribute with a policy. It preserves inherited controller
+gates, TempData redirects, warning headers and explicit challenge behavior; the
+ordinary attribute mappings below do not migrate those side effects.
 
-```csharp
-// If roles come from a custom claim type, configure it:
-builder.Services.AddAuthentication()
-    .AddCookie(options =>
-    {
-        options.ClaimsIssuer = "LegacyApp";
-    });
-
-// Or map during claims transformation:
-builder.Services.AddTransient<IClaimsTransformation, LegacyRoleClaimsTransformation>();
-```
+`[Authorize(Roles = "Admin")]` works in both frameworks but resolves roles from
+different sources. Preserve each `ClaimsIdentity.RoleClaimType` and its role values
+when creating or transforming identities. Cookie `ClaimsIssuer` sets an issuer,
+not the role claim type; adding another cookie scheme does not repair the mapping
+and can break side-by-side identity. Use the claims inventory and policy example in
+`migrating-mvc-filters` to verify the existing principal instead.
 
 **`[Authorize(Users = "...")]` is removed** in ASP.NET Core. Replace with a policy:
 

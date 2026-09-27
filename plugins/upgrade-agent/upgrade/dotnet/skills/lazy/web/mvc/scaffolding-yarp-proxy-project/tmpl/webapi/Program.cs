@@ -310,6 +310,10 @@ app.MapControllers();
 // forwarder route below so forwarded requests bypass the auth middleware; naming the scheme on
 // migrated endpoints is the less surprising of the two.
 //</remoteauth>
-app.MapForwarder("/{**catch-all}", app.Configuration["ProxyTo"]!).Add(static builder => ((RouteEndpointBuilder)builder).Order = int.MaxValue);
+// WithOrder, not an Add convention that assigns RouteEndpointBuilder.Order: the route-ownership
+// analysis reads WithOrder and treats any other endpoint convention as unreadable match data. An
+// unreadable forwarder order withholds Terminated on every route this proxy fronts — the verdict
+// that licenses deleting the Framework original.
+app.MapForwarder("/{**catch-all}", app.Configuration["ProxyTo"]!).WithOrder(int.MaxValue);
 
 app.Run();

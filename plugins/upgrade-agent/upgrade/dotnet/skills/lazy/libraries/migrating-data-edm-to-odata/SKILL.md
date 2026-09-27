@@ -19,6 +19,15 @@ Migrate projects from the OData v1–v3 EDM library (`Microsoft.Data.Edm`) to th
 
 > **Related skills:** migrating-data-odata-to-odata-core, migrating-data-services-client
 
+## Wire-Contract Gate
+
+Before replacement in any server-side project or library serving Framework HTTP endpoints, first run the
+`migrating-webapi-odata` wire-compatibility gate, including non-OData responses.
+Require a scoped PASS, or evidence-backed NOT APPLICABLE from its applicability
+check for code with no affected HTTP consumers. On STOP, unknown evidence, or an
+unavailable gate, do not execute the conversion instructions below or remove
+dependencies needed by the live host. Similar EDM APIs do not establish wire compatibility.
+
 ## Package Reference Changes
 
 ### Old Reference (Remove)

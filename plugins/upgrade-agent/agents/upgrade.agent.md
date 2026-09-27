@@ -28,6 +28,7 @@ mcp-servers:
       # remove, or change a host-level env var here, mirror it in that script's
       # orchestrator MCP `Env` block so local dev matches the shipped plugin.
       APPMOD_CALLER_TYPE: copilot-cli
+      MODERNIZE_ORCHESTRATOR_PLUGIN_ROOT: '${PLUGIN_ROOT}'
       # Disable MCP Apps (SEP-1865) UI for the plugin-hosted server. The GitHub
       # Copilot App mounts MCP App UIs only on tool completion, which deadlocks
       # the blocking confirm_options/show_upgrade_options pattern (the tool blocks

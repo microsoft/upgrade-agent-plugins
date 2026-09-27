@@ -14,6 +14,12 @@ metadata:
 
 Migrate ASP.NET MVC routing from `RouteCollection`/`RouteConfig.cs` to ASP.NET Core endpoint routing in Program.cs.
 
+**Side-by-side migrations:** keep the Framework registrations needed by unmigrated routes.
+For C# hosts, load #skill:analyzing-cross-host-route-ownership and run
+`analyze_route_ownership` with both project paths before and after each route-moving wave.
+For other languages, preserve the prose inventory and runtime comparisons instead; the tool
+is C#-only.
+
 ## Workflow
 
 ```
@@ -96,6 +102,10 @@ app.MapControllerRoute(
 ```
 
 ### Step 5: Remove RouteConfig
+
+In a side-by-side migration, delete only registrations that satisfy the ownership skill's
+deletion prerequisites. Do not remove the shared route configuration while unmigrated
+routes still depend on it. The full cleanup below applies after all its routes have moved.
 
 1. Delete `RouteConfig.cs` (or equivalent file containing `RegisterRoutes`). Only delete if it contains no non-routing logic.
 2. Remove all references to `RouteTable.Routes` across the codebase.

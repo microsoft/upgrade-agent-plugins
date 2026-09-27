@@ -42,6 +42,22 @@ Determine mode from `scenario-instructions.md` (Upgrade Options > Project Approa
 
 ---
 
+## Wire-Contract Gate
+
+Before any changes, load `migrating-webapi-odata` and apply its wire-contract
+gate, including non-OData endpoints and when this skill is invoked directly.
+Run its cheap applicability check first. Require a recorded scoped PASS or
+evidence-backed NOT APPLICABLE before executing the automatic workflow below.
+If the gate is unavailable or evidence is unknown, STOP.
+On STOP, follow the gate's preservation and in-place replanning instructions
+instead of converting the Framework host. An approved preservation task is
+separate from this automatic conversion workflow.
+
+This prerequisite runs before project retargeting, not at the controller phase,
+and is independent of the just-in-time satellite loading schedule below.
+
+---
+
 ## Satellite Skill Loading Guide
 
 This migration touches many complex feature areas. Each has a dedicated satellite skill
@@ -73,7 +89,8 @@ that needs them — not all upfront.
 2. **Load satellite just before the step that needs it** — not all upfront. Token
    budget matters; load only what the current step requires.
 3. **If a satellite is not available** — proceed with caution, note the gap, apply
-   general knowledge, and flag areas requiring manual review.
+   general knowledge, and flag areas requiring manual review. This fallback does
+   not apply to `migrating-webapi-odata`: if that prerequisite is unavailable, STOP.
 4. **Multiple satellites may apply to the same step** — load all relevant ones before
    starting that step.
 5. **`managing-shared-database-schema` is the exception to rule 1.** When the old host
@@ -93,6 +110,12 @@ Side-by-side splits them across tasks — see [side-by-side.md](side-by-side.md)
 ---
 
 ### Baseline Capture
+
+Reuse the wire gate's endpoint inventory and evidence record. The gate's
+consumer/protocol/formatter fields extend this baseline; they do not replace
+the status, auth, and header checks below. Capture one combined inventory:
+the gate uses it for the compatibility decision and this phase uses it for
+final verification.
 
 Before any changes, record:
 

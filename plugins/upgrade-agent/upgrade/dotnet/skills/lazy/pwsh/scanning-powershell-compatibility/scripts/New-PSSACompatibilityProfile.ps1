@@ -375,6 +375,13 @@ function New-TargetProfile {
         $arguments['ExcludeAssemblyPathPrefix'] = @('C:\Program Files\WindowsPowerShell')
     }
 
+    # Invalidate before the collector can overwrite (or partially write) the
+    # profile. Skipped or failed validation must not leave an old verdict usable.
+    $validationPath = [System.IO.Path]::ChangeExtension($Destination, '.validation.json')
+    if (Test-Path -LiteralPath $validationPath) {
+        Remove-Item -LiteralPath $validationPath -ErrorAction Stop
+    }
+
     # Generation emits BadImageFormatException / TypeLoadException warnings for
     # native DLLs it cannot reflect over. Those are expected and not failures.
     New-PSCompatibilityProfile @arguments 3>$null | Out-Null

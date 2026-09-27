@@ -2,11 +2,14 @@
 name: migrating-mvc-razor-views
 description: >
   Migrates ASP.NET MVC Razor views to ASP.NET Core by converting HtmlHelpers to TagHelpers,
-  child actions to ViewComponents, and updating layout infrastructure. Use when upgrading MVC apps
-  that use Html.ActionLink, Html.BeginForm, Html.TextBoxFor, Html.DropDownListFor,
-  Html.ValidationMessageFor, Html.ValidationSummary, Html.Action, Html.RenderAction,
-  ChildActionOnly, @helper, HtmlString, or custom HtmlHelper extensions. Also triggers for
-  TagHelper conversion, ViewComponent migration, _ViewImports setup, view discovery changes,
+  child actions to ViewComponents, porting custom view-location precedence, and updating layout
+  infrastructure. Use when upgrading MVC apps that use Html.ActionLink, Html.BeginForm,
+  Html.TextBoxFor, Html.DropDownListFor, Html.ValidationMessageFor, Html.ValidationSummary,
+  Html.Action, Html.RenderAction, ChildActionOnly, @helper, HtmlString, custom HtmlHelper
+  extensions, or a custom RazorViewEngine / VirtualPathProviderViewEngine registered through
+  ViewEngines.Engines. Also triggers for TagHelper conversion, ViewComponent migration,
+  _ViewImports setup, view discovery changes, ViewLocationFormats, PartialViewLocationFormats,
+  MasterLocationFormats, AreaViewLocationFormats, RazorViewEngineOptions, IViewLocationExpander,
   ViewBag/ViewData/TempData migration, display templates, and editor templates in MVC-to-Core
   upgrades.
 metadata:
@@ -25,13 +28,14 @@ Migrate ASP.NET MVC Razor views to ASP.NET Core. Razor syntax is mostly compatib
 ```
 Migration Progress:
 - [ ] Step 1: Set up _ViewImports.cshtml
-- [ ] Step 2: Convert HtmlHelpers to TagHelpers
-- [ ] Step 3: Convert child actions to ViewComponents
-- [ ] Step 4: Update partial view references
-- [ ] Step 5: Migrate custom HtmlHelper extensions
-- [ ] Step 6: Update view data passing patterns
-- [ ] Step 7: Clean up removed APIs
-- [ ] Step 8: Verify build
+- [ ] Step 2: Port custom view-location precedence
+- [ ] Step 3: Convert HtmlHelpers to TagHelpers
+- [ ] Step 4: Convert child actions to ViewComponents
+- [ ] Step 5: Update partial view references
+- [ ] Step 6: Migrate custom HtmlHelper extensions
+- [ ] Step 7: Update view data passing patterns
+- [ ] Step 8: Clean up removed APIs
+- [ ] Step 9: Verify build
 ```
 
 ### Step 1: Set Up _ViewImports.cshtml
@@ -48,7 +52,36 @@ Replace `MyApp` with the actual project namespace. The `@addTagHelper` directive
 
 Verify that `_ViewStart.cshtml` still references the correct layout path. The default `_Layout.cshtml` path is compatible between MVC and Core.
 
-### Step 2: Convert HtmlHelpers to TagHelpers
+### Step 2: Port Custom View-Location Precedence
+
+Both frameworks probe an ordered list of path formats and render the **first file that exists**, so that order is behavior. An app that replaced the default view engine — usually to put an override folder ahead of `Views/` — loses every override if the order is not carried across, and loses it silently, because the fallback view still renders.
+
+Search the Framework project for these signals in startup, `*ViewEngine.cs`, controllers, and their base classes or view-returning helpers:
+
+| Signal | What it means |
+|--------|---------------|
+| `ViewEngines.Engines.Clear()`, `.Add(...)`, `.Insert(...)` | the engine list was replaced or reordered |
+| a type deriving from `RazorViewEngine` or `VirtualPathProviderViewEngine` | custom formats, or an overridden `FindView` / `FindPartialView` / `CreateView` |
+| a type implementing `IViewEngine` directly | fully custom resolution, which may go beyond file locations |
+| assignment to any `*LocationFormats` property | the precedence list itself |
+| `DisplayModeProvider.Instance.Modes`, `DefaultDisplayMode`, `*.Mobile.cshtml`, or other configured suffixed views | request-dependent selection, including stock Mobile mode without a custom engine |
+| `View(viewName, masterName)` or `View(viewName, masterName, model)`, including named `masterName:` arguments | explicit master selection, even with the stock engine; follow the [explicit-layout rewrite guidance](ref/view-location-precedence.md#when-the-source-orders-diverge) |
+
+Confirm the bound MVC overload before rewriting: `View(viewName, model)` is not a master-name call. The two-string master overload silently binds to Core's `View(string, object)`, making the layout name the model; the three-argument master overload has no Core equivalent. Do not take the no-signal exit until these call sites have been checked.
+
+**If none of them is present, skip to Step 3 after checking the stock fallbacks.** MVC also searched `~/Views/{1}/{0}.cshtml` for a request inside an area, and Core's default area list does not. Insert `/Views/{1}/{0}.cshtml` immediately before `/Views/Shared/{0}.cshtml`, after the two area-specific entries. Appending it would let a global shared view beat the controller-specific view. Inside the existing Razor options configuration, for an otherwise unchanged Core default list:
+
+```csharp
+options.AreaViewLocationFormats.Insert(2, "/Views/{1}/{0}.cshtml");
+```
+
+The resulting order is area controller, area shared, non-area controller, global shared. If other configuration has changed the list, reconstruct that order rather than relying on index 2. MVC's `.vbhtml` locations have no Core equivalent at all — Core Razor compiles C# only, so a VB Razor view has to be rewritten as `.cshtml` before any location matters.
+
+One registration also needs no port: a `ViewEngines.Engines.Clear()` whose only purpose was dropping `WebFormViewEngine`, followed by a stock `RazorViewEngine` with no format overrides. The area, `.vbhtml`, display-mode, and explicit-master checks still apply.
+
+Otherwise, copy every `*LocationFormats` array out **verbatim and in order**, and inventory explicit master calls and display modes before flattening the lists. Follow [ref/view-location-precedence.md](ref/view-location-precedence.md) for explicit-layout rewrites, collection mapping, area-list concatenation, display-mode selection, and `IViewLocationExpander` for request-varying precedence.
+
+### Step 3: Convert HtmlHelpers to TagHelpers
 
 Replace `@Html.*` helper calls with TagHelper equivalents. TagHelpers use HTML attributes prefixed with `asp-` instead of C# method calls, making views closer to standard HTML.
 
@@ -116,7 +149,7 @@ The `asp-for` TagHelper generates `id`, `name`, `type`, and validation attribute
 
 Use `All` instead of `ModelOnly` if the original `excludePropertyErrors` parameter was `false`.
 
-### Step 3: Convert Child Actions to ViewComponents
+### Step 4: Convert Child Actions to ViewComponents
 
 Child actions (`Html.Action` / `Html.RenderAction` with `[ChildActionOnly]`) are removed in ASP.NET Core. Replace them with ViewComponents, which follow a mini-controller pattern.
 
@@ -179,7 +212,7 @@ For the TagHelper syntax, add to `_ViewImports.cshtml`:
 @addTagHelper *, MyApp
 ```
 
-### Step 4: Update Partial View References
+### Step 5: Update Partial View References
 
 Partial views are supported in ASP.NET Core but the invocation syntax changed.
 
@@ -196,9 +229,9 @@ Partial views are supported in ASP.NET Core but the invocation syntax changed.
 
 The `<partial>` TagHelper is preferred over `@Html.PartialAsync` and `@await Html.PartialAsync`. The synchronous `Html.Partial` is removed in ASP.NET Core because views run asynchronously.
 
-View discovery paths are the same by default: `Views/<Controller>/` then `Views/Shared/`. Display templates (`DisplayTemplates/`) and editor templates (`EditorTemplates/`) follow the same conventions and are compatible.
+Non-area partials resolve the same way by default: `Views/<Controller>/` then `Views/Shared/`. A partial requested from inside an area does not — MVC also probed `~/Views/{1}/{0}.cshtml` there and Core's default area list does not, which is the gap Step 2 covers. If Step 2 found a custom view engine, partials resolve through the ported `ViewLocationFormats` instead. Display templates (`DisplayTemplates/`) and editor templates (`EditorTemplates/`) follow the same conventions and are compatible.
 
-### Step 5: Migrate Custom HtmlHelper Extensions
+### Step 6: Migrate Custom HtmlHelper Extensions
 
 Custom `HtmlHelper` extension methods use a different pattern in ASP.NET Core because the return type changed from `HtmlString`/`MvcHtmlString` to `IHtmlContent`.
 
@@ -239,7 +272,7 @@ Option A preserves the existing call sites (`@Html.IconLink(...)`). Option B is 
 
 Replace `HttpUtility.HtmlEncode` with `HtmlEncoder.Default.Encode` (from `System.Text.Encodings.Web`). Replace `MvcHtmlString` / `HtmlString` from `System.Web` with `HtmlString` from `Microsoft.AspNetCore.Html` or the `IHtmlContent` interface.
 
-### Step 6: Update View Data Passing Patterns
+### Step 7: Update View Data Passing Patterns
 
 These patterns are mostly compatible but have behavioral differences:
 
@@ -256,14 +289,16 @@ builder.Services.AddSession();
 
 - **`WebViewPage<T>`** — if the project uses a custom base class derived from `WebViewPage<T>`, migrate to a custom `RazorPage<T>` base class or use `_ViewImports.cshtml` with `@inject` directives instead.
 
-### Step 7: Clean Up Removed APIs
+### Step 8: Clean Up Removed APIs
 
 Search for and remove these patterns that have no direct equivalent in ASP.NET Core:
 
 | Pattern | Action |
 |---------|--------|
 | `@helper { }` blocks | Convert to partial views or TagHelpers |
-| `Html.Action()` / `Html.RenderAction()` | Converted in Step 3 |
+| `Html.Action()` / `Html.RenderAction()` | Converted in Step 4 |
+| `ViewEngines.Engines` registration | Converted in Step 2 — remove after the formats reach `RazorViewEngineOptions` |
+| `RazorViewEngine` / `VirtualPathProviderViewEngine` subclasses | Delete once their formats or lookup logic are ported (Step 2) |
 | `[ChildActionOnly]` | Remove — ViewComponents are not callable as actions by default |
 | `MvcHtmlString` | Replace with `IHtmlContent` or `HtmlString` |
 | `System.Web.Mvc` usings | Replace with `Microsoft.AspNetCore.Mvc` |
@@ -272,13 +307,14 @@ Search for and remove these patterns that have no direct equivalent in ASP.NET C
 
 For bundling cleanup (`@Scripts.Render`, `@Styles.Render`, `BundleConfig.cs`), follow the `migrating-mvc-bundling` skill.
 
-### Step 8: Verify Build
+### Step 9: Verify Build
 
 Build the project to confirm no compilation errors. Search for any remaining `System.Web` references in `.cshtml` and `.cs` files. Common post-migration build errors:
 
 - **Missing TagHelper attributes**: Verify `@addTagHelper` directive in `_ViewImports.cshtml`.
 - **`Html.Partial` errors**: Replace synchronous `Html.Partial` with `<partial>` TagHelper.
 - **`MvcHtmlString` not found**: Replace with `IHtmlContent`.
+- **`InvalidOperationException: The view '...' was not found`**: The message lists every location searched. Compare that list against the formats recorded in Step 2 — a missing entry or a lost `Clear()` is the usual cause.
 
 ## HtmlHelper to TagHelper Quick Reference
 
@@ -304,6 +340,8 @@ Build the project to confirm no compilation errors. Search for any remaining `Sy
 ## Success Criteria
 
 - `_ViewImports.cshtml` exists with `@addTagHelper` directive
+- Custom view-location formats ported to `RazorViewEngineOptions` with their original order preserved, or confirmed that the app registered no custom view engine
+- No `ViewEngines.Engines` registration or `RazorViewEngine` / `VirtualPathProviderViewEngine` subclass remains
 - All `@Html.ActionLink`, `@Html.BeginForm`, `@Html.TextBoxFor`, and similar calls replaced with TagHelpers
 - All `@Html.Action` / `@Html.RenderAction` calls replaced with ViewComponent invocations
 - All `@Html.Partial` / `@Html.RenderPartial` calls replaced with `<partial>` TagHelper

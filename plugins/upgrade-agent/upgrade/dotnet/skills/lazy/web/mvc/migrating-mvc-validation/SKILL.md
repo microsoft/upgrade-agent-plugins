@@ -19,6 +19,18 @@ metadata:
 
 Migrate validation logic from ASP.NET Framework to ASP.NET Core. Most `DataAnnotations` attributes transfer directly, but custom validators with service dependencies, client-side validation infrastructure, `[Remote]` attribute configuration, and `[ApiController]` automatic model validation require targeted changes.
 
+## Wire-Contract Gate
+
+Before any changes, load `migrating-webapi-odata` and apply its wire-contract
+gate, including non-OData endpoints and when this skill is invoked directly.
+Run its cheap applicability check first. Require a recorded scoped PASS or
+evidence-backed NOT APPLICABLE before executing the automatic workflow below.
+If the gate is unavailable or evidence is unknown, STOP.
+On STOP, follow the gate's preservation and in-place replanning instructions
+instead of replacing validation-error responses. This prerequisite concerns
+Framework-to-Core migration, not maintenance on an already-Core application;
+client-script-only work with no response-contract effect can be NOT APPLICABLE.
+
 ## Workflow
 
 Track progress across these steps:

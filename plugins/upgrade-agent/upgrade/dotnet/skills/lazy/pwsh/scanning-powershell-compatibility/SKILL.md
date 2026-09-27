@@ -174,10 +174,12 @@ The script does three things:
 All four `FAIL` causes can suppress real findings. A sidecar recording `FAIL`
 is always refused: the wrapper reports its recorded causes and has no override
 for that verdict. A missing sidecar only produces a warning before scanning,
-with `profileValidation: 'not-found'`. `-SkipValidation` does not write a new
-sidecar; it does not remove an existing one either. Never skip validation or
-delete a sidecar to claim a clean compatibility result, and never treat a scan
-without validation as clean.
+with `profileValidation: 'not-found'`. Before generating, the generator removes
+any previous sidecar; if removal fails, it stops before replacing the profile.
+`-SkipValidation`, generation errors, and validation exceptions therefore leave
+no old verdict to reuse. Only completed validation writes a new sidecar.
+Never skip validation or delete a sidecar to claim a clean compatibility result,
+and never treat a scan without validation as clean.
 
 | Sidecar field | Cause and remedy |
 |---|---|

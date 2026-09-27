@@ -226,11 +226,17 @@ added to it.
 
 ```powershell
 npm ci --omit=peer
+npm run lint
 npm run typecheck
 npm run build
 npm run test:unit
 npm run test:e2e
 ```
+
+`npm run lint` runs Biome without formatting or rewriting files. Warnings and
+errors fail; the existing per-rule `info` baseline remains nonblocking.
+`npm run test:unit` (and therefore `npm test`) includes lint before typecheck
+and build. CI invokes the same lint command before its prebuilt unit-test runner.
 
 `npm run build` emits `canvas/app/index.html`, hashed Vite assets under
 `canvas/app/assets/`, generated `dist/extension.mjs`, and generated
