@@ -43,7 +43,6 @@ upgrade-agent/
 │   ├── dotnet-version-estimator.agent.md
 │   ├── dotnet-version-scenario-initializer.agent.md
 │   ├── error-fixer.agent.md
-│   ├── jsts-dependabot-validation.agent.md
 │   ├── jsts-playwright-spec-author.agent.md
 │   ├── planner.agent.md
 │   ├── report-generator.agent.md
@@ -281,6 +280,7 @@ upgrade-agent/
 │   │   │   │       ├── mvc/
 │   │   │   │       │   ├── analyzing-cross-host-route-ownership/
 │   │   │   │       │   │   ├── ref/
+│   │   │   │       │   │   │   ├── endpoint-order.md
 │   │   │   │       │   │   │   └── pipeline-code.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-aspnet-framework-to-core/
@@ -500,8 +500,6 @@ upgrade-agent/
 │   │           └── SKILL.md
 │   └── typescript/
 │       ├── skills/
-│       │   ├── jsts-dependabot/
-│       │   │   └── SKILL.md
 │       │   ├── jsts-framework-migration/
 │       │   │   ├── migrations/
 │       │   │   │   └── jasmine-karma-to-vitest.md

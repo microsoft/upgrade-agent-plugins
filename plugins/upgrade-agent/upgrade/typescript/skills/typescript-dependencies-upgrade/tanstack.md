@@ -35,6 +35,7 @@ official migration steps.
 | Family | Pattern to find | Required action |
 | --- | --- | --- |
 | Query v4 -> v5 | Positional `useQuery(key, fn, options)`, `useMutation(fn, options)`, or positional `queryClient.*` calls | Run Query's official `remove-overloads` codemod, then manually fix every usage it reports as ambiguous. |
+| Query v4 -> v5 | `queryClient.fetchQuery`, `fetchInfiniteQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `ensureQueryData`, or `ensureInfiniteQueryData` | Migrate these deprecated imperative methods to `queryClient.query` or `queryClient.infiniteQuery` as documented. Preserve prefetch semantics by handling the returned rejection, and use `staleTime: 'static'` for the documented ensure-data replacement. |
 | Query v4 -> v5 | `onSuccess`, `onError`, or `onSettled` on queries | Refactor query callbacks; v5 removed them from queries (mutations still support them). |
 | Query v4 -> v5 | `cacheTime`, `useErrorBoundary`, `keepPreviousData`, `isPreviousData`, `hashQueryKey` | Apply the official v5 replacements (`gcTime`, `throwOnError`, placeholder-data APIs, `hashKey`). The existing KB handles the safe mechanical subset on newly-erroring files. |
 | Query v4 -> v5 | `useInfiniteQuery` without `initialPageParam` | Add an explicit initial page parameter and verify the next/previous-page functions. |
@@ -72,10 +73,11 @@ Official sources:
      or lint fix afterward because the official guide warns the codemod can change formatting.
    - **Table v7 -> v8:** perform the official package/API rewrite. This is architectural and is not
      safe for a broad regex.
-   - **Table v8 -> v9:** migrate to `useTable({ features, columns, data })`. Prefer explicit
-     `tableFeatures`; `stockFeatures` is an acceptable temporary migration shortcut.
-     `useLegacyTable` is deprecated and must not be the final state. Confirm the bundler and
-     TypeScript configuration support v9's ESM-only, ES2022 output.
+   - **Table v8 -> v9:** migrate to `useTable({ features, columns, data })`. Use explicit
+     `tableFeatures` for tree-shaking, or `stockFeatures` for v8-like all-feature behavior at the
+     cost of a larger bundle. `useLegacyTable` is deprecated, is only a temporary migration aid,
+     and must not be the final state. Confirm the bundler and TypeScript configuration support
+     v9's ESM-only, ES2022 output.
    - **Router:** read the official changelog across the exact installed-to-target range, replace
      affected exported internals with the documented public API, then run the project's Router
      plugin or CLI so `routeTree.gen.ts` matches the upgraded packages.

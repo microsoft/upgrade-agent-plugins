@@ -84,13 +84,16 @@ So, before calling `typescript_upgrade_package_dependency_group`:
 ## Strategy: lockstep bump, no codemod
 
 There is **no Radix codemod** — no `@radix-ui/codemod` package exists on npm, and the official Themes
-upgrade guide prescribes manual find-and-replace. So the flow is: bump the whole cluster to latest in
-one step, then apply the documented renames by hand for any major crossed.
+upgrade guide prescribes manual find-and-replace. So the flow is: bump each member to its explicit
+requested target when present, otherwise to latest, in one step, then apply the documented renames
+by hand for any major crossed.
 
-The primitives are all still on **major 1** (e.g. `@radix-ui/react-dialog` latest is `1.1.x`), so for
-the primitives this is a **minor/patch** bump, not a major migration — which is exactly why treating
-it as "just a version bump" is so tempting and so often wrong. The real majors in this cluster live in
-`@radix-ui/themes` (v1 → v2 → v3) and `@radix-ui/colors` (v3).
+Primitive package majors vary: for example, the official release history lists Dialog 1.1.2 and
+Select 2.1.2 in the same October 2024 release, and records major-2 releases for several primitives.
+Determine whether each installed-to-target transition crosses a major from that package's own
+versions; do not assume a primitive upgrade is only minor or patch because another primitive remains
+on major 1. The major migration guidance covered below applies to `@radix-ui/themes` (v1 → v2 → v3)
+and `@radix-ui/colors` (v3).
 
 ## Order of operations
 

@@ -75,7 +75,7 @@ confidence — they are different findings, and they call for different actions.
 | `Terminated` | Static evidence covers this route's paths and methods on Core. | A deletion candidate, subject to every prerequisite in "Deleting a Framework route"; not unconditional permission. |
 | `Forwarded` | The proxy forwards this route's URL space to the Framework app, or a Core handler for it forwards at least some requests (`kind: "Forwarder"`; read the handler before saying what it serves). | It is still live on the old host. Migrating it is a unit of work; deleting it is an outage. |
 | `Partial` | Local coverage is incomplete or symbolic, or the proxy forwards only a slice. | **Not proven complete.** Inspect candidates and remaining traffic; this need not mean anything has migrated. |
-| `Unclaimed` | The proxy was read and neither host claims this URL space. | A gap in the arrangement. Usually a missing proxy route; it may already be a 404 in production. |
+| `Unclaimed` | The proxy was read, but no eligible local coverage or proven forwarding was found. | Investigate a possible routing gap; a Core fallback may still answer. This is not proof of a 404. |
 | `Ignored` | An `IgnoreRoute` that provably registers, or a route an earlier one provably swallows. | A swallowed route never matches inbound and can go, subject to the preconditions in "Deleting a Framework route". The `IgnoreRoute` itself cannot — it is working, not redundant. |
 | `Unknown` | Ownership could not be determined. | Read `unknownReason` and resolve it before acting. |
 | `NotApplicable` | The route is on the Core host, so there is no Framework space for it to take over. | Nothing. Ownership is a question about Framework routes; filter these out before reasoning about coverage. |
@@ -90,13 +90,14 @@ wave takes another slice of it, and it is not finished until the last one lands.
 - **`terminatedBy` is populated.** Core endpoints overlap this space but were not shown to
   cover all of it. Establish what they actually serve before deciding which traffic
   remains.
-- **`terminatedBy` is empty.** Core serves none of it; the proxy forwards only a slice,
-  and the rest is claimed by nobody. Do not read this as partly migrated. Nothing has
-  migrated; part of the URL space is simply unreachable through the proxy.
+- **`terminatedBy` is empty.** No eligible local coverage was found; the proxy forwards only
+  a slice. This proves neither migration nor that the remainder is unreachable: a Core
+  fallback may still answer. Inspect the remaining paths and methods.
 
 `residualForwarded` records whether a forwarder relates to this space. It does not prove
-that every remaining URL or verb reaches Framework. When false, no such forwarding was
-found; verify whether the unresolved remainder is a routing gap.
+that every remaining URL or verb reaches Framework. `Terminated` clears it even when a forwarder
+overlaps. For other verdicts, false means no related forwarding was found; inspect unresolved
+gaps before deciding whether any remainder is unreachable.
 
 **`Unknown` is a question, not a failure.** The `unknownReason` says what is missing:
 
@@ -134,80 +135,14 @@ found; verify whether the unresolved remainder is a routing gap.
   is not known to lose endpoint selection to them, so the request may still reach
   Framework. Core orders endpoints by `Order` before template specificity, so a forwarder
   whose `Order` is lower than the local endpoint's wins however specific that endpoint is.
-  `terminatedBy` names the covering endpoints and `conflicts[]` names the forwarder — that
-  is a lookup, not a pointer: no field on the route record names it, and it can return
-  **more than one** conflict. The route is withheld when any one slice of its URL space is
-  lost, while each overlapping pair is reported separately, so a route spanning several
-  verbs or URLs carries one conflict for each covering endpoint that overlaps a forwarder,
-  and those conflicts can disagree.
+  Load [ref/endpoint-order.md](ref/endpoint-order.md) before interpreting conflicts or changing order.
+  It distinguishes readable conventions, opaque overrides, and conflicts that disagree.
 
-  Read the **last sentence** of each `evidence` before the numbers in front of it. That
-  sentence is this analysis's finding on that pair; the order clause ahead of it is only
-  the working:
-  - **`The proxy may win, or an equal-priority tie may be ambiguous…`** — the pair is in
-    doubt. On a route carrying several conflicts these are the ones that explain the
-    verdict, and the ones to act on.
-  - **`The local endpoint wins endpoint selection…`** — the pair is settled, and it does
-    **not** clear the route: another conflict on the same route is why the verdict was
-    withheld. A `LocalVersusCatchAll` never carries this sentence, because a local that
-    provably beats a catch-all is not reported at all; a `ProxyVersusLocal` carries either,
-    because it reports the overlap whether or not the local wins.
-
-  The order clause ahead of that sentence says how the winner was, or was not, established.
-  It is one of three:
-  - **Both orders were read** — the evidence prints them, as in `Local Order is 2; proxy
-    Order is 0.` The lower number wins outright, whichever side it is on; equal numbers go
-    to a second stage:
-    - **The proxy's number is lower.** It wins. Treat the Framework route as **still
-      live**.
-    - **The local's number is lower.** It wins, and the last sentence says so.
-    - **The numbers are equal.** Core breaks the tie on template precedence, so the last
-      sentence is decided there rather than by the numbers. One shape clears: a local
-      endpoint that is not a `MapControllerRoute` and whose template is more specific than
-      the forwarder's. Three do not — a `MapControllerRoute` carrying an explicit `Order`,
-      where the tiebreak is declined outright because the template on file is the
-      registration and Core matches requests against the action endpoints it expands into,
-      whose precedence is not the registration's; templates of equal precedence, where
-      there is no winner on shape and — if nothing in the endpoints' selection metadata
-      separates them either — Core raises `AmbiguousMatchException` and **neither** host
-      serves the URL; and a forwarder of higher precedence, which wins, leaving Framework
-      still serving that URL. Where the last sentence expresses doubt, open both
-      registrations: equal numbers then tell you the tie was not broken in the local's
-      favour, not who serves the request.
-  - **`Their relative Order is not established.`** — either the Core side has no `Order` to
-    read, or something on one side could not be read at all.
-    - A `MapControllerRoute` has no `Order` to read. Conventional routes are numbered from
-      a counter starting at 1, an unordered forwarder sits at 0, and action endpoints
-      inherit their registration's order, so the forwarder wins. Treat the route as
-      **still live**.
-    - An unreadable constraint, endpoint convention or malformed template defeats the
-      comparison whatever the orders say. A forwarder whose order is set by anything other
-      than `WithOrder` — an `Add` convention assigning `RouteEndpointBuilder.Order`, say —
-      lands here. Read the value: a catch-all parked at `int.MaxValue` is a last-resort
-      fallback that loses to every Core endpoint, and rewriting it as
-      `.WithOrder(int.MaxValue)` makes the comparison readable without changing behaviour.
-  - **`The proxy declares the last-resort Order int.MaxValue; a conventional registration
-    is numbered from a counter that cannot reach it, so the local endpoint takes the
-    request.`** — a **local win** proven without a comparison: there is no pair of numbers
-    to print, because the winner follows from the ceiling on the registration counter
-    rather than from an `Order` Core stated.
-    The overlap is still reported, because both templates claim the space — that is not a
-    doubt about who serves the request.
-    - This does **not** exempt the route from the deletion gate below. A conflict naming a
-      `terminatedBy` route still blocks deletion; the way through is the confirmation
-      against a running host, not an exemption. The clause tells you what you are
-      confirming.
-
-  To establish the order, declare an explicit `Order` on the **Core registration** —
-  raising the forwarder's instead can change which endpoint wins without making the
-  comparison readable — then confirm against a running host before treating the route as
-  migrated.
-
-`terminatedBy` is also populated on `Unknown`, and it means something weaker there than it
-does on `Terminated` or `Partial`. On those two it names endpoints shown to cover the
-space. On `Unknown` it names overlapping **candidates** whose coverage could not be proven
-— the shortlist to check, not a set of proven replacements. `ProxyPrecedence` is one
-exception: coverage *was* proven and what answers first is in doubt. `OpaqueRegistrar`
+`terminatedBy` names covering endpoints on `Terminated`, but on `Partial` it can name
+symbolic overlaps rather than a slice proven to have moved. On `Unknown` it names
+overlapping **candidates** whose coverage could not be proven
+— the shortlist to check, not a set of proven replacements. `ProxyPrecedence` is an
+exception where coverage *was* proven and what answers first is in doubt. `OpaqueRegistrar`
 from pipeline code may mean that or unproven candidates, and the reason alone does not say
 which, so verify the list. Either way, an `Unknown`'s `terminatedBy` never licenses a deletion.
 
@@ -219,9 +154,12 @@ Two fields describe the quality of a route's answer, and they answer different q
 registration came from bound symbols. It is set when the route is scanned, and it says
 nothing about how its ownership was later decided.
 
-- **`Enumerated`** — symbols bound and the controller and action resolved to literal
-  values, so the route's own URL space is concrete rather than parameterised.
-- **`Subsumption`** — symbols bound, but the template keeps free parameters.
+- **`Enumerated`** — the scanner read a direct registration or controller/action values.
+  On conventional routes, defaults can populate `controller` and `action` even while those
+  tokens remain free. Thus `precision: "Enumerated"` does not prove a concrete URL space.
+  Read `template` and `basis` rather than treating these fields as expanded actions.
+- **`Subsumption`** — the scanner represents the registration by its template, including
+  conventional Core registrations. This does not determine its eventual coverage basis.
 - **`SyntaxOnly`** — symbols did not bind at all and a bounded set of known registration
   shapes was matched textually. Treat findings at this precision as leads.
 
@@ -314,8 +252,12 @@ The reasons that change what you should do:
   conditional rather than dead — the proxy is live and may well forward them. What it
   forwards is a deployment fact that is not in the repository. Ask, or read the deployed
   configuration.
-- `MalformedSource` — a configuration file could not be parsed. The Framework findings
-  still stand; the proxy ones are incomplete.
+- `MalformedSource` — a project could not be loaded, a proxy directory could not be listed,
+  a configuration file could not be read, or a route template or configuration file could
+  not be parsed. Read the entry's `source`, `description`, and `proxyStatus`.
+  If the Framework project did not load, `proxyStatus` is `NotEvaluated`: neither host was
+  inventoried, even if a proxy path was supplied. Do not infer unaffected scope from the
+  reason alone.
 - `UnsupportedRegistrationApi` — a registration form the tool does not model, or a method
   it cannot read being handed the route collection. The second is the common one: a
   registrar that lives in a referenced package has no source to follow, so whatever it
@@ -406,13 +348,20 @@ is not one production serves.** Check the file before planning a wave around it.
    controller move together or break each other.
 5. For each `Partial` route in the pool, identify the remaining slice specifically. This
    is where a wave silently leaves URLs behind.
-6. After the wave, re-run and exercise the changed URLs and verbs. A route that moved
-   should come back `Terminated` at `basis: "Enumerated"` — or `Unknown` at `OpaqueRegistrar`
-   with the moved endpoints in `terminatedBy` where Core pipeline code withholds it, as a
-   scaffolded proxy's usually does; re-running alone will not clear that, so confirm it as
-   [ref/pipeline-code.md](ref/pipeline-code.md) says. One returning `Partial` with a populated `terminatedBy` usually means an action or a verb did not move with it — read the remaining slice rather than assuming the tool is cautious.
-   A whole wave at `ProxyPrecedence` points at the Core host: check its forwarder's `Order`.
-   `Unclaimed` is a possible routing gap, not proof of a live 404.
+6. After the wave, re-run and exercise the changed URLs and verbs. When conventional
+   action enumeration is available and coverage and forwarder precedence are readable, a
+   fully moved route can return `Terminated` at `basis: "Enumerated"`. Core pipeline code can
+   instead withhold it as `Unknown` at `OpaqueRegistrar`; load
+   [ref/pipeline-code.md](ref/pipeline-code.md), since re-running alone will not clear it. The scaffold's
+   `MapForwarder(...).WithOrder(int.MaxValue)` provides a readable last-resort order, not
+   proof that every route migrated. Attribute routes need no conventional expansion, so
+   not every migrated route has an enumerated basis. Hand-rolled forwarders or unrecognized
+   handlers need runtime confirmation: forwarding inside a referenced project can still
+   leave a handler classified as local. In all cases, no verdict bypasses "Deleting a Framework
+   route": check unresolved gaps, conflicts, and runtime host attribution. For `Partial`,
+   inspect candidates and the remaining slice; for `Unknown` at `ProxyPrecedence`, check
+   forwarder order and recognizability. Investigate `Unclaimed` as a possible routing gap,
+   not proof of a live 404.
 
 ## Deleting a Framework route
 

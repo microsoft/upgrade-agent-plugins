@@ -4,6 +4,18 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.612] - 2026-09-29
+
+### Changed
+
+- Route-ownership guidance now covers endpoint ordering, fallback routing, and configuration-read failures when deciding whether ASP.NET Core owns a route.
+- Updated the bundled TypeScript extender to 0.1.14.
+
+### Fixed
+
+- Binary API scanning uses less memory during analysis without changing its results.
+- The dashboard activity list and recent commits now use native button controls for keyboard and assistive-technology access.
+
 ## [1.1.596] - 2026-09-27
 
 ### Added

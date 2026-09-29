@@ -3,6 +3,12 @@
 Read this when a Framework route reports `Unknown` at `OpaqueRegistrar` while `terminatedBy`
 names Core endpoints, or when `unresolved` carries an `OpaqueRegistrar` entry for Core code.
 
+## Contents
+
+- [Why it withholds `Terminated`](#why-it-withholds-terminated)
+- [How it appears in the report](#how-it-appears-in-the-report)
+- [How to review it](#how-to-review-it)
+
 ## Why it withholds `Terminated`
 
 Coverage is proven among endpoints only, and middleware runs before any endpoint is

@@ -5,6 +5,7 @@
 Call `typescript_scan_dependencies` with:
 - `rootDirectory` — the repository root.
 - `requestedPackages` — REQUIRED npm dependency scope. Pass the explicit npm package names the user requested (e.g., `["react", "axios"]`), or `[]` when the user asked to upgrade all outdated dependencies. Omit only if intent is genuinely unknown.
+- `requestedPackageVersions` — optional exact stable versions keyed by package name (e.g., `{"react":"18.3.1"}`). Every key must also appear in `requestedPackages`. **Only** set a key when the user explicitly named that exact version for that package. Do **not** infer a version, and do **not** pass the latest version as a target — omit a package to upgrade it to latest (the default). When the user simply says "upgrade react" (no version), pass `requestedPackages` only and omit `requestedPackageVersions`.
 - `packageDirectory` — optional package-project/workspace scope, independent of `requestedPackages`. Omit it to discover packages repository-wide. Set it only when the user explicitly names a workspace/path, or after repository discovery deliberately narrows the workflow to one package project. Supplying it targets exactly that project; `packageDirectory` equal to `rootDirectory` means the root package only.
 - `skill` — REQUIRED. Pass `"typescript-dependencies-upgrade"`.
 
@@ -15,6 +16,7 @@ Examples (paths are illustrative):
 | User scope | Scan arguments |
 |---|---|
 | Upgrade React in this repository | `rootDirectory: "/repo"`, `requestedPackages: ["react"]`; omit `packageDirectory` |
+| Upgrade React to 18.3.1 | `rootDirectory: "/repo"`, `requestedPackages: ["react"]`, `requestedPackageVersions: {"react":"18.3.1"}`; omit `packageDirectory` |
 | Upgrade only the root package | `rootDirectory: "/repo"`, `packageDirectory: "/repo"`, `requestedPackages: [...]` |
 | Upgrade the explicitly named website workspace | `rootDirectory: "/repo"`, `packageDirectory: "/repo/website"`, `requestedPackages: [...]` |
 
@@ -29,6 +31,7 @@ Review the scan results. The tool returns structured JSON including:
   - `disableKnowledgeBase` — skip knowledge base fixes
 - `packages` — array of packages with their `directory` and `dependencyGroups`. Each dependency group is an object with:
   - `packages` — ordered list of package names to upgrade together
+  - `targetVersions` — exact requested versions for packages in this group; omitted when the whole group uses latest-version behavior
   - `containsBundlers` — true if any package in the group is a bundler/build tool (webpack, vite, esbuild, rollup, tsup, etc.)
 - `sessionId` — pass this to all subsequent tool calls
 

@@ -51,8 +51,9 @@ If `react`/`react-dom` appear only under the manifest's `peerDependencies` — a
 If `applicableGuidance` includes `tanstack.md`, keep direct dependencies from the same family in
 the same upgrade group: Query's React adapter/core/devtools/persistence packages, Table's React
 adapter/core packages, and Router's React adapter/core/plugin/CLI/devtools packages. Upgrade every
-included package to **its own latest compatible version**; the Query, Table, and Router version
-lines are independent and must not be forced to one shared version. Check each target React
+included package to **its explicit requested target when present, otherwise its own latest compatible
+version**; the Query, Table, and Router version lines are independent and must not be forced to one
+shared version. Check each target React
 adapter's declared peer range and surface the React core as a required peer-floor upgrade when the
 project is below it. See [tanstack.md](./tanstack.md).
 
@@ -83,7 +84,8 @@ upgrade is requested; do not silently expand a Query-only request into a tRPC ma
 
 **Exception:** if `applicableGuidance` includes `react-hook-form.md`, recommend upgrading
 `react-hook-form` and every `@hookform/*` package present in the manifest together, while resolving
-each package to its own latest compatible version. In particular, `@hookform/resolvers` v5 requires
+each package to its explicit requested target when present, otherwise its own latest compatible
+version. In particular, `@hookform/resolvers` v5 requires
 `react-hook-form` 7.55.0 or newer and changes resolver typing to distinguish form input from
 validated output. Leaving React Hook Form stale can fail installation; upgrading only the resolver
 can also expose TypeScript errors where schema transforms/defaults make input and output differ.
