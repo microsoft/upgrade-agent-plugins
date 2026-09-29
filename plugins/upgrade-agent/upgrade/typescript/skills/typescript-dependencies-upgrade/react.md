@@ -6,7 +6,7 @@ These rules constrain how the React group is processed within the standard `type
 
 - **Pass the whole group as it enters Phase 2.** For an all-packages request that's the entire scan group; for a scoped request it's the requested packages plus the peers confirmed in Phase 0 (with the React core four always included, per [peer-dependencies.md](./peer-dependencies.md)).
 - **Do not strip the call down to just the core four.** The scan grouped these packages because they are peer-coupled and meant to upgrade together; dropping the rest is what creates the install/peer conflicts this skill exists to avoid.
-- **Upgrade "react"-named members to their own latest version, not React's.** Group members that merely have "react" in their name (`react-icons`, `html-react-parser`, `react-helmet`, etc.) are still upgraded — but to **their own** latest compatible version, NOT forced onto React's major number (there is no `react-icons@19` that tracks React 19).
+- **Upgrade "react"-named members to their own requested target, or their own latest version when untargeted—not React's version.** Group members that merely have "react" in their name (`react-icons`, `html-react-parser`, `react-helmet`, etc.) are still upgraded, but are NOT forced onto React's major number (there is no `react-icons@19` that tracks React 19).
 - **Revert, don't pre-exclude, a broken non-core member.** If upgrading one of those non-core members introduces breakage you can't resolve, fall back to reverting just that package per [upgrade-packages.md](./upgrade-packages.md) — don't pre-emptively exclude it from the group.
 
 `applicableGuidance` — the ordered list of guidance entries returned in the `typescript_scan_dependencies` response (defined in SKILL.md and generate-plan.md) — includes a `react/<major>.md` entry for each React major the upgrade crosses. **Reading every per-major file it lists is REQUIRED — do not skip them and do not treat them as optional reference.** Read them in full and apply them cumulatively: each documents the breaking changes introduced in that major, and a single-shot jump (e.g. 17 → 19) must still handle every major it passes through. The Pre-upgrade audit table below is a *detection* checklist only — it tells you what to grep for, not how to fix it, and it is **not** a substitute for the per-major files, which carry the fix details, TS-specific failure modes, and ecosystem peer requirements the table omits. Do NOT rationalize skipping them ("react.md already summarized the highlights", "the per-major file is probably just a longer version of the table", "I'll consult it only if I get stuck"). Read only the files the scan listed — don't read per-major files it didn't list.
@@ -17,7 +17,7 @@ This guidance targets **web React** (`react` + `react-dom`). React Native versio
 
 ## Strategy: single-shot upgrade
 
-Go directly from the current major to the target major in one pass. Do NOT hop major-by-major (e.g. 17 → 18 → 19) unless the user explicitly asks — going straight to the target avoids leaving the project in an inconsistent intermediate state, and the per-major guidance already covers every major you cross. Reading and upgrading are separate steps: you still read **every** per-major file the scan listed (per the REQUIRED rule above) and apply them cumulatively — read all the majors you cross, then upgrade once.
+For a React 19 upgrade, first upgrade to React 18.3 and address the warnings it surfaces before upgrading to React 19. React 18.3 is identical to 18.2 except for warnings about deprecated APIs and other changes needed for React 19, and the official React 19 upgrade guide recommends this preparatory step. After that preflight, go directly to the target major rather than hopping through any other intermediate releases unless the user explicitly asks. Reading and upgrading are separate steps: still read **every** per-major file the scan listed and apply them cumulatively.
 
 ## Pre-upgrade audit
 
@@ -37,13 +37,16 @@ Before changing version pins, search the package directory for patterns that wil
 
 ## CRA blocker
 
-If `react-scripts` (or its abandoned TypeScript fork `react-scripts-ts`) is in `package.json`, the project uses Create React App, which never gained React 19 support. Migrating its build tooling to Vite, Next, Remix, or another modern bundler is outside this tool's scope. Treat this as a React blocker (reason: "CRA / react-scripts") and follow "Handling a React blocker" below.
+If `react-scripts` (or its abandoned TypeScript fork `react-scripts-ts`) is in the `package.json` currently being upgraded, that package uses Create React App, which never gained React 19 support. Migrating its build tooling to Vite, Next, Remix, or another modern bundler is outside this tool's scope. Treat that package entry as a React blocker (reason: "CRA / react-scripts") and follow "Handling a React blocker" below.
+
+This check is package-scoped, not repository-scoped. In a monorepo, a CRA example, fixture, or documentation site does not block upgrading a separate library package that declares React. Do not abandon the repository-wide request merely because `react-scripts` appears somewhere under the repository root: mark only the scan entry whose own manifest declares it as blocked, then continue processing every other React-declaring entry.
 
 ## Handling a React blocker
 
 When React cannot be upgraded — CRA, or a peer dependency with no compatible version — what you do depends on scope:
 
-- **The user asked only to upgrade React** → report the blocker and its reason via `typescript_write_upgrade_summary`, then stop. Nothing else is in scope.
+- **The user asked only to upgrade React in a standalone package** → report the blocker and its reason via `typescript_write_upgrade_summary`, then stop. Nothing else is in scope.
+- **The user asked to upgrade React in a monorepo** → mark that package entry as blocked and continue with every other React-declaring entry from the scan. Stop the whole React upgrade only when every in-scope declaration is blocked.
 - **The user asked to upgrade all packages** → do NOT halt the workflow. Revert any React-related `package.json` edits and reinstall to restore the baseline lockfile, then continue with the remaining dependency groups. Record React as blocked in the Phase 4 summary.
 
 Never downgrade React or pin it below the target to work around a blocker.
@@ -74,6 +77,10 @@ Do not edit files under `node_modules`, and do not downgrade `@types/react` to d
 ## Libraries that declare React as a peer dependency
 
 If `react`/`react-dom` appear only under `peerDependencies` — typical for libraries that render React but don't own the version — the upgrade tools won't "bump" anything, because a peer range isn't a pinned dependency. To support the new major, **widen the peer range** instead of pinning: e.g. `"react": "^17.0.0 || ^18.0.0 || ^19.0.0"`. Keep the already-supported majors in the range unless the user asked to drop them. Then bump the matching `devDependencies` pin (libraries usually pin a concrete `react`/`@types/react` in devDeps for their own build and tests) to the target major so the code is actually compiled and tested against it.
+
+In a monorepo, process **every package entry returned by the scan that declares React**, including peer-only member packages. Root `pnpm.overrides`, npm `overrides`, and Yarn `resolutions` control installed versions only; they do not update those public peer declarations and do not count as completing the requested upgrade.
+
+A blocked application or example does not block a separate library entry. Widen the library's peer range, pin its development copy to the requested target, and validate that library against the target before moving on.
 
 **Validate the compatibility claim — don't just assert it.** Widening the peer range to add a new major is a public statement that the library *works* with that React version, so it must be backed by actually building and testing against it. Be aware: because this path edits `package.json` by hand and does **not** call `typescript_upgrade_package_dependency_group`, the runtime-validation gate that normally blocks an unvalidated upgrade will **not** fire here — nothing forces the check, so it is on you to run it. Concretely:
 - **Baseline first (Phase 1):** before changing anything, invoke the `typescript-runtime-validation` skill in upgrade mode to record the library building/testing against its current React. For a library, the eval plan is typically a build + test assertion, not an http-probe.

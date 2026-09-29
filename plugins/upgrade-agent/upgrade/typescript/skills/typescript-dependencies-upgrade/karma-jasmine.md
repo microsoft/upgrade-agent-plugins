@@ -51,7 +51,7 @@ Search specs and the Karma/Jasmine config for these. Most surface at test time, 
 | config `failFast` | Renamed (Jasmine 4) → `stopOnSpecFailure`. |
 | config `oneFailurePerSpec` | Renamed (Jasmine 4) → `stopSpecOnExpectationFailure`. |
 | config `randomTests` / `randomizeTests` / `Promise` | Removed (Jasmine 4) — use `Env#configure({ random: … })`; drop `Promise`. |
-| custom matcher using global `matchersUtil` / `jasmine.pp` | Use the `matchersUtil`/`pp` passed into the matcher factory (globals removed in Jasmine 4). |
+| custom matcher using global `matchersUtil` / `jasmine.pp` | Use the `matchersUtil`/`pp` passed into the matcher factory. Jasmine 4 removed both globals; Jasmine 6 re-exposes the pretty printer as `jasmine.pp()`, but not `matchersUtil`. |
 | `.toContain(` relying on `===` identity; `done(nonError)` or a second `done()` | Jasmine 4: `toContain` uses deep equality; a non-`Error` `done` argument or a repeated `done()` is a failure. |
 | `getEnv().execute(callback)`; `node_boot.js` | Jasmine 5: `Env#execute` is async (no callback); use the exported `boot`. |
 | backslashes in `spec_files` / `helpers` globs | Jasmine 5 treats `\` as an escape — use `/`. |

@@ -5,8 +5,9 @@ Monorepos contain multiple packages in a single repository, typically managed by
 ## Upgrade Strategy
 
 1. **Install at the root first** — call `typescript_install_dependencies` with the root directory to install all dependencies.
-2. **Upgrade member packages one at a time** — the scan results contain multiple entries in the `packages` array. For each member package, complete the full upgrade cycle (upgrade → fix → validate) before moving to the next.
+2. **Upgrade member packages one at a time** — the scan results contain multiple entries in the `packages` array. For each member package, complete the full upgrade cycle (upgrade → fix → validate) before moving to the next. If one member has a package-specific blocker, record that member as blocked and continue with the remaining entries; do not treat one example, fixture, or application as a repository-wide blocker.
 3. **Respect dependency order** — if package A depends on package B, upgrade B first.
+4. **Recover missing workspace build artifacts** — if a baseline cannot resolve an internal package's declared entry point or a generated module, do not immediately declare the repository broken. Inspect repository documentation and existing root/workspace scripts, run the repository-declared build or generate command once in dependency order, and retry the exact failed baseline. Do not invent commands, edit generated output manually, or apply this recovery to external registry packages.
 
 ## Common Patterns
 

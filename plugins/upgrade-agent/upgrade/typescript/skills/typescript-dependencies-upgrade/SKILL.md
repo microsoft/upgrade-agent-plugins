@@ -1,6 +1,6 @@
 ---
 name: typescript-dependencies-upgrade
-description: Upgrade a JavaScript or TypeScript project's npm dependencies to their latest versions and resolve breaking changes. Use this when asked to upgrade, update, or modernize npm packages in any JavaScript or TypeScript project — including JavaScript-only projects with no tsconfig.json — whether upgrading all packages or specific ones the user names, except when the user is upgrading the typescript package itself (use typescript-compiler-upgrade instead).
+description: Upgrade a JavaScript or TypeScript project's npm dependencies to their latest or explicitly requested exact versions and resolve breaking changes. Use this when asked to upgrade, update, or modernize npm packages in any JavaScript or TypeScript project — including JavaScript-only projects with no tsconfig.json — whether upgrading all packages or specific ones the user names, except when the user is upgrading the typescript package itself (use typescript-compiler-upgrade instead).
 requires-extension: upgrade-typescript
 metadata:
   discovery: scenario
@@ -17,7 +17,7 @@ Follow these phases in order. Each phase has detailed instructions in its own fi
 
 ## Phase 0 — Plan
 
-**Determine scope:** Did the user ask to upgrade **specific packages** (e.g., "upgrade react" or "upgrade react and axios"), or **all packages**?
+**Determine scope:** Did the user ask to upgrade **specific packages** (e.g., "upgrade react" or "upgrade react and axios"), optionally to exact versions, or **all packages**?
 
 Read [generate-plan.md](./generate-plan.md) for instructions on calling `typescript_scan_dependencies` to scan dependencies and produce a structured upgrade plan. Always pass `requestedPackages` and `skill` (detailed there) — workflow telemetry depends on them.
 

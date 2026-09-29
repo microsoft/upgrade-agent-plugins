@@ -14,7 +14,7 @@ If the repo root has an `nx.json`, the Angular versions are governed by Nx (`@nr
 
 - **Pin the exact Nx patch every hop.** A floating-major `nx migrate @nrwl/workspace@N` crashes (`Cannot read properties of undefined (reading 'schematics')`). Use a concrete patch per hop (e.g. `@13.10.6`, `@14.8.6`, `@15.9.7`, `@16.10.0`, …), then `nx migrate --run-migrations` and prune broken entries (below).
 - **CLI entry point moves at v13; `@nrwl/*` → `@nx/*` scope rename at v16.** From Nx 13, invoke `node node_modules/nx/bin/nx.js` — the old `@nrwl/cli/bin/nx.js` throws `MODULE_NOT_FOUND`. At Nx 16, `nx migrate --run-migrations` renames the `@nrwl/*` packages to the `@nx/*` scope (the `@nrwl/*` aliases stop being published at Nx 20).
-- **The `@nrwl/angular` alias caps Angular.** Migrating `@nrwl/workspace` leaves Angular behind. After each Nx hop, bump Angular explicitly per major: `nx migrate @angular/core@N @angular/cli@N` (and `@angular/material@N` / `@angular/cdk@N` if present), then `--run-migrations`.
+- **The `@nrwl/angular` alias caps Angular.** Migrating `@nrwl/workspace` leaves Angular behind. After each Nx hop, bump Angular explicitly per major: `nx migrate @angular/core@N @angular/cli@N` (and `@angular/material@N` / `@angular/cdk@N` if present), then `--run-migrations`. On the final hop of a version-specific request, replace `N` with the exact requested Angular version and verify the manifest landed on that patch.
 - **Prune broken migrations.** Some `migrations.json` entries fail (`split-configuration` "missing a factory"; Angular schematics throwing `tree.readText is not a function` on a stale Nx devkit; project-config migrations on `package.json`-based projects). Remove the failing entries from `migrations.json`, keep the Angular source migrations that run, and rely on the final build to surface anything truly needed.
 - **Old Nx executors can't build Angular 22.** If `nx build` fails because the workspace's `@nx/angular` executor is too old, build the target **directly** — Angular CLI for apps (`node node_modules/@angular/cli/bin/ng build <project>`), `ng-packagr` for libraries, `tsc -p` for plain-TS libs. Libraries consumed via tsconfig `paths` type-check as part of the app build, so a separate lib build is often unnecessary.
 
@@ -37,7 +37,7 @@ Do a single clean install now (`npx -y rimraf node_modules`, then `typescript_in
 
 ## Step-by-Step Angular Upgrade Procedure
 
-Angular major versions **must** be upgraded one at a time (e.g., 16 → 17 → 18 → 19 → 20 → 21). You cannot skip major versions.
+Angular major versions **must** be upgraded one at a time (e.g., 16 → 17 → 18 → 19 → 20 → 21 → 22). You cannot skip major versions.
 
 **First, detect the workspace type.** If the repo root has an `nx.json`, follow the [Nx workspaces](#nx-workspaces-nxjson-present) section above for the upgrade command (`nx migrate` per major) instead of the `ng update` loop below — the rest of this procedure (pre-flight, validation, TypeScript 6) is unchanged.
 
@@ -51,18 +51,23 @@ Read `@angular/core` from `package.json` (dependencies or devDependencies) and e
 
 ### 2. Determine the target Angular major version
 
-Use the latest stable Angular major version as the target. You can check this via a shell command (e.g., `npm view @angular/core version` — this queries the npm registry and works regardless of which package manager the project uses).
+Read `requestedPackageVersions` from the scan. If it contains any Angular package, use that exact version as the terminal Angular target; all explicitly targeted Angular packages must share its major. Otherwise use the latest stable Angular major version. You can check the latest via a shell command (e.g., `npm view @angular/core version` — this queries the npm registry and works regardless of which package manager the project uses).
 
 ### 3. Loop: upgrade one major version at a time
 
-For each major version `N` from `(current + 1)` to `target`:
+For each major version `N` from `(current + 1)` to the target major:
 
-**a.** Run `ng update` for the core Angular packages (this installs the new versions internally):
+**a.** Run `ng update` for the core Angular packages (this installs the new versions internally). Use `^N` for intermediate hops. On the final hop, if an exact target was requested, replace both specs with that exact version:
 ```
 npx ng update @angular/cli@^N @angular/core@^N --allow-dirty --force
 ```
 
-**b.** If the project uses `@angular/material`, also update it:
+Final exact-target example:
+```
+npx ng update @angular/cli@18.2.7 @angular/core@18.2.7 --allow-dirty --force
+```
+
+**b.** If the project uses `@angular/material`, also update it. Use its explicit exact target on the final hop when provided; otherwise use the hop major:
 ```
 npx ng update @angular/material@^N --allow-dirty --force
 ```
@@ -79,7 +84,7 @@ npx ng build
 - **`buildTarget` schema errors** — The `ng update` schematics should have migrated `angular.json` automatically. If they didn't, check that `angular.json` uses the new `application` builder format (Angular 17+). See the "Common Issues" section below.
 - **Peer dependency warnings** — Usually safe to ignore during intermediate hops since the next hop will align versions.
 
-**f.** Verify you landed on the expected version by re-reading `@angular/core` from `package.json`.
+**f.** Verify you landed on the expected version by re-reading `@angular/core` from `package.json`. On the final hop, the declared version must equal the exact requested target rather than merely sharing its major.
 
 ### 4. After all Angular hops complete
 
@@ -102,9 +107,9 @@ After all Angular hops are complete (or if the upgrade fails at a particular hop
 - `sessionId`: from the scan response
 - `success`: whether the full Angular upgrade succeeded
 - `fromVersion`: the starting Angular major version (e.g., `"16"`)
-- `toVersion`: the target Angular major version (e.g., `"21"`)
+- `toVersion`: the target Angular major version (e.g., `"22"`)
 - `strategy`: `"major-by-major"` (Angular upgrades one major at a time via `ng update`)
-- `upgradeSteps`: the number of major version hops performed (e.g., `5` for 16→21)
+- `upgradeSteps`: the number of major version hops performed (e.g., `6` for 16→22)
 - `failureReason`: (if failed) a brief description of why the upgrade failed
 
 `typescript_report_telemetry` is **not** the terminal event. Return to `SKILL.md` which finishes with `typescript_write_upgrade_summary`. In the rare case you must stop early instead of returning, still call `typescript_write_upgrade_summary` once before exiting.
@@ -124,7 +129,7 @@ Angular will refuse to build if `@angular/*` packages are misaligned. All `@angu
 Angular versions are often tied to specific RxJS versions. The `ng update` schematics usually handle this, but if you see RxJS errors after an upgrade hop, check `package.json` for version mismatches and align RxJS to the version expected by that Angular major.
 
 ### Decorator metadata changes
-Older Angular versions used different decorator compilation. If upgrading across many majors (e.g., 14 → 21), expect intermediate hops to handle these transitions.
+Older Angular versions used different decorator compilation. If upgrading across many majors (e.g., 14 → 22), expect intermediate hops to handle these transitions.
 
 ### Stale or inconsistent `node_modules`
 The hop loop relies on `ng update`'s internal install and does not wipe `node_modules` each hop. If a hop fails with module-resolution or native-binding errors that a plain reinstall doesn't fix, do a one-off clean reinstall as a recovery step: `npx -y rimraf node_modules`, then `typescript_install_dependencies`. Use this only when needed — not on every hop.

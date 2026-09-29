@@ -1,7 +1,7 @@
 # React Hook Form Upgrades
 
 Upgrade `react-hook-form` and the official `@hookform/*` packages present in the manifest as one
-compatibility group, after any in-scope React upgrade. Resolve each package to its own latest
+compatibility group, after any in-scope React upgrade. Resolve each package to its explicit target when present, otherwise to its own latest
 compatible version; their version numbers do not move in lockstep.
 
 `@hookform/resolvers` v5 requires `react-hook-form` 7.55.0 or newer. It also relies on peer

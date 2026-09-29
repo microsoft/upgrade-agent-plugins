@@ -10,6 +10,7 @@ For each dependency group from the upgrade plan, call the `typescript_upgrade_pa
    - `rootDirectory` — the repository root
    - `packageDirectory` — the directory containing the `package.json` to upgrade
    - `dependencies` — the array of package names for this group (from the scan results)
+   - `targetVersions` — the group's target-version map from the scan result, when present; omit it when every package should upgrade to latest
    - `sessionId` — from the scan response
 
 2. **Review the result.** The tool returns a summary including:
