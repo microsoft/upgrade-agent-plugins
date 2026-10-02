@@ -49,6 +49,14 @@ Inspect `package.json` and identify the real dev-server script. Start one
 background server before the first recording, retain its PID, read the actual
 URL from ready output, and probe that exact URL.
 
+Keep all recording-server output outside the repository. Prefer the host's
+managed background-process facility. If the server command requires explicit
+output redirection, write its log to a uniquely named file in the host operating
+system's temporary directory. Never allow `nohup.out` or another server log to
+be created in the repository: temporary output must not enter the patch or
+whole-repository checks. Remove any workflow-owned temporary log during the
+Step 5 cleanup.
+
 Track whether this workflow owns the process:
 
 - If this workflow starts the server, set `serverOwnedByWorkflow = true` and

@@ -8,15 +8,13 @@ metadata:
   weight: "10000"
   traits: .NET|CSharp|VisualBasic|DotNetCore
   scenarioTraitsSet: ".NET"
-  post-completion:
-    suggest-scenarios:
-      - aspire-integration
-      - aspire-version-upgrade
-      - migrating-ef6-code-first-to-ef-core
-      - winforms-feature-adoption
-      - dotnet-arm64-migration
-    suggest-actions:
-      - generate-report
+  post-completion-suggest-scenarios: >-
+    aspire-integration|
+    aspire-version-upgrade|
+    migrating-ef6-code-first-to-ef-core|
+    winforms-feature-adoption|
+    dotnet-arm64-migration
+  post-completion-suggest-actions: "generate-report"
 ---
 
 # .NET Version Upgrade Scenario

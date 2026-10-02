@@ -15,5 +15,18 @@
     "pathEnv": "APPMOD_DOTNET_SERVER_PATH",
     "argsEnv": "APPMOD_DOTNET_SERVER_ARGS"
   },
+  "upgradeHooks": {
+    "collect_facts": {
+      "command": "dnx",
+      "args": [
+        "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp",
+        "--yes",
+        "--ignore-failed-sources",
+        "--",
+        "--hook",
+        "collect_facts"
+      ]
+    }
+  },
   "traits": ".NET|CSharp|VisualBasic|DotNetCore"
 }

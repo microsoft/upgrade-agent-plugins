@@ -103,7 +103,10 @@ Escalate to the full Visual Studio MSBuild (`msbuild.exe`) when ANY of these con
 
 7. **Legacy (non-SDK-style) project file that hasn't been converted yet.**
    If the project still uses `<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets">`
-   rather than `<Project Sdk="Microsoft.NET.Sdk">`, only `msbuild.exe` will work.
+   rather than `<Project Sdk="Microsoft.NET.Sdk">`, only `msbuild.exe` will work. A project
+   file with a top-level `<Sdk Name="…" />` element or `<Import … Sdk="…" />` instead of the
+   `Sdk` attribute is SDK-style too, unless it also imports `Microsoft.CSharp.targets` or
+   `Microsoft.VisualBasic.targets` itself.
 
 #### Build tool decision guide
 
@@ -224,6 +227,9 @@ Add or update a `## Build Tool Decisions` section:
 - **Tests.csproj**: dotnet build (SDK-style after conversion)
 ```
 
+Record the tool, never the `msbuild.exe` path: this file is committed, and the path differs per
+machine and changes when Visual Studio updates. Resolve it each session with **Locating MSBuild**.
+
 On subsequent builds, check this section first:
 - If the project is listed → use the cached decision
 - If not listed or the project changed → re-read this skill and determine the right tool
@@ -271,6 +277,8 @@ When the decision is `msbuild.exe`, the agent must locate it reliably.
 > trailing backtick opens command substitution — see **Shell portability** below before
 > adapting any of these.
 
+Stop at the first priority that gives a path; each later one is only a fallback.
+
 **Priority 1 — `VSINSTALLDIR` environment variable:**
 If the agent is running inside Visual Studio or was launched from a VS Developer Command
 Prompt, the `VSINSTALLDIR` environment variable is already set and points to the correct
@@ -285,25 +293,65 @@ VS installation. Read it in a way the active shell understands:
 This is the preferred approach — it matches the user's active VS context and avoids
 picking a different installation than the one they're working with. If the variable expands
 to nothing (it is unset outside a VS context), fall through to Priority 2 rather than
-building a path from an empty value.
+building a path from an empty value. If it is set but that file does not exist, try
+`MSBuild\15.0\Bin\MSBuild.exe` under it (Visual Studio 2017), and fall through if neither exists.
 
-**Priority 2 — `vswhere.exe`:**
-If `VSINSTALLDIR` is not set (agent running outside VS), use `vswhere.exe`. Keep it on one
-line — no `^`, no backtick, no backslash continuations — and pick the form for your shell.
-**A quoted path is not a command in PowerShell**: it is just a string expression, so the next
-token fails with `Unexpected token '-latest'`. PowerShell needs the call operator `&`:
+**Priority 2 — `validate_dotnet_sdk_installation` output:**
+On Windows this tool also reports `Visual Studio MSBuild: <path>` — the instance the upgrade
+engine itself loads: the newest with MSBuild that is complete, or registered and needing no
+reboot, including Preview, Insiders, Canary and Build Tools. Use that path when Priority 1 gave
+none and the output is in your context or you can call the tool with a valid target framework
+(an unparseable one returns only a format error). `none found` is not proof that Visual Studio
+is missing; continue to Priority 3.
+
+**Priority 3 — `vswhere.exe`:**
+Keep it on one line — no `^`, no backtick, no backslash continuations — and pick the form for
+your shell. **A quoted path is not a command in PowerShell**: it is just a string expression,
+so the next token fails with `Unexpected token '-latest'`. PowerShell needs the call operator `&`:
 
 | Shell | Command |
 |---|---|
-| PowerShell | `& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe` |
-| cmd | `"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe` |
-| bash | `"/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild/**/Bin/MSBuild.exe` |
+| PowerShell | `& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe"` |
+| cmd | `"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe"` |
+| Git Bash | `"/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild/**/Bin/MSBuild.exe"` |
+
+Under WSL, use `/mnt/c/` where Git Bash uses `/c/`, here and in the web-targets query below,
+and convert the Windows path vswhere prints with `wslpath -u` before running it.
+Never drop `-prerelease` or `-products "*"`: without them vswhere skips Preview, Insiders,
+Canary and Build Tools, and prints nothing on a machine that has only those. Keep `"*"` quoted —
+unquoted, bash expands it to file names, and vswhere prints nothing and exits 0.
 
 The same `&` rule applies to any quoted executable path you invoke from PowerShell, including
 the `powershell -File` form used elsewhere in these skills.
 
-**Priority 3 — well-known paths:**
-If neither is available, fall back to well-known paths under `Program Files`.
+**Priority 4 — install folders:**
+List the `<version>\<edition>` folders under `C:\Program Files\Microsoft Visual Studio` and
+`C:\Program Files (x86)\Microsoft Visual Studio` (editions include Preview, Insiders, Canary
+and BuildTools) and use one that contains `MSBuild\Current\Bin\MSBuild.exe` (Visual Studio
+2017: `MSBuild\15.0\Bin\MSBuild.exe`).
+
+**Legacy web projects need the web targets too.** A project that imports
+`Microsoft.WebApplication.targets` builds only with an instance that has
+`MSBuild\Microsoft\VisualStudio\v*\WebApplications\Microsoft.WebApplication.targets`, and the
+newest instance may not (Priority 2 reports whether it does). If the chosen instance lacks it,
+list the instances that have it, newest first, and use `MSBuild\Current\Bin\MSBuild.exe`
+(2017: `MSBuild\15.0\Bin\MSBuild.exe`) under the first result's instance folder (the part before
+`\MSBuild\`):
+
+| Shell | Command |
+|---|---|
+| PowerShell | `& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\Microsoft\VisualStudio\v*\WebApplications\Microsoft.WebApplication.targets"` |
+| cmd | `"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\Microsoft\VisualStudio\v*\WebApplications\Microsoft.WebApplication.targets"` |
+| Git Bash | `"/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild/Microsoft/VisualStudio/v*/WebApplications/Microsoft.WebApplication.targets"` |
+
+If it prints nothing, MSBuild is installed but no instance has the web targets. Stop retrying and
+tell the user to add the **ASP.NET and web development** workload (Build Tools: **Web development
+build tools**) to the instance you found.
+
+**If every priority comes up empty,** report that no Visual Studio MSBuild was found and list
+what you checked. Do not substitute `dotnet build` for a project the decision guide sent to
+`msbuild.exe`: the SDK has no Visual Studio targets, so it fails with `MSB4019` and hides the
+real cause.
 
 ### Shell portability (read before writing any command)
 

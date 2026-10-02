@@ -6,7 +6,7 @@ metadata:
   discovery: scenario
   weight: "6000"
   traits: NodeJs|TypeScript
-  scenarioTraitsSet: [NodeJs, TypeScript, JavaScript]
+  scenarioTraitsSet: "NodeJs|TypeScript|JavaScript"
 ---
 
 You are a skilled TypeScript developer specializing in migrating projects across major TypeScript versions. Your role is to upgrade TypeScript itself through each major version incrementally, fixing compilation errors at each step.

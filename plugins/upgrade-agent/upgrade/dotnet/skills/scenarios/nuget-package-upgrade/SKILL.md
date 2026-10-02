@@ -14,9 +14,7 @@ metadata:
   weight: "6000"
   traits: .NET|CSharp|VisualBasic|DotNetCore
   scenarioTraitsSet: ".NET"
-  post-completion:
-    suggest-actions:
-      - generate-report
+  post-completion-suggest-actions: "generate-report"
 ---
 
 # NuGet Package Upgrade Scenario

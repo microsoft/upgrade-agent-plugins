@@ -199,7 +199,9 @@ is **not** sufficient:
 7. **Failure handling — self-dispatch the inner loop, escalate the hard cases.**
    - **Tight inner loop (do it yourself, nested).** For an ordinary build/test failure in
      your task's scope, you may dispatch `BuildValidator` (to pin down what's broken) or
-     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool. You
+     `ErrorFixer` (to fix a stubborn but bounded failure) directly via the `agent` tool. When
+     a project needs Visual Studio MSBuild, pass `BuildValidator` the `msbuild.exe` path you
+     resolved (building-projects skill, **Locating MSBuild**). You
      may likewise dispatch `CodeReviewer` for a focused review of the changes you just made
      when a quality check adds value, and `TaskBreaker` when step 4 fires. Their heavy
      diagnostic/review/planning context stays in *their* processes and returns you a distilled

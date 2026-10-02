@@ -12,6 +12,7 @@ Bump the core MUI packages to the **same MUI major together**. Do not force MUI 
 
 - **Emotion is a required peer of `@mui/material`.** `@mui/material` declares `@emotion/react` (`^11.5.0`) and `@emotion/styled` (`^11.3.0`) as (optional) peer dependencies — optional only because `@mui/styled-engine-sc` can substitute styled-components, but Emotion is the default. If the project uses Emotion, upgrade `@emotion/react` / `@emotion/styled` **in the same group** as `@mui/material`. Emotion's own major (v10 → v11) is a breaking change and must land **before or with** MUI v5 (MUI v5 requires Emotion v11).
 - **`@mui/x-*` does not track the `@mui/material` versioning strategy.** Leave MUI X packages unchanged while upgrading Material UI v5 → v6 or v6 → v7, as directed by the corresponding official migration guides. Treat any MUI X upgrade as a separate migration based on that package's own compatibility requirements.
+- The dependency scan may place MUI core and MUI X in one peer-connected group. For a scoped core/Emotion request, filter `@mui/x-*` packages out of the group. For an MUI X request, do not add unrelated core or X packages unless the target package's declared peer range requires them.
 - These rules **constrain** the standard `typescript_upgrade_package_dependency_group` flow — they do not replace it. Pass the scanned core MUI/Emotion packages into Phase 2, but do not force separately versioned MUI X packages to the core major.
 
 ## Strategy: single-shot bump, cumulative codemods
