@@ -4,6 +4,28 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.652] - 2026-10-02
+
+### Changed
+
+- Route-ownership analysis is stricter about when a Framework route can be removed. It now reads the content types an ASP.NET Core endpoint accepts, keeps Framework URL space it cannot prove is covered (unseen controllers, unresolved symbols, unbound ASP.NET Core attributes) from licensing a deletion, and accepts uses of the MVC global filter collection only in an exact list of recognized forms.
+- Project analysis is faster: MSBuild projects are loaded once and reused across analysis steps instead of being re-evaluated for each one.
+- Extenders can declare upgrade hooks in `upgrade-extension.json`. The .NET extender now supplies repository facts for scenario discovery through a `collect_facts` hook.
+- Extenders now read orchestrator session events from a per-session journal, so an extender that starts late still sees the session's earlier events.
+- Updated the bundled TypeScript extender to 0.1.15.
+
+### Fixed
+
+- Builds of legacy ASP.NET Web Application projects now find Visual Studio MSBuild on machines that have only a Preview, Insiders, Canary, or Build Tools edition installed, instead of reporting the tooling as missing.
+- .NET assessments of a folder without a solution file now load every discovered project, so they no longer report zero projects.
+- The dashboard now distinguishes "no assessment data yet" from "the assessment found nothing", so a missing assessment no longer reads as an all-clear.
+- When given a solution path that does not exist, the upgrade workflow now stores its plan and assessment under the real containing folder, so the dashboard and resume can find them.
+- When two installed copies of an extender have the same version, the copy in the plugin root selected by the Copilot CLI or Agency is now used.
+- NuGet package IDs and target framework prefixes are now compared case-insensitively when checking package compatibility and replacements.
+- Razor view discovery and other identifier comparisons no longer depend on the machine's culture settings.
+- The canvas side panel now lays out correctly at narrow widths in the Activity Log, By File, Assessment, Dependencies, and Options views.
+- Canvas empty states now say whether data is not available yet or was not produced at all, instead of naming internal files such as `tasks.md`.
+
 ## [1.1.612] - 2026-09-29
 
 ### Changed

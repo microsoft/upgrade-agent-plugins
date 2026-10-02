@@ -63,6 +63,7 @@ If the plan on disk has been edited between baseline and post-upgrade, the tool 
 
 On regressions:
 1. Fix the application code (correlate failures against the packages you just upgraded).
+   For a lint, formatting-check, or spellcheck regression, use the repository's existing autofix command when available, then repair any remaining upgrade-introduced errors. Never add an autofix command to the eval plan.
 2. Call `typescript_compile_package` to verify your fix compiles.
 3. Call `typescript_validate_runtime` again with `retryCount` incremented.
 4. Iterate up to 3 times. If still failing, revert the upgrade.

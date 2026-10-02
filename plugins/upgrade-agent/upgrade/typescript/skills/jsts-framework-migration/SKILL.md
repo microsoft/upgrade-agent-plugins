@@ -6,7 +6,7 @@ metadata:
   discovery: scenario
   weight: "6000"
   traits: NodeJs|TypeScript|JavaScript
-  scenarioTraitsSet: [NodeJs, TypeScript, JavaScript]
+  scenarioTraitsSet: "NodeJs|TypeScript|JavaScript"
 ---
 
 You are a JavaScript and TypeScript framework-migration specialist. Migrate the complete project, not only a representative slice or proof of concept.

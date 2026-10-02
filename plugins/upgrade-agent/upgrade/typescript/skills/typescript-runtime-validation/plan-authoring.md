@@ -36,7 +36,15 @@ Read [per-project-type.md](./per-project-type.md), copy the template for the pro
 
 Read [tests-assertion.md](./tests-assertion.md) and append the `tests-pass` assertion. If the project has no test script, follow the context-specific generation flow in that file before emitting the assertion.
 
-## Step 6 - Apply schema and `output-contains` rules
+## Step 6 - Add repository hygiene assertions
+
+Inspect the target package and repository-root `package.json` scripts. When the repository defines non-mutating lint, formatting-check, or spellcheck commands, add each applicable command as a separate `process` assertion using `verificationMethod: "exit-code"` and `expected: "0"`. Use the repository's canonical whole-tree scripts and the `cwd` from which its package manager expects them to run.
+
+Only record check commands. Never put an autofix or mutating command in the plan, including scripts or arguments that use `--fix`, `--write`, or otherwise rewrite files. If the repository only exposes a mutating formatter script, omit it from the plan rather than changing files during baseline validation. Do not install new tooling or weaken a rule to create an assertion.
+
+These assertions must remain in the same plan for the baseline and post-upgrade runs. If one fails after the upgrade, return the failure to the calling workflow for repair; do not modify the plan to hide the regression.
+
+## Step 7 - Apply schema and `output-contains` rules
 
 - Confirm the plan matches [plan-schema.md](./plan-schema.md).
 - For every `output-contains` assertion, confirm the substring is stable using [output-contains.md](./output-contains.md).
@@ -45,11 +53,11 @@ Read [tests-assertion.md](./tests-assertion.md) and append the `tests-pass` asse
 - When the workflow selected a specific Node binary, declare it once in the top-level `runtime` object with `kind: "node"`, `executable`, and `expectedVersion`. Use a per-step `runtime` only when that step intentionally requires a different Node — for example, a legacy build script that must run on Node 18 while the dev server and tests run on the project's Node 20. Do not repeat the Node path in command fields.
 - Prefer a portable runtime executable such as `"node"` when the environment already selects the right version. An absolute Node path is allowed only when the workflow deliberately selected that installed runtime; never copy a host-resolved npm path into the authored plan.
 
-## Step 7 - Save
+## Step 8 - Save
 
 Write the JSON to `<packageDirectory>/.tsupgrader/runtime-validation/eval-plan.json`. Use 2-space indentation. Assertion `name`s must be unique within the file.
 
-## Step 8 - Hand control back
+## Step 9 - Hand control back
 
 Report what changed in one or two sentences, then resume the calling runtime-validation workflow.
 

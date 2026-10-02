@@ -22,13 +22,31 @@ the working:
   because it reports the overlap whether or not the local wins.
 
 The order clause ahead of that sentence says how the winner was, or was not, established.
-It is one of three:
+Core ranks the endpoints that match a request by the lower `Order`; at an equal `Order`,
+the higher template precedence; at an equal `Order` and precedence, one that declares HTTP
+methods ahead of one that declares none, and where that does not separate them, one that
+declares content types ahead of one that declares none. A first rank two endpoints share
+fails the request as ambiguous. Comparing a local with the forwarder, this analysis applies
+only `Order` and precedence: it never counts declared HTTP methods or content types as the
+local's win, so where only they would separate the pair, the last sentence still expresses
+doubt.
+
+Check content types first. A local that lists `acceptedContentTypes` without a `*/*` that
+is bare or has `q` as its first parameter never wins a request carrying another
+`Content-Type`, or none: Core drops it before ranking, so no `Order` change on it clears
+the conflict, and `evidence` names the types. Such a request goes to whichever of the
+forwarder and the other local endpoints that accept it ranks first, and Framework serves
+it when that is the forwarder. The order clauses below compare this local with the
+forwarder, so they decide only the requests both accept. The order clause is one of three:
 
 - **Both orders were read** — the evidence prints them, as in `Local Order is 2; proxy
   Order is 0.` The lower number wins outright, whichever side it is on; equal numbers go
   to a second stage:
   - **The proxy's number is lower.** It wins. Treat the Framework route as **still live**.
-  - **The local's number is lower.** It wins, and the last sentence says so.
+  - **The local's number is lower.** It wins the requests both accept. Where it lists
+    `acceptedContentTypes` without such a `*/*`, the last sentence still expresses doubt,
+    since the requests it rejects go elsewhere; otherwise the last sentence says the local
+    wins.
   - **The numbers are equal.** Core breaks the tie on template precedence, so the last
     sentence is decided there rather than by the numbers. One shape clears: a local
     endpoint that is not a `MapControllerRoute` and whose template is more specific than

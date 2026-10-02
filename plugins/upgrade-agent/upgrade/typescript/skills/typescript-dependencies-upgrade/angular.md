@@ -14,7 +14,7 @@ If the repo root has an `nx.json`, the Angular versions are governed by Nx (`@nr
 
 - **Pin the exact Nx patch every hop.** A floating-major `nx migrate @nrwl/workspace@N` crashes (`Cannot read properties of undefined (reading 'schematics')`). Use a concrete patch per hop (e.g. `@13.10.6`, `@14.8.6`, `@15.9.7`, `@16.10.0`, …), then `nx migrate --run-migrations` and prune broken entries (below).
 - **CLI entry point moves at v13; `@nrwl/*` → `@nx/*` scope rename at v16.** From Nx 13, invoke `node node_modules/nx/bin/nx.js` — the old `@nrwl/cli/bin/nx.js` throws `MODULE_NOT_FOUND`. At Nx 16, `nx migrate --run-migrations` renames the `@nrwl/*` packages to the `@nx/*` scope (the `@nrwl/*` aliases stop being published at Nx 20).
-- **The `@nrwl/angular` alias caps Angular.** Migrating `@nrwl/workspace` leaves Angular behind. After each Nx hop, bump Angular explicitly per major: `nx migrate @angular/core@N @angular/cli@N` (and `@angular/material@N` / `@angular/cdk@N` if present), then `--run-migrations`. On the final hop of a version-specific request, replace `N` with the exact requested Angular version and verify the manifest landed on that patch.
+- **The `@nrwl/angular` alias caps Angular.** Migrating `@nrwl/workspace` leaves Angular behind. After each Nx hop, bump Angular explicitly per major: `nx migrate @angular/core@N @angular/cli@N` (and `@angular/material@N` / `@angular/cdk@N` if present), then `--run-migrations`. On the final hop, use each package's own exact entry from the scan group's `targetVersions` when present and keep `@N` for untargeted Angular packages; verify every explicitly targeted package landed on its requested patch.
 - **Prune broken migrations.** Some `migrations.json` entries fail (`split-configuration` "missing a factory"; Angular schematics throwing `tree.readText is not a function` on a stale Nx devkit; project-config migrations on `package.json`-based projects). Remove the failing entries from `migrations.json`, keep the Angular source migrations that run, and rely on the final build to surface anything truly needed.
 - **Old Nx executors can't build Angular 22.** If `nx build` fails because the workspace's `@nx/angular` executor is too old, build the target **directly** — Angular CLI for apps (`node node_modules/@angular/cli/bin/ng build <project>`), `ng-packagr` for libraries, `tsc -p` for plain-TS libs. Libraries consumed via tsconfig `paths` type-check as part of the app build, so a separate lib build is often unnecessary.
 
@@ -51,20 +51,20 @@ Read `@angular/core` from `package.json` (dependencies or devDependencies) and e
 
 ### 2. Determine the target Angular major version
 
-Read `requestedPackageVersions` from the scan. If it contains any Angular package, use that exact version as the terminal Angular target; all explicitly targeted Angular packages must share its major. Otherwise use the latest stable Angular major version. You can check the latest via a shell command (e.g., `npm view @angular/core version` — this queries the npm registry and works regardless of which package manager the project uses).
+From the scan's `packages[].dependencyGroups`, collect the `targetVersions` entries for every Angular package into one exact-target map. If that map is non-empty, derive the terminal Angular major from its values; all explicitly targeted Angular packages must share that major, but they may have different patch versions. Otherwise use the latest stable Angular major version. You can check the latest via a shell command (e.g., `npm view @angular/core version` — this queries the npm registry and works regardless of which package manager the project uses).
 
 ### 3. Loop: upgrade one major version at a time
 
 For each major version `N` from `(current + 1)` to the target major:
 
-**a.** Run `ng update` for the core Angular packages (this installs the new versions internally). Use `^N` for intermediate hops. On the final hop, if an exact target was requested, replace both specs with that exact version:
+**a.** Run `ng update` for the core Angular packages (this installs the new versions internally). Use `^N` for intermediate hops. On the final hop, construct each package spec independently: use that package's exact `targetVersions` entry when present, otherwise keep `^N`.
 ```
 npx ng update @angular/cli@^N @angular/core@^N --allow-dirty --force
 ```
 
-Final exact-target example:
+Final exact-target example (the CLI and Core patches are intentionally independent):
 ```
-npx ng update @angular/cli@18.2.7 @angular/core@18.2.7 --allow-dirty --force
+npx ng update @angular/cli@18.2.8 @angular/core@18.2.7 --allow-dirty --force
 ```
 
 **b.** If the project uses `@angular/material`, also update it. Use its explicit exact target on the final hop when provided; otherwise use the hop major:
@@ -84,7 +84,7 @@ npx ng build
 - **`buildTarget` schema errors** — The `ng update` schematics should have migrated `angular.json` automatically. If they didn't, check that `angular.json` uses the new `application` builder format (Angular 17+). See the "Common Issues" section below.
 - **Peer dependency warnings** — Usually safe to ignore during intermediate hops since the next hop will align versions.
 
-**f.** Verify you landed on the expected version by re-reading `@angular/core` from `package.json`. On the final hop, the declared version must equal the exact requested target rather than merely sharing its major.
+**f.** Verify the final manifest. Every Angular package with a `targetVersions` entry must equal its own exact requested target; untargeted Angular packages must land on the terminal major.
 
 ### 4. After all Angular hops complete
 

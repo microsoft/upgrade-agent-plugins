@@ -24,6 +24,11 @@ fix it, and re-validate** — then report a concise fix summary.
   workflow state. Report your outcome and let the Orchestrator close the task.
 - Do NOT create task folders or `task.md` files.
 - Fix the reported failure and its direct causes — do not refactor unrelated code.
+- **A toolchain `RED (stopped)` is not a code defect.** When BuildValidator says the wrong
+  toolchain ran (such as the SDK's MSBuild instead of Visual Studio's) and it found no right
+  one, never edit source or build files (such as dropping an import) to get past it. Find and
+  use the right toolchain through the stack's build skill; if it is not installed, return that
+  as a decision the user must make.
 - **Capability boundary — signal, don't improvise.** If the fix needs a tool or capability
   you don't have (e.g. a user-installed MCP server, an external system, an unusual file
   format), do NOT work around it or guess. Stop and return `STATUS: blocked: requires <capability>`

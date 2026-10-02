@@ -36,8 +36,8 @@ output stays in **your** context and never pollutes the Orchestrator's.
 ## Inputs you receive (in the dispatched turn)
 
 The units / workspace / phase to validate, the repo path, the **build/test command(s)**
-for this stack (or the test scope), and (optionally) whether to run tests. **Rehydrate
-from disk** — read paths as needed.
+for this stack (or the test scope), the Visual Studio `msbuild.exe` path when a project needs
+one, and (optionally) whether to run tests. **Rehydrate from disk** — read paths as needed.
 
 ## What to do
 
@@ -54,7 +54,44 @@ from disk** — read paths as needed.
    resolution error (`NETSDK1045` and friends) means *your* toolchain selection is wrong, not
    that the code is broken. Check `dotnet --list-sdks` and any `global.json` pin, retry with
    the correct SDK, and only then report. Reporting a resolution problem as a code defect
-   sends the whole loop off to fix source that was already correct.
+   sends the whole loop off to fix source that was already correct. `MSB4019` for an import
+   searched under `dotnet\sdk\<version>\` (either slash) is the same kind of error, the SDK's
+   MSBuild running instead of Visual Studio's, when the project is not SDK-style (no `Sdk`
+   attribute or `<Sdk>` element anywhere in the project file, or it imports
+   `Microsoft.CSharp.targets` or `Microsoft.VisualBasic.targets` itself), the path has a
+   `Microsoft\VisualStudio\v*\` folder (e.g. `Microsoft.WebApplication.targets`), or on
+   Windows the part after `sdk\<version>\` exists under `C:\Program Files (x86)\MSBuild`
+   (Visual Studio's MSBuild also looks there); any other
+   `MSB4019` is an ordinary missing import (SDK, workload, package or custom extension), so
+   report it as usual. For the Visual Studio case,
+   retry the same build with Visual Studio's `msbuild.exe`, from the first source that has one:
+   the path in your inputs; `VSINSTALLDIR` when set; on Windows, the newest instance that has the
+   missing file. For that, take the searched path after `sdk\<version>\`, write its `vNN.0`
+   folder as `v*`, prefix `MSBuild\`, and `-find` it (web targets shown; one line, your shell's
+   form):
+
+   | Shell | Command |
+   |---|---|
+   | PowerShell | `& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\Microsoft\VisualStudio\v*\WebApplications\Microsoft.WebApplication.targets"` |
+   | cmd | `"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild\Microsoft\VisualStudio\v*\WebApplications\Microsoft.WebApplication.targets"` |
+   | Git Bash | `"/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -sort -prerelease -products "*" -requires Microsoft.Component.MSBuild -find "MSBuild/Microsoft/VisualStudio/v*/WebApplications/Microsoft.WebApplication.targets"` |
+
+   Its first line is in the newest instance with the file. If it prints nothing, the file may be
+   in MSBuild's own `Bin` or in `C:\Program Files (x86)\MSBuild`, which it cannot see: rerun it
+   with `-latest` in place of `-sort` and `"MSBuild\**\Bin\MSBuild.exe"` as the `-find` pattern,
+   and use the `msbuild.exe` it prints. In an instance folder (`VSINSTALLDIR`, or a result's
+   part before `\MSBuild\`), `msbuild.exe` is `MSBuild\Current\Bin\MSBuild.exe` (Visual Studio
+   2017: `MSBuild\15.0\Bin`). Under WSL, use `/mnt/c/` for `/c/` and convert vswhere's output
+   with `wslpath -u`. If the input or `VSINSTALLDIR` instance also reports `MSB4019` or
+   `MSB4226`, retry once with the query's.
+
+   If you cannot retry, report `Verdict: RED (stopped)` with the command and the `MSB4019` line,
+   never a code defect: say no Visual Studio MSBuild was found, or on macOS or Linux that the
+   project must be built on Windows with Visual Studio. If Visual Studio's `msbuild.exe` also
+   reports `MSB4019` or `MSB4226`, report the same verdict with the file and that instance (web
+   targets: add
+   the **ASP.NET and web development** workload, or **Web development build tools** to Build
+   Tools).
 
 ## What to return (compact, structured)
 
@@ -71,6 +108,7 @@ verdict channel, where the Orchestrator already routes to TaskExecutor/ErrorFixe
   `Verdict: RED (stopped)`** and give the exact command plus its last output. This is a
   distinct outcome from an ordinary RED: nothing was proven about the code, so the reader must
   not treat it as a test failure. A bare "RED, tests did not run" is indistinguishable from a
-  real failure and sends the fix to production code that was never broken.
+  real failure and sends the fix to production code that was never broken. The same verdict
+  covers a build the wrong MSBuild ran that you could not retry with Visual Studio's (step 4).
 - Never the raw multi-thousand-line log. Your whole value is compressing it.
 - **Hard cap: under ~12 lines.** Verdict + the root-cause errors only.

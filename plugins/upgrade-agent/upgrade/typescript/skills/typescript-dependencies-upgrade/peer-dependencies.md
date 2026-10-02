@@ -42,9 +42,9 @@ For React **major** bumps specifically, don't leave those ecosystem companions t
 
 If `react`/`react-dom` appear only under the manifest's `peerDependencies` — a library that renders React but doesn't own its version — there's nothing to "upgrade" in the usual sense. See react.md ("Libraries that declare React as a peer dependency"): widen the peer range to add the new major and bump the matching `devDependencies` pin. Don't present this as a peer opt-in.
 
-### MUI + Emotion is a compatibility group
+### MUI core + Emotion is a compatibility group; MUI X is separate
 
-**Exception:** if `applicableGuidance` from the scan includes a `mui.md` entry (an entry whose `file` is `mui.md`), treat the MUI cluster as a group that upgrades together. When the user requests any `@mui/*` or `@emotion/*` package, present the rest of the cluster present in the manifest — `@mui/material`, `@mui/icons-material`, the `@mui/x-*` packages, and the `@emotion/react` / `@emotion/styled` styling engine — with an explicit **recommendation to include** them (not a neutral opt-in). Emotion is `@mui/material`'s peer styling engine, and `@mui/x-*` must not lead `@mui/material`'s major, so leaving one behind causes peer-dependency errors at install time. See [mui.md](./mui.md) for the coupling rules.
+**Exception:** if `applicableGuidance` from the scan includes a `mui.md` entry (an entry whose `file` is `mui.md`), coordinate Material UI core and its styling engine without forcing MUI X onto the same version line. For a request involving `@mui/material`, `@mui/icons-material`, `@emotion/react`, or `@emotion/styled`, present the other core/Emotion packages that are present in the manifest with an explicit **recommendation to include** them, but exclude `@mui/x-*` packages from that recommendation. For a request involving an `@mui/x-*` package, keep that migration separate: include only the requested X packages and any packages required by their target peer ranges, and recommend a Material UI core change only when the target X package requires it. See [mui.md](./mui.md) for the coupling rules.
 
 ### TanStack Query, Table, and Router use family-specific companion packages
 
