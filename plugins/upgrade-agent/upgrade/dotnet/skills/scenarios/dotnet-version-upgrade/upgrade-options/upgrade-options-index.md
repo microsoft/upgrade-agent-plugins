@@ -154,9 +154,9 @@ Rules:
 
 ### Rendering the payload as text
 
-Hosts without an interactive options form present the payload in chat. Render it as
-**one compact block**, then ask a **single** combined question — never one question
-per option.
+Hosts without an interactive options form render the payload as **one compact block**
+(placed per **Where the block goes** below), then ask a **single** combined question —
+never one question per option.
 
 Every option sits under its section heading, and every alternative is indented one
 level below its option and prefixed `Alternative — `:
@@ -218,19 +218,14 @@ Rules:
 
 Before sending, check every option line: it sits under a bold section heading, it
 ends with ` — ` plus a rationale, and it is followed by one `Alternative — ` bullet
-for every remaining entry in its `choices`. Fix any line that fails before printing.
+for every remaining entry in its `choices`. Fix any line that fails before sending.
 
-**Put the block in your chat message — never inside the question tool.** Interactive
-question UI is dismissed the moment the user answers, so anything rendered inside it
-is gone: a user who picks "change something" is left with nothing to refer to. Print
-the full block as your visible response **first**, then call the question tool with
-only a short prompt (e.g. "Confirm these upgrade options?") and its choices. Never
-put option names, values, rationales, or alternatives into the question text or the
-choice labels.
-
-**Re-print the whole block every round.** If the user changes something, print the
-complete updated block again — with their change applied — before asking the next
-question. Never ask a follow-up about options the user can no longer see.
+**Where the block goes.** With `ask_user`, put it **inside the `question` text** — text
+before a tool call can stay in your reasoning or be collapsed by the host, leaving nothing
+to confirm. With `ask_question`, print it as your response first, then ask only "Confirm
+these upgrade options?". With no question tool, the block is your final message, ending with
+the combined question. Never put options or values in choice labels. Every follow-up
+question shows the complete updated block again.
 
 ---
 

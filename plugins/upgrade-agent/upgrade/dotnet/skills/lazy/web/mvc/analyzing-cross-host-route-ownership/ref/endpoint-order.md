@@ -8,6 +8,19 @@ lost, while each overlapping pair is reported separately, so a route spanning se
 verbs or URLs carries one conflict for each covering endpoint that overlaps a forwarder,
 and those conflicts can disagree.
 
+A forwarder at the route's URLs withholds it only over the methods it may carry there. Where
+the route and the forwarder both list `httpMethods` and share none, the forwarder does not
+withhold the route, unless the route's `httpMethods` include `OPTIONS` and the forwarder names
+a `corsPolicy`. Such a forwarder may carry the CORS preflight to a route admitting `OPTIONS`
+or listing no methods, so a route Core covers reads `Unknown` at `ProxyPrecedence` rather
+than `Terminated`, whatever either side's `Order`. The preflight sentence below says how to
+settle it. A forwarder whose `corsPolicy` and `httpMethods` come from different settings
+files reads the same, and a `ConfigDrivenGating` entry names the other file. Where the
+forwarder's own entry lists `Match.Methods`, the report gives it those methods and the other
+file's policy, both readable. Where its own entry lists none and another file lists them, the
+report gives it no `httpMethods` and sets `hasOpaqueMatchData`, because which methods it serves
+depends on the files a run loads.
+
 Read the **last sentence** of each `evidence` before the numbers in front of it. That
 sentence is this analysis's finding on that pair; the order clause ahead of it is only
 the working:
@@ -17,9 +30,20 @@ the working:
   verdict, and the ones to act on.
 - **`The local endpoint wins endpoint selection…`** — the pair is settled, and it does
   **not** clear the route: another conflict on the same route is why the verdict was
-  withheld. A `LocalVersusCatchAll` never carries this sentence, because a local that
-  provably beats a catch-all is not reported at all; a `ProxyVersusLocal` carries either,
-  because it reports the overlap whether or not the local wins.
+  withheld. A `LocalVersusCatchAll` never ends with this sentence, because a local that
+  provably beats a catch-all is reported only for the preflight below; a `ProxyVersusLocal`
+  carries either, because it reports the overlap whether or not the local wins.
+- **`…verify which endpoint serves the preflight…`** — the proxy names a `CorsPolicy` and the
+  local admits `OPTIONS` or lists no methods. The tool reads no CORS metadata on Core
+  endpoints, so `Order` does not clear this. A local takes the preflight only for a method it
+  lists and only where it carries CORS metadata (`[DisableCors]` counts); then the lower
+  `Order` takes it and an equal `Order` fails it as ambiguous. A sentence ahead of it about
+  shared methods settles those methods only. Where the two share none, the evidence has no
+  order clause, and the host's CORS middleware decides whether the proxy answers the
+  preflight or forwards it ([proxy-destinations.md](proxy-destinations.md#how-to-check-it),
+  step 2). To settle it, send the running proxy a preflight, an `OPTIONS` with `Origin` and
+  `Access-Control-Request-Method` headers (CORS middleware ignores a plain `OPTIONS`), and
+  see which endpoint answers.
 
 The order clause ahead of that sentence says how the winner was, or was not, established.
 Core ranks the endpoints that match a request by the lower `Order`; at an equal `Order`,
@@ -75,6 +99,13 @@ forwarder, so they decide only the requests both accept. The order clause is one
     every configured forwarder opaque; this also applies to conventions on its enclosing
     group. Do not infer effective order from configuration alone: those conventions can
     override it. Inspect the unresolved entries and confirm endpoint selection at runtime.
+  - Decision rule for that case: the opaque forwarders no longer prove forwarding. A route
+    they alone would make `Forwarded` or `Partial` is **neither**: it is `Unknown` at
+    `UnevaluableConstraint` (`ConditionalCoverage` if the forwarder is gated) with
+    `residualForwarded: true`, and a route Core covers that one of them overlaps on a shared
+    method is `Unknown` at `ProxyPrecedence`. So under `MapReverseProxy().WithOrder(5)`, a
+    configured `/orders/{**rest}` forwarder leaves the Framework route `orders/{id}`
+    `Unknown`. `MapForwarder` routes keep their own match data.
 - **`The proxy declares the last-resort Order int.MaxValue; a conventional registration
   is numbered from a counter that cannot reach it, so the local endpoint takes the
   request.`** — a **local win** proven without a comparison: there is no pair of numbers

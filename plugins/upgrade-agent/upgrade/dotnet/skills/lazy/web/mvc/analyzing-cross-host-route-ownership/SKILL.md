@@ -30,7 +30,7 @@ This adds a machine-readable inventory and ownership/conflict analysis to the pr
 baseline in **migrating-aspnet-framework-to-core/side-by-side.md**. Keep that baseline
 for runtime comparison; the report does not replace it.
 
-**Version 1 supports C# projects only.** Both inputs must be `.csproj` files. Visual Basic
+**The analyzer supports C# projects only.** Both inputs must be `.csproj` files. Visual Basic
 and other project languages are not supported; do not interpret an unsupported project
 as having no routes. Projects must be loadable through the current workspace. An unloaded
 proxy is reported as unreadable, not scanned by guessing which files belong to it.
@@ -56,8 +56,8 @@ visible in the strings:
 - A Framework route with `defaults: new { action = "Index" }` serves the bare prefix
   `/packages`. A Core route written `packages/{action}/{id?}` does not. The templates read
   almost identically and cover different URL sets.
-- `IgnoreRoute` installs a `StopRoutingHandler`. It looks like a registered route and
-  serves nothing.
+- `IgnoreRoute` installs a `StopRoutingHandler`. It looks like a registered route, but it means
+  Framework *routing* serves nothing there — not that nothing does: an IIS handler (`*.axd`) may.
 - A route registered inside `if (config.EnableFeature)` may or may not exist at runtime,
   and the source does not say which.
 - MVC and Web API/OData use separate ordering domains; OData shares the Web API collection.
@@ -76,7 +76,7 @@ confidence — they are different findings, and they call for different actions.
 | `Forwarded` | The proxy forwards this route's URL space to the Framework app, or a Core handler for it forwards at least some requests (`kind: "Forwarder"`; read the handler before saying what it serves). | It is still live on the old host. Migrating it is a unit of work; deleting it is an outage. |
 | `Partial` | Local coverage is incomplete or symbolic, or the proxy forwards only a slice. | **Not proven complete.** Inspect candidates and remaining traffic; this need not mean anything has migrated. |
 | `Unclaimed` | The proxy was read, but no eligible local coverage or proven forwarding was found. | Investigate a possible routing gap; a Core fallback may still answer. This is not proof of a 404. |
-| `Ignored` | An `IgnoreRoute` that provably registers, or a route an earlier one provably swallows. | A swallowed route never matches inbound and can go, subject to the preconditions in "Deleting a Framework route". The `IgnoreRoute` itself cannot — it is working, not redundant. |
+| `Ignored` | An `IgnoreRoute` that provably registers, or a route an earlier one provably swallows. Framework routing does not serve the URL; `residualForwarded` records whether a forwarder relates to it. | A swallowed route never matches inbound and can go, subject to the preconditions in "Deleting a Framework route". The `IgnoreRoute` itself cannot — it is working, not redundant. When `residualForwarded` is `true`, a forwarder relates to these URLs: before treating them, or the Framework host, as retired, check that forwarder's methods, match conditions and destination, and whether an IIS handler (`*.axd`) or a static file answers them on Framework. |
 | `Unknown` | Ownership could not be determined. | Read `unknownReason` and resolve it before acting. |
 | `NotApplicable` | The route is on the Core host, so there is no Framework space for it to take over. | Nothing. Ownership is a question about Framework routes; filter these out before reasoning about coverage. |
 
@@ -109,7 +109,8 @@ gaps before deciding whether any remainder is unreachable.
   record's `predicate` gates only this route's own registration, so it answers the
   question in the first case below and not the second:
   - **This route is itself a gated `IgnoreRoute`** (`kind: "Ignore"`) — its own `predicate`
-    holds the condition, and that is the whole finding.
+    holds the condition, and that is the whole finding about whether it registers. Act on
+    `residualForwarded` as the `Ignored` row says.
   - **Otherwise a gated Core endpoint or YARP forwarder** decides the space, and nothing
     here points at it: it is deliberately left out of `terminatedBy`, because an unproven
     registration is not a coverage candidate. A `predicate` on this record does not fill
@@ -131,28 +132,28 @@ gaps before deciding whether any remainder is unreachable.
   see into. When `routes` holds a `Middleware` or `MiddlewareBranch` record, **load [ref/pipeline-code.md](ref/pipeline-code.md)**.
 - `UnresolvedSymbol` — a required value could not be read: a template, default, reference,
   package version, or other dependency or restore evidence. See the fuller entry below.
-- `ProxyPrecedence` — Core endpoints do cover this space, but a forwarder overlapping it
-  is not known to lose endpoint selection to them, so the request may still reach
-  Framework. Core orders endpoints by `Order` before template specificity, so a forwarder
-  whose `Order` is lower than the local endpoint's wins however specific that endpoint is.
-  A local that lists `acceptedContentTypes` without a `*/*` that is bare or has `q` as its
-  first parameter is dropped for every other `Content-Type`, and none, whatever the `Order`;
-  the forwarder takes that request only if no other local that accepts it outranks or ties
-  with the forwarder. Where `evidence` says that list was read from a body a registration
-  may make a service, the endpoint may accept any content type instead.
-  For a request both accept, at an equal `Order` and precedence, Core
-  prefers the one that alone declares HTTP methods, failing that the one that alone declares
-  content types; the analysis never counts either as the local's win. `evidence` names the types.
-  Load [ref/endpoint-order.md](ref/endpoint-order.md) before interpreting conflicts or changing order.
-  It distinguishes readable conventions, opaque overrides, and conflicts that disagree.
+- `ProxyPrecedence` — Core endpoints do cover this space, but a forwarder overlapping it is not known to lose
+  endpoint selection to them, so the request may still reach Framework. Core orders endpoints by `Order` before
+  template specificity, so a forwarder whose `Order` is lower than the local endpoint's wins however specific that
+  endpoint is. A local that lists `acceptedContentTypes` without a `*/*` that is bare or has `q` as its first
+  parameter is dropped for every other `Content-Type`, and none, whatever the `Order`; the forwarder takes that
+  request only if no other local that accepts it outranks or ties with the forwarder. Where `evidence` says that list
+  was read from a body a registration may make a service, the endpoint may accept any content type instead. For a
+  request both accept, at an equal `Order` and precedence, Core prefers the one that alone declares HTTP methods,
+  failing that the one that alone declares content types; the analysis never counts either as the local's win.
+  `evidence` names the types. Load [ref/endpoint-order.md](ref/endpoint-order.md) before interpreting conflicts or
+  changing order. It distinguishes readable conventions, opaque overrides, and conflicts that disagree.
+- `ProxyPathTransform` — Core endpoints cover this space, but a forwarder in `reachedThrough` may deliver to it from another
+  URL or method, so it is unconfirmed, not moved; **load [ref/proxy-destinations.md](ref/proxy-destinations.md)**. An earlier
+  reason such as `ProxyPrecedence` or `OpaqueRegistrar` is reported in its place, so load it for an `Unknown` route at any
+  reason while a forwarder in `routes` carries `destinationTemplate` or `hasOpaqueDestination`.
 
-`terminatedBy` names covering endpoints on `Terminated`, but on `Partial` it can name
-symbolic overlaps rather than a slice proven to have moved. On `Unknown` it names
-overlapping **candidates** whose coverage could not be proven
-— the shortlist to check, not a set of proven replacements. `ProxyPrecedence` is an
-exception where coverage *was* proven and what answers first is in doubt. `OpaqueRegistrar`
-from pipeline code may mean that or unproven candidates, and the reason alone does not say
-which, so verify the list. Either way, an `Unknown`'s `terminatedBy` never licenses a deletion.
+`terminatedBy` names covering endpoints on `Terminated`, but on `Partial` it can name symbolic overlaps rather than a
+slice proven to have moved. On `Unknown` it names overlapping **candidates** whose coverage could not be proven — the
+shortlist to check, not a set of proven replacements. `ProxyPrecedence` and `ProxyPathTransform` are exceptions where
+coverage *was* proven and what answers first, or where a forwarder delivers, is in doubt. `OpaqueRegistrar` from
+pipeline code may mean that or unproven candidates, and the reason alone does not say which, so verify the list.
+Either way, an `Unknown`'s `terminatedBy` never licenses a deletion.
 
 ## How coverage is decided, and what `basis` tells you
 
@@ -162,12 +163,13 @@ Two fields describe the quality of a route's answer, and they answer different q
 registration came from bound symbols. It is set when the route is scanned, and it says
 nothing about how its ownership was later decided.
 
-- **`Enumerated`** — the scanner read a direct registration or controller/action values.
-  On conventional routes, defaults can populate `controller` and `action` even while those
-  tokens remain free. Thus `precision: "Enumerated"` does not prove a concrete URL space.
-  Read `template` and `basis` rather than treating these fields as expanded actions.
+- **`Enumerated`** — the scanner read a direct registration, or a conventional one whose
+  controller and action are both fixed. On a conventional route `controller` and `action`
+  are null whenever the template carries that token; the token's default is in
+  `defaultController`/`defaultAction`, which is only the value an omitted segment falls back
+  to. Read `expansion` and `basis`, not these fields, for the actions a route reaches.
 - **`Subsumption`** — the scanner represents the registration by its template, including
-  conventional Core registrations. This does not determine its eventual coverage basis.
+  a conventional route with a controller or action token. This does not determine its eventual coverage basis.
 - **`SyntaxOnly`** — symbols did not bind at all and a bounded set of known registration
   shapes was matched textually. Treat findings at this precision as leads.
 
@@ -176,8 +178,9 @@ nothing about how its ownership was later decided.
 - **`Enumerated`** — conventional routes were expanded against the actions that actually exist, and
   coverage was settled over the URLs they really serve. A conventional route such as
   `{controller}/{action}/{id?}` is expanded by pairing each controller/action reachable
-  through it with the URL the route builds for it, carrying the action's HTTP-method
-  constraints along. This is the strongest answer the tool produces, and the only one
+  through it with the URL the route builds for it, carrying the verbs both the route's own
+  method constraint and the action admit; where they share none, the row keeps the route's
+  verbs and `isCertain: false`. This is the strongest answer the tool produces, and the only one
   under which a conventional Core route can contribute proven coverage. A directly mapped
   Core endpoint can cover a Framework template without conventional Core expansion.
 - **`Symbolic`** — coverage was decided by comparing template shapes. A shape containing
@@ -251,26 +254,25 @@ only as complete as this list is empty.
 
 The reasons that change what you should do:
 
-- `ConfigDrivenGating` — the proxy calls `MapReverseProxy()` but its configured route
-  table is empty, or nothing here proves that table is what the proxy loads, or a
-  route's registration depends on runtime configuration. The third case is the one that
-  looks wired up: a `ReverseProxy` section and a `MapReverseProxy()` call are both
-  present, but no `LoadFromConfig(...)` was shown to bind that section, so the running
-  proxy may take its routes from somewhere else entirely. Those routes are reported as
-  conditional rather than dead — the proxy is live and may well forward them. What it
-  forwards is a deployment fact that is not in the repository. Ask, or read the deployed
-  configuration.
-- `MalformedSource` — a project could not be loaded, a proxy directory could not be listed,
-  a configuration file could not be read, or a route template or configuration file could
-  not be parsed. Read the entry's `source`, `description`, and `proxyStatus`.
-  If the Framework project did not load, `proxyStatus` is `NotEvaluated`: neither host was
-  inventoried, even if a proxy path was supplied. Do not infer unaffected scope from the
-  reason alone. Affected routes remain unsettled; unreadable proxy configuration leaves
-  every proxy finding incomplete.
-- `UnsupportedRegistrationApi` — a registration form the tool does not model, or a method
-  it cannot read being handed the route collection. The second is the common one: a
-  registrar that lives in a referenced package has no source to follow, so whatever it
-  adds is invisible. Read it yourself and treat that URL space as undetermined.
+- `ConfigDrivenGating` — the proxy calls `MapReverseProxy()` but its configured route table is empty, or nothing here
+  proves that table is what the proxy loads, or a route's registration depends on runtime configuration. The third case
+  is the one that looks wired up: a `ReverseProxy` section and a `MapReverseProxy()` call are both present, but no
+  `LoadFromConfig(...)` was shown to bind that section, so the running proxy may take its routes from somewhere else
+  entirely. Those routes are reported as conditional rather than dead — the proxy is live and may well forward them.
+  What it forwards is a deployment fact that is not in the repository. Ask, or read the deployed configuration. A
+  forwarder whose id has `Transforms` in the other kind of settings file carries `hasOpaqueDestination`: **load
+  [ref/proxy-destinations.md](ref/proxy-destinations.md)**.
+- `MalformedSource` — a project could not be loaded, a proxy directory could not be listed, a configuration file could
+  not be read, a route template or configuration file could not be parsed, or a configuration file sets a field YARP refuses. Read the entry's `source`, `description`,
+  and `proxyStatus`. If the Framework project did not load, `proxyStatus` is `NotEvaluated`: neither host was
+  inventoried, even if a proxy path was supplied. Do not infer unaffected scope from the reason alone. Affected routes
+  remain unsettled; unreadable proxy configuration leaves every proxy finding incomplete. A forwarder whose `Transforms`
+  could not be parsed carries `hasOpaqueDestination`: **load [ref/proxy-destinations.md](ref/proxy-destinations.md)**.
+- `UnsupportedRegistrationApi` — a registration form the tool does not model, or code it
+  cannot read (a registrar in a referenced package, say) being handed the route collection.
+  Read it yourself. A URL the call site spells out is in `routes` with `hasOpaqueMatchData`,
+  but the entry still names no route — the unread code may rewrite it or register more — so
+  treat the whole URL space as undetermined.
 - `AttributeRoutingNotEnabled` — controllers carry route attributes but nothing calls
   `MapMvcAttributeRoutes()` or `MapHttpAttributeRoutes()`, or on the Core side none of
   `MapControllers()`, `MapControllerRoute()`, `MapDefaultControllerRoute()` or
@@ -313,16 +315,16 @@ The reasons that change what you should do:
 - `IndeterminateLoop` — a registration sits inside a loop, so how many routes it adds and
   where they sit in a first-match-wins collection are not knowable from the source.
   Ordering for that surface is approximate, which weakens every shadowing claim in it.
+- `OpaqueDestination` — the path or method a forwarder delivers could not be read, so **every** Framework route Core covers, whatever that forwarder matches,
+  stays `Unknown`, at `ProxyPathTransform` unless an earlier reason applies; **load [ref/proxy-destinations.md](ref/proxy-destinations.md)**.
 - `OpaqueRegistrar` — part of the URL space is claimed through an API the tool cannot see
   into, such as Core pipeline code (**load [ref/pipeline-code.md](ref/pipeline-code.md)**). On the
-  Framework side it also covers a registration helper of your own that takes both the
-  template and the route collection as parameters: the URL is its callers' to decide, and
-  call sites are followed only for helpers named `MapRoute`, `MapPageRoute`, `IgnoreRoute`
-  or `MapHttpRoute`, so any other name yields this entry naming the method instead of a
-  route in `routes`. A helper whose template resolves to a compile-time constant is read
-  normally whatever it is called; one that takes the template but reaches the collection
-  some other way lands in `UnresolvedSymbol` instead, naming the invoked API rather than
-  the helper. Open the named method and treat the URLs it adds as undetermined.
+  Framework side it also names your own helper that takes the template and route collection
+  as parameters and branches, writes more than once, or is used other than by a direct call.
+  Helpers that provably pass the caller's URL to `MapRoute`, `MapPageRoute`, `IgnoreRoute` or
+  `MapHttpRoute`, or whose template is a compile-time constant, are read whatever their name; one
+  reaching the collection some other way lands in `UnresolvedSymbol`, naming the invoked API. Open
+  the named method and treat the URLs it adds as undetermined.
 
 ## `conflicts` is the third array, and it is not optional reading
 
@@ -332,7 +334,7 @@ disagreement lives in and `evidence` in plain words.
 
 | `class` | What it means |
 |---------|---------------|
-| `LocalVersusCatchAll` | Three shapes, told apart by who is named in `participantIds`. **Two Core routes** — a local *catch-all* and the proxy catch-all cover the same space. Registration order does not decide this: Core compares lower numeric `Order` first, and where `Order`, precedence and selection metadata all tie there is no winner at all — the request fails with `AmbiguousMatchException`. Read `evidence` for which of the two this is. **A non-catch-all Core endpoint and the proxy catch-all** — reported whenever the local endpoint does not *provably* win. Core compares lower numeric `Order` before template precedence, so a more specific local template does not automatically beat the catch-all: it wins only at a lower `Order`, or at an equal `Order` where its precedence is higher (a template without a catch-all never ties a catch-all on precedence, so the declared-method and content-type rungs of [ref/endpoint-order.md](ref/endpoint-order.md) never decide this shape) — and, if it lists `acceptedContentTypes` without a `*/*` that is bare or has `q` as its first parameter, never for a request whose `Content-Type` falls outside them, or that carries none; the catch-all takes that request only if no other local that accepts it outranks or ties with the catch-all. Where the relative `Order` cannot be established, the conflict is reported rather than assumed away. **A Framework route and a Core fallback** (`MapFallbackToFile` and friends) — informational. A fallback sits at the lowest precedence and answers only what matches nothing else, so it never displaces a real endpoint and is not evidence of migration. |
+| `LocalVersusCatchAll` | Three shapes, told apart by who is named in `participantIds`. **Two Core routes** — a local *catch-all* and the proxy catch-all cover the same space. Registration order does not decide this: Core compares lower numeric `Order` first, and where `Order`, precedence and selection metadata all tie there is no winner at all — the request fails with `AmbiguousMatchException`. Read `evidence` for which of the two this is. **A non-catch-all Core endpoint and the proxy catch-all** — reported whenever the local endpoint does not *provably* win, and also where it does if the catch-all names a `CorsPolicy` and lists `Methods` and the local admits `OPTIONS`, because the tool does not let `Order` settle the CORS preflight (see [ref/endpoint-order.md](ref/endpoint-order.md)). Core compares lower numeric `Order` before template precedence, so a more specific local template does not automatically beat the catch-all: it wins only at a lower `Order`, or at an equal `Order` where its precedence is higher (a template without a catch-all never ties a catch-all on precedence, so the declared-method and content-type rungs of [ref/endpoint-order.md](ref/endpoint-order.md) never decide this shape) — and, if it lists `acceptedContentTypes` without a `*/*` that is bare or has `q` as its first parameter, never for a request whose `Content-Type` falls outside them, or that carries none; the catch-all takes that request only if no other local that accepts it outranks or ties with the catch-all. Where the relative `Order` cannot be established, the conflict is reported rather than assumed away. **A Framework route and a Core fallback** (`MapFallbackToFile` and friends) — informational. A fallback sits at the lowest precedence and answers only what matches nothing else, so it never displaces a real endpoint and is not evidence of migration. |
 | `LocalVersusLocal` | Two registrations on one host may compete, and the two hosts fail differently. **Two Framework registrations** — source order, a shared HTTP method and containing templates are not proof of runtime shadowing: inspect activation, execution order and full method coverage, since the first match wins and the later route is simply never reached. **Two Core endpoints** — everything this analysis can read ties. Both serve a URL named in `evidence` at the same `Order` for a shared method, with equal precedence and equal constraints, and Core requires a unique winner, so the request throws `AmbiguousMatchException` rather than falling through to either. What decides it is endpoint *selection*. This analysis reads methods, route constraints and the content types each endpoint accepts (`acceptedContentTypes` on the route). Absent means any only on a route whose selection is read — a minimal API (`MapGet`, `MapMethods` and the like), a bare `Map`, a `MapFallback` with a handler, or an attribute-routed action — and not where the route has `hasOpaqueMatchData` or an unresolved entry names it. A conventional route (`MapControllerRoute`, `MapAreaControllerRoute`, `MapDefaultControllerRoute`) never carries the field, whatever its actions declare; an action it reaches that declares content types is counted as uncertain instead. Core prefers an endpoint that declares HTTP methods over one that declares none, so a pair where only one of the two declares methods is not reported. Content types can then separate a pair, or confine its tie to requests carrying no `Content-Type`; `evidence` says which. An endpoint whose host restriction or other selection metadata could not be read is left out rather than tied. A selector policy declared outside this project, whether compiled into a reference or in a sibling project, is invisible wherever it is registered, and may separate the pair at runtime. Check the two registrations for one before treating the pair as broken — but treat it as a live failure until you have found one that does, because the tie is real everywhere this analysis can see. It is reported only where the shared URL was enumerated. |
 | `ProxyVersusLocal` | An explicit proxy route and a local Core endpoint both claim the space. Check content types first: a local that lists `acceptedContentTypes` without a `*/*` that is bare or has `q` as its first parameter is dropped for every request carrying another `Content-Type`, or none, whatever the `Order`, and the proxy route takes it only if no other local that accepts it outranks or ties with the proxy route. For a request both accept, compare `Order`, then template precedence for equal order, then, for equal precedence, declared HTTP methods before declared content types ([ref/endpoint-order.md](ref/endpoint-order.md)); the analysis never counts those last two as the local's win. Do not assume the local endpoint wins: requests may still forward to Framework, or a tie may fail as ambiguous. Read the conflict evidence before treating the local endpoint as the one serving the URL. |
 
@@ -361,10 +363,10 @@ traffic, so it cannot support retiring `RouteConfig.cs` or calling a migration f
 
 ## Environment-specific proxy configuration
 
-Routes read from `appsettings.Development.json` (or any other environment file) are
-reported with the file they came from in `source.filePath`. Which file wins is a
-deployment fact the repository does not record — **a route that only exists in Development
-is not one production serves.** Check the file before planning a wave around it.
+Routes read from `appsettings.Development.json` (or any other environment file) are reported with the file they
+came from in `source.filePath`; a `CorsPolicy`, `Match.Methods` or `Order` merged in from the file a run loads beside
+it is named, with that file, in a `ConfigDrivenGating` entry. Which file wins is a deployment fact the repository does
+not record — **a route that only exists in Development is not one production serves.** Check the file before planning.
 
 ## Using the report to plan a wave
 
@@ -376,7 +378,21 @@ is not one production serves.** Check the file before planning a wave around it.
    registration or one sharing only GET can leave the later route live for other traffic.
    Exclude a candidate only after independently confirming it is unreachable.
 4. Group candidates by controller or area, not by route count. Routes that share a
-   controller move together or break each other.
+   controller move together or break each other. Group a Framework route by its `expansion`
+   rows (template, `httpMethods`, `area` where present, controller, action, `isCertain`), not by its defaults. A
+   route's own `httpMethods` is its method constraint (never read for `kind: "Ignore"`, whose
+   `[]` says nothing about verbs); a request with another verb falls through to the next
+   route, so two same-template routes with disjoint verbs are separate slices. A row with
+   `isCertain: false` is one the route may reach (an area it cannot rule out, a shorter
+   URL dropping a constrained optional segment, or an action whose selection is uncertain:
+   ambiguous same-verb actions or overloads, host metadata, a custom or unbound verb
+   provider; a custom MVC method selector stays certain, since the route already
+   dispatched when it declines) or one it matches and then dispatches nothing (its verbs
+   are the route's, shared with no action verb): keep it in the space a deletion must
+   cover, but never read it as that action serving those verbs. Only Framework routes
+   carry `expansion`; `expansion: []` means the route was expanded and reaches no action.
+   A missing `expansion` (with or without `expansionOmitted: true`, meaning its rows
+   exceeded the report's budget) leaves no rows: treat the whole template as one slice.
 5. For each `Partial` route in the pool, identify the remaining slice specifically. This
    is where a wave silently leaves URLs behind.
 6. After the wave, re-run and exercise the changed URLs and verbs. When conventional
@@ -389,10 +405,10 @@ is not one production serves.** Check the file before planning a wave around it.
    not every migrated route has an enumerated basis. Hand-rolled forwarders or unrecognized
    handlers need runtime confirmation: forwarding inside a referenced project can still
    leave a handler classified as local. In all cases, no verdict bypasses "Deleting a Framework
-   route": check unresolved gaps, conflicts, and runtime host attribution. For `Partial`,
-   inspect candidates and the remaining slice; for `Unknown` at `ProxyPrecedence`, check
-   forwarder order, recognizability and the local's `acceptedContentTypes`, which no
-   `Order` clears. Investigate `Unclaimed` as a possible routing gap, not proof of a live 404.
+   route": check unresolved gaps, conflicts, and runtime host attribution. For `Partial`, inspect candidates and the
+   remaining slice; for `Unknown` at `ProxyPrecedence`, check forwarder order, recognizability and the local's
+   `acceptedContentTypes`, which no `Order` clears; for `Unknown` at `ProxyPathTransform`, load
+   [ref/proxy-destinations.md](ref/proxy-destinations.md). Investigate `Unclaimed` as a possible routing gap, not proof of a live 404.
 
 ## Deleting a Framework route
 

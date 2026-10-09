@@ -73,6 +73,8 @@ for k in keys:
             | head -n 1 \
             | sed -E "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"([^\"]*)\".*/\1/")
         if [ -n "$val" ]; then
+            # JSON escapes Windows separators even when no parser is installed.
+            val="${val//\\\\/\\}"
             echo "$val"
             return
         fi
@@ -104,7 +106,7 @@ FILE_PATH_NORMALIZED="${FILE_PATH//\\//}"
 # 3) Either host's extenders: .../upgrade/*/skills/**/SKILL.md
 #    (both hosts stage extenders under the same `upgrade` prefix, so
 #    one alternative covers the VSIX and the CLI plugin)
-if echo "$FILE_PATH_NORMALIZED" | grep -qiE '(/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/.*/|/upgrade/([^/]+/)?skills/.*/)[^/]+/SKILL\.md$'; then
+if echo "$FILE_PATH_NORMALIZED" | grep -qiE '(/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/|/upgrade/([^/]+/)?skills/)([^/]+/)*[^/]+/SKILL\.md$'; then
     # Extract skill name from the parent directory of SKILL.md
     SKILL_NAME=$(basename "$(dirname "$FILE_PATH_NORMALIZED")")
 

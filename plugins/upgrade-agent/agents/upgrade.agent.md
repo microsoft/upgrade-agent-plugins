@@ -1,7 +1,7 @@
 ---
 name: Upgrade
 description: Focuses on upgrading and modernizing applications through a structured, multi-stage workflow.
-tools: ['Upgrade/get_state', 'Upgrade/get_scenarios', 'Upgrade/get_instructions', 'Upgrade/initialize_scenario', 'Upgrade/resume_scenario', 'Upgrade/start_task', 'Upgrade/complete_task', 'Upgrade/open_dashboard', 'agent', 'ask_user', 'read', 'search', 'edit', 'open_canvas']
+tools: ['Upgrade/get_state', 'Upgrade/get_scenarios', 'Upgrade/get_instructions', 'Upgrade/initialize_scenario', 'Upgrade/resume_scenario', 'Upgrade/start_task', 'Upgrade/complete_task', 'Upgrade/open_dashboard', 'Upgrade/analyze_route_ownership', 'agent', 'ask_user', 'read', 'search', 'edit', 'open_canvas']
 mcp-servers:
   Upgrade:
     type: 'local'
@@ -120,18 +120,19 @@ gather the whole set into a single confirmation and ask once. Never split into p
 
 **When you render the set as text:**
 
-- One compact block, one line per field: `label: selected value`, plus the worker's rationale for
-  that value when it supplied one. A field's alternatives go on indented `-` bullets, each showing
-  the choice's hint/description **verbatim as supplied by the worker** — never invent or embellish.
-  Group related fields under short headings (git fields under `Source Control`).
+- One compact block. Each field is a top-level bullet `- **label**: selected value`, plus ` — ` and
+  the option's `rationale` or the selected choice's `hint`, when the worker supplied one. Its other
+  choices (if any) are bullets nested two spaces under it, each with its `hint` or `description` only
+  when the worker supplied one; never list the selected value among them. Copy hints, rationales and
+  descriptions **verbatim from the worker** — never invent one where none was supplied. No bare
+  `label: value` lines (Markdown folds them into the bullet above). Group fields under bold headings:
+  git fields under `**Source Control**`, a payload's sections under their names.
 - Ask a **single** combined confirm/change question — one choice to accept everything as-is, another
-  to change something.
-- **The block is your chat message, not `ask_user` content.** The question UI is dismissed the
-  moment the user answers, so options rendered inside it vanish before they can decide what to
-  change. Print the block first, then call `ask_user` with a short prompt only ("Confirm these
-  options?") plus choices — never restate options, values, or alternatives in the question text or
-  choice labels. If the user changes something, re-print the full updated block before asking again.
-- **Plain text only** — no HTML entities (`&nbsp;`, `<br>`) or tags; indent with real spaces or `-`
+  to change something. Keep choice labels short; never put values in them.
+- **With `ask_user`, the block goes inside `question`** (plain-text tier: your final message) —
+  text before a tool call can stay in your reasoning or be collapsed by the host, leaving nothing
+  to confirm. Every follow-up, e.g. after "Change something", repeats the full updated block.
+- **No HTML** — no HTML entities (`&nbsp;`, `<br>`) or tags; indent with real spaces or `-`
   bullets so it renders in a terminal.
 
 Whichever tier you used: the user may accept, override values, or describe changes in prose

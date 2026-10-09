@@ -210,19 +210,13 @@ user before the plan is generated. Who runs that confirmation depends on the hos
 
 1. **`show_upgrade_options`** — if it is in your tool list, call it with the payload.
    It renders an interactive form and blocks until the user confirms or cancels.
-2. **Chat + interactive question** — render the payload as text using the
-   **Rendering the payload as text** spec in the trigger index, then ask a **single**
-   combined question with `ask_user` / `ask_question`. Offer confirming everything as
-   one choice and changing something as another. Never ask one question per option.
+2. **Interactive question** — render the payload as text using the
+   **Rendering the payload as text** spec in the trigger index, placed per
+   **Where the block goes**, and ask a **single** combined question with `ask_user` /
+   `ask_question`. Offer confirming everything as one choice and changing something as
+   another. Never ask one question per option.
 3. **Plain text only** — same rendered block, then "reply `confirm`, or tell me what
    to change."
-
-For tiers 2 and 3 the rendered block is **your chat response**, not question-tool
-content. Interactive question UI vanishes once answered, so options rendered inside
-it cannot be reviewed while the user decides what to change. Print the block first,
-then ask only "Confirm these upgrade options?" with its choices — never restate
-options, values, or alternatives inside the question or its choice labels. If the
-user changes something, re-print the full updated block before asking again.
 
 The user may confirm as-is, override individual values, or describe changes in prose
 ("use top-down and skip test coverage"). Resolve whatever they say into a final

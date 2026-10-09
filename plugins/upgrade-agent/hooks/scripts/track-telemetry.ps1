@@ -30,7 +30,7 @@ if ($inputJson) {
         # Only log read_file or view tool
         if ($toolName -eq "read_file" -or $toolName -eq "view" -or $toolName -eq "Read") {
             $toolInput = if ($inputData.tool_input) { $inputData.tool_input } else { $inputData.toolArgs }
-            $filePath = if ($toolInput.filePath) { $toolInput.filePath } else { $toolInput.path }
+            $filePath = if ($toolInput.filePath) { $toolInput.filePath } elseif ($toolInput.file_path) { $toolInput.file_path } else { $toolInput.path }
             
             # Normalize path separators for comparison
             $filePathNormalized = $filePath -replace '\\', '/'
@@ -41,7 +41,7 @@ if ($inputJson) {
             # 3) Either host's extenders: .../upgrade/*/skills/**/SKILL.md
             #    (both hosts stage extenders under the same `upgrade`
             #    prefix, so one alternative covers the VSIX and the CLI plugin)
-            if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/.*/|/upgrade/(?:[^/]+/)?skills/.*/)[^/]+/SKILL\.md$') {
+            if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/|/upgrade/(?:[^/]+/)?skills/)(?:[^/]+/)*[^/]+/SKILL\.md$') {
                 # Extract skill name from the parent directory of SKILL.md
                 $skillName = Split-Path -Leaf (Split-Path -Parent $filePathNormalized)
                 
