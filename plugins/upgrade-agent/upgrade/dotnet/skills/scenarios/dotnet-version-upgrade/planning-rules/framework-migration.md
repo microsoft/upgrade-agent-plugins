@@ -177,4 +177,5 @@ When side-by-side tasks are generated, add these constraints to
 - Reference cleanup (test projects, multi-targeting) is part of migrate, not a separate task
 - Old project is NOT deleted by the agent — documented as post-upgrade step for user
 - If both hosts share one database, schema changes are governed by managing-shared-database-schema: one toolchain owns schema deployment, changes stay additive, and the EF6 `Migrations/` folder is not deleted while the old host is live
+- Background jobs that write shared state run on one executor at a time across both hosts while its lease is live, governed by migrating-inprocess-background-jobs: the Framework copy takes the shared guard before the Core copy is enabled, and delivery is at-least-once, so each job's effects are idempotent or fenced
 ```

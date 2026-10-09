@@ -34,3 +34,25 @@ TFM upgrade. If the project has both general API changes and Windows-specific
 API changes, break them apart — general changes first, Windows compatibility
 second (may require Windows Compatibility Pack decision).
 **Priority**: SHOULD
+
+---
+
+### hint: inprocess-background-jobs
+**Applies to task types**: web layer migration, startup migration, service migration, console app migration
+**Condition**: A .NET Framework web project starts background work, or a .NET Framework console project in
+scope runs scheduled work
+**Detection**:
+- Packages: WebBackgrounder
+- Code: `JobManager`, `IJob`, `IJobCoordinator`, `HostingEnvironment.QueueBackgroundWorkItem`,
+  `IRegisteredObject`, `HostingEnvironment.RegisterObject`, timers or `Task.Run` loops started from
+  `Application_Start`, `PostApplicationStartMethod` or OWIN `Startup`
+- Console projects whose `Main` loops with a sleep, or runs once per external trigger
+**Recommendation**: Break background jobs out of controller, middleware and other migration work into
+their own subtasks, and add `#skill:migrating-inprocess-background-jobs` to every one — pins do not
+propagate from the parent. Order them: inventory and classify every job first; then, for each job that
+writes shared state, add the duplicate-execution guard to the Framework copy before the new copy is
+enabled. A subtask that creates the guard's schedule table also carries
+`#skill:managing-shared-database-schema`. Do not create a subtask that enables a shared-state job in the
+new host, or schedules a ported console job, while the Framework copy still runs unguarded.
+**Priority**: MUST when the Framework copy stays live — Project Approach **Side-by-side**, or a legacy
+console job still scheduled — and any job writes shared state; SHOULD otherwise

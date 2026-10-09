@@ -137,6 +137,7 @@ app.UseSession();
 ## Troubleshooting
 
 - **Custom events not in the mapping**: Implement as custom middleware or `IHostedService` depending on whether they are request-scoped or application-scoped.
+- **Background work started here** (WebBackgrounder `JobManager`, `HostingEnvironment.QueueBackgroundWorkItem`, timers or loops): load `migrating-inprocess-background-jobs` before porting it. A job ported to the new host while the old one still runs executes twice.
 - **Session state differences**: ASP.NET Core sessions are opt-in and require explicit middleware registration. If the app relied on implicit session behavior, add `UseSession()` and verify cookie settings.
 
 ## Success Criteria

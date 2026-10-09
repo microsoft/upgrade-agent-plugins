@@ -75,29 +75,44 @@ that needs them — not all upfront.
 | `UsesSession`, `UsesTempData`, `UsesApplicationState` | `migrating-mvc-session-state` | DI container setup |
 | `UsesCustomDependencyResolver`, `UsesAutofac`, `UsesUnity`, `UsesNinject`, `UsesCastleWindsor` | `migrating-mvc-dependency-injection` | DI container setup |
 | `UsesAttributeRouting`, `UsesRouteConstraints`, `UsesAreaRouting` | `migrating-mvc-routing` | Controller migration |
-| `UsesWebApiControllers`, `UsesHttpResponseMessage`, `UsesContentNegotiation`, `UsesCustomFormatters` | `migrating-mvc-controllers`, `migrating-mvc-content-negotiation` | Controller migration |
+| JSON endpoints | `migrating-mvc-content-negotiation` | Baseline capture, before project retargeting |
+| `UsesWebApiControllers`, `UsesHttpResponseMessage`, `UsesContentNegotiation`, `UsesCustomFormatters` | `migrating-mvc-controllers`, `migrating-mvc-content-negotiation` | Controller migration; JSON naming prerequisite already checked at baseline |
 | `UsesMvcControllers`, `UsesChildActions`, `UsesHtmlHelpers` | `migrating-mvc-controllers` | Controller migration |
 | `UsesCustomFilters`, `UsesOutputCache`, `UsesHandleError` | `migrating-mvc-filters` | Controller migration |
 | `UsesCustomModelBinders`, `UsesFromUri`, `UsesValueProviders` | `migrating-mvc-model-binding` | Controller migration |
 | `UsesMvcViews`, `UsesBundling`, `UsesHtmlHelpers`, `UsesChildActions` | `migrating-mvc-razor-views` | Views migration |
 | Old and new host resolve to the same database (side-by-side, shared connection string) | `managing-shared-database-schema` | **Any** schema, migration, or data-access change |
+| WebBackgrounder, `QueueBackgroundWorkItem`, `IRegisteredObject`, or timers and loops started at application start | `migrating-inprocess-background-jobs` | Porting startup code, or enabling any background job in the new host |
 
 ### Loading Rules
 
 1. **During baseline capture** — inventory which satellites will be needed
-   for this project and note them. Do not load them yet.
+   for this project and note them. Load only the baseline prerequisites below.
 2. **Load satellite just before the step that needs it** — not all upfront. Token
    budget matters; load only what the current step requires.
 3. **If a satellite is not available** — proceed with caution, note the gap, apply
    general knowledge, and flag areas requiring manual review. This fallback does
    not apply to `migrating-webapi-odata`: if that prerequisite is unavailable, STOP.
+   It also does not apply to `migrating-mvc-content-negotiation` for JSON endpoints:
+   if unavailable, STOP before changing serializer or controller registrations;
+   for an in-place host this also means before project retargeting or dependency removal;
+   do not substitute general knowledge for the naming inventory. Record the blocked
+   scope and load failure under `## Wire Compatibility` in `progress-details.md`
+   (or `.github/upgrades/wire-compatibility.md` without managed task state). Ask the
+   owner to approve a separate preservation task that keeps the current host and
+   serializer serving those endpoints; record the decision in `scenario-instructions.md`
+   (or the direct-invocation record). Do not resume registration changes until the
+   prerequisite is available and its evidence requirements are satisfied. Preservation
+   approval does not waive an existing wire-gate STOP.
 4. **Multiple satellites may apply to the same step** — load all relevant ones before
    starting that step.
-5. **`managing-shared-database-schema` is the exception to rule 1.** When the old host
+5. **Baseline prerequisites are exceptions to just-in-time loading.** For JSON
+   endpoints, load `migrating-mvc-content-negotiation` during baseline capture so
+   an unavailable prerequisite cannot strand a retargeted in-place host.
+   For `managing-shared-database-schema`, when the old host
    stays live against the same database, load it during baseline capture, before any
-   data-access work is scoped. Every other satellite is about moving code, which is
-   reversible; this one is about not corrupting a database both hosts are using, which
-   is not. Skipping it because a step "looks like just a DbContext registration" is the
+   data-access work is scoped. Unlike code conversion, schema writes may not be
+   reversible. Skipping it because a step "looks like just a DbContext registration" is the
    common failure.
 
 ---
@@ -110,6 +125,12 @@ Side-by-side splits them across tasks — see [side-by-side.md](side-by-side.md)
 ---
 
 ### Baseline Capture
+
+For JSON endpoints, before project retargeting or dependency removal, load
+`migrating-mvc-content-negotiation` and complete its Serialization Naming Inventory.
+If the prerequisite is unavailable or its source evidence is unknown, STOP and
+keep the current host, serializer, and dependencies intact; follow the preservation
+and recording instructions in Loading Rules. This applies to both migration modes.
 
 Reuse the wire gate's endpoint inventory and evidence record. The gate's
 consumer/protocol/formatter fields extend this baseline; they do not replace
@@ -156,6 +177,13 @@ this document is the acceptance oracle for final verification.
 ---
 
 ### Entry Point and Host
+
+For JSON endpoints, before changing controller registrations, load
+`migrating-mvc-content-negotiation` and complete its Serialization Naming Inventory.
+Record effective source defaults in the baseline and preserve them when
+registering the new serializer; plain `AddControllers()` and `AddNewtonsoftJson()`
+both adopt Core web defaults. Unknown naming behavior requires resolution, not
+a successful build as evidence of compatibility.
 
 - Create `Program.cs` with minimal `WebApplication` host — no features, stub only
 - Wire `app.MapGet("/health", () => "ok")` as a smoke test endpoint
@@ -234,6 +262,7 @@ All services registered (stubs acceptable for System.Web-dependent ones).
 > - `migrating-mvc-routing` if: `UsesAttributeRouting`, `UsesRouteConstraints`, `UsesAreaRouting`
 > - `migrating-mvc-controllers` if: `UsesWebApiControllers`, `UsesHttpResponseMessage`
 > - `migrating-mvc-controllers` if: `UsesMvcControllers`, `UsesChildActions`
+> - `migrating-mvc-content-negotiation` for JSON responses or formatter changes, including models without explicit property names
 > - `migrating-mvc-filters` if: `UsesCustomFilters`, `UsesOutputCache`, `UsesHandleError`
 > - `migrating-mvc-model-binding` if: `UsesCustomModelBinders`, `UsesFromUri`
 

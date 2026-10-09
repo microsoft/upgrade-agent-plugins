@@ -4,6 +4,26 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.685] - 2026-10-09
+
+### Added
+
+- New skill for moving ASP.NET Framework background work (WebBackgrounder, `HostingEnvironment.QueueBackgroundWorkItem` and `IRegisteredObject`, console job runners) to ASP.NET Core, with a guard against the same job running in both apps during a side-by-side migration.
+
+### Changed
+
+- ASP.NET Framework-to-Core migration guidance now preserves the JSON property naming of existing responses across MVC, Web API, Minimal API, and manual serialization, so clients do not see renamed fields after the move.
+- Route-ownership analysis keeps more of each Framework route in its report: HTTP verb constraints, controller and action defaults, and every route expansion.
+- Route-ownership analysis now finds routes registered through renamed or compiled route-wrapper helpers instead of missing them.
+- Migration confirmation options are now shown inside the confirmation question, so they stay visible in every client, including the GitHub App.
+
+### Fixed
+
+- Route-ownership analysis no longer marks a Framework route as removable while it can still be reached through a YARP path transform, a CORS preflight a YARP forwarder carries, or a method body that runs through interface or virtual dispatch. Ignored routes behind a forwarder now report that they are still forwarded, and a regex constraint ending in `?` is no longer read as an optional parameter.
+- Assessment queries return fresh results after an assessment is rerun.
+- Project caching now tracks NuGet-generated imports correctly for C#, Visual Basic, and F# projects.
+- The canvas At a glance, Repository summary, and Execution > Repository views now agree on changed files and commits, and list uncommitted changes.
+
 ## [1.1.652] - 2026-10-02
 
 ### Changed

@@ -61,6 +61,8 @@ upgrade-agent/
 │   └── scripts/
 │       ├── track-telemetry.ps1
 │       └── track-telemetry.sh
+├── tests/
+│   └── TrackTelemetry.Tests.py
 ├── upgrade/
 │   ├── dotnet/
 │   │   ├── skills/
@@ -99,6 +101,13 @@ upgrade-agent/
 │   │   │   │   │   │   │   └── nullable-attributes.md
 │   │   │   │   │   │   ├── scripts/
 │   │   │   │   │   │   │   └── Get-NullableReadiness.ps1
+│   │   │   │   │   │   └── SKILL.md
+│   │   │   │   │   ├── migrating-inprocess-background-jobs/
+│   │   │   │   │   │   ├── ref/
+│   │   │   │   │   │   │   ├── duplicate-execution-guard.md
+│   │   │   │   │   │   │   ├── porting-patterns.md
+│   │   │   │   │   │   │   ├── scheduled-singleton-job.cs
+│   │   │   │   │   │   │   └── worked-example.md
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── modernizing-csharp-version/
 │   │   │   │   │   │   ├── csharp-10.md
@@ -281,7 +290,8 @@ upgrade-agent/
 │   │   │   │       │   ├── analyzing-cross-host-route-ownership/
 │   │   │   │       │   │   ├── ref/
 │   │   │   │       │   │   │   ├── endpoint-order.md
-│   │   │   │       │   │   │   └── pipeline-code.md
+│   │   │   │       │   │   │   ├── pipeline-code.md
+│   │   │   │       │   │   │   └── proxy-destinations.md
 │   │   │   │       │   │   └── SKILL.md
 │   │   │   │       │   ├── migrating-aspnet-framework-to-core/
 │   │   │   │       │   │   ├── side-by-side.md

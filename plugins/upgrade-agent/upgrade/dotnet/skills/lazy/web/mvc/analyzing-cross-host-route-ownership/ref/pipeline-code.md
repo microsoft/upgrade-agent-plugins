@@ -28,11 +28,44 @@ failed; its entry names the pipeline and says so. The tool counts as pipeline co
   extension outside ASP.NET Core's own routing-neutral set, or a method in a referenced
   project that is handed the application builder, whether it is called directly or passed on
   as a delegate (`Action<IApplicationBuilder> configure = LegacyPipeline.Register;`), and so
-  is a delegate property a referenced project declares, or an interface method that nothing
-  in the project implements, and `Build()` on a pipeline builder, called or passed on as a
-  delegate. A `Map` or `UseWhen` that ASP.NET Core did not compile, such as a same-named
-  extension in a referenced project or one that does not bind, is such a method, not a branch;
-  one the project declares is read through its code, like any method it declares;
+  is a delegate property a referenced project declares, and `Build()` on a pipeline builder,
+  called or passed on as a delegate. A `Map` or `UseWhen` that ASP.NET Core did not compile, such
+  as a same-named extension in a referenced project or one that does not bind, is such a method,
+  not a branch; one the project declares is read through its code, like any method it declares;
+- a method or delegate property the project declares that takes the application builder and is
+  reached through an interface or abstract member, where the call does not show which body
+  runs: a default interface method, instance or `static virtual`, that a class satisfies
+  with a member it inherits from a referenced project; an interface or abstract method that
+  nothing in the project implements, or that a class implements through a referenced
+  project's base; or an interface member called on a parameter or a value whose exact type
+  the code does not show. The tool reads the project's own code for a method where the call
+  fixes the body that runs: a non-virtual or static method, or a sealed override; a `base.`
+  call; a receiver created in place, a local only ever set to one, or a value of a sealed type
+  or a struct, whose own implementation is in the project. It also reads a class's virtual
+  method, or an override, whatever the receiver, since that method and every override of it
+  are the project's own code; and an abstract method, an interface method without a default
+  body included, when every class or struct in the project that implements it does so with
+  the project's own code. A delegate property or indexer is read when it is non-virtual, a
+  class's virtual property, or reached through `base.`; an interface or abstract one is
+  pipeline code whatever the receiver, and so is one a referenced project declares. An
+  element of a collection of delegates (a `List<Action<IApplicationBuilder>>` read by index,
+  an array, a `foreach`) is not checked, so pipeline code a referenced project puts in one
+  is not seen. A callback handed to a member is read as run where the call fixes the body
+  that runs, as listed above, or, for a class's virtual or abstract method, where every body
+  the project declares for it (its own unless abstract, and every override) runs it; so an
+  endpoint mapped in a callback handed to an interface member reached through a value of
+  unknown type is conditional, and so is one handed to a class method an override in the
+  project drops, or to an abstract one nothing in the project overrides. A call that an
+  interceptor replaces is never read through the code it names: a method the project declares,
+  or ASP.NET Core's own middleware (`UseRouting`, `Map`, `UseWhen` and the rest) included, is
+  pipeline code if it is handed the application builder; and a callback handed to any call an
+  interceptor replaces is not read as run. Nor is a callback handed to a referenced project's
+  virtual or interface member that a type in the project overrides or implements, unless the
+  call shows which body runs: the referenced project's own code for that member, or the
+  project's own code   where that code runs the callback. An implementation of a referenced project's interface that
+  a class in the project inherits from a referenced project counts as such a type, and so does
+  a class in the project that inherits a referenced project's override of the member; the
+  inherited code is not read as running the callback either;
 - a rewriter or `UsePathBase`;
 - an `IHttpForwarder.SendAsync` that no endpoint owns, or one in a handler method that other
   code also calls, or one inside a branch or `MapReverseProxy` callback that the branch itself

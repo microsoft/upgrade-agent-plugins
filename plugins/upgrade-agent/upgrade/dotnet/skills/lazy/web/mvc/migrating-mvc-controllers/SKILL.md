@@ -29,6 +29,29 @@ On STOP, follow the gate's preservation and in-place replanning instructions
 instead of rewriting controllers or responses. An approved preservation task
 is separate from this automatic conversion workflow.
 
+## Serialization Prerequisite
+
+For JSON responses or formatter work, before changing their controller registrations
+or response paths, load
+`migrating-mvc-content-negotiation` and complete its Serialization Naming Inventory.
+View-only controller work without JSON responses or formatter changes does not
+require this serialization prerequisite.
+Preserve the effective source policy even when it is implicit; retaining
+Newtonsoft through `AddNewtonsoftJson()` also adopts camelCase unless configured
+otherwise. Carry the baseline into response-pipeline comparisons.
+
+For the JSON/formatter scope above: If this required naming skill is unavailable, STOP
+before package, registration, or contract changes. Keep the current host, serializer,
+and dependencies intact; do not introduce a Framework host for proven Core-only scope.
+Record the blocked scope and load failure using the wire gate's Gate Records:
+under `## Wire Compatibility` in `progress-details.md`, with the scoped verdict and
+evidence link in `task.md`. Ask the owner to approve a separate preservation task,
+and persist the decision and approved scope in `scenario-instructions.md`.
+Without task state, use `.github/upgrades/wire-compatibility.md` for both evidence
+and decisions; carry the record path into child tasks and read it on resume.
+Do not resume the affected conversion until the guidance is available and its
+evidence requirements are satisfied. Preservation approval never waives an existing wire-gate STOP.
+
 ## Workflow
 
 ```
@@ -140,20 +163,16 @@ MVC return types are mostly compatible. Key differences:
 | Old | New | Notes |
 |-----|-----|-------|
 | `ActionResult` | `IActionResult` | `ActionResult` still exists but `IActionResult` is idiomatic |
-| `JsonResult` via `Json(data)` | `Json(data)` | **Silent behavior change**: default serializer is System.Text.Json, not Newtonsoft. Property casing changes from PascalCase to camelCase by default. |
+| `JsonResult` via `Json(data)` | `Json(data)` | **Silent behavior change**: Core uses System.Text.Json by default instead of MVC's JavaScriptSerializer; both Core JSON integrations default to camelCase. Preserve the source contract. |
 | `Json(data, JsonRequestBehavior.AllowGet)` | `Json(data)` | Second parameter removed — GET requests always allowed in Core |
 | `new HttpStatusCodeResult(code)` | `StatusCode(code)` | Different class, same behavior |
 | `new HttpNotFoundResult()` | `NotFound()` | Helper method preferred |
 
-**JsonResult serialization gotcha**: If frontend JavaScript expects PascalCase property names, configure the serializer:
-
-```csharp
-builder.Services.AddControllersWithViews()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.PropertyNamingPolicy = null);
-```
-
-Or add Newtonsoft compatibility if the project has complex serialization requirements. See `migrating-newtonsoft-to-system-text-json` for details.
+**JsonResult serialization gotcha**: Apply the naming recipe selected from
+`migrating-mvc-content-negotiation` to the existing controller/view registration.
+Do not register a competing serializer or assume switching to Newtonsoft
+preserves casing. Keep per-action overrides and compare serialized responses,
+including models without explicit property-name attributes.
 
 #### ResponseTypeAttribute Migration
 
@@ -264,7 +283,7 @@ ViewComponents support constructor injection natively. Async ViewComponents retu
 
 1. Build the project and fix compilation errors
 2. Check each endpoint returns the expected HTTP status codes
-3. Verify JSON response shapes — property casing and date formats may differ with System.Text.Json
+3. Compare serialized JSON response shapes with the source baseline through the MVC pipeline, including exact property casing and date formats for either serializer
 4. Confirm `[ApiController]` auto-validation produces acceptable error responses
 5. Test any ViewComponents render correctly in their host views
 
