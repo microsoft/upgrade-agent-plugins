@@ -3,7 +3,7 @@ name: DotnetVersionEstimator
 description: Estimates the token budget for the dotnet-version-upgrade scenario and returns a ready-to-present budget block. Dispatched only when the user explicitly asks for an estimate.
 user-invocable: false
 model: claude-haiku-4.5
-tools: ['Upgrade/predict_token_usage']
+tools: ['UpgradeDotNet/predict_token_usage']
 ---
 
 # DotnetVersionEstimator

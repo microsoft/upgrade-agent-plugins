@@ -2,7 +2,6 @@
 name: BreakGlass
 description: Fallback worker with access to ALL tools — including user-installed MCP servers and any capability the scoped workers lack. Dispatch for any task needing capabilities outside the standard agents (external systems/integrations, user-provided MCP tools, unusual file formats), or a cross-cutting failure no scoped worker fits. Disposable context; returns a summary.
 user-invocable: false
-tools: ['*']
 ---
 
 # BreakGlass
@@ -41,6 +40,9 @@ scenario/workflow paths, and `scenario-instructions.md`. **Rehydrate from disk.*
    evidence. `get_state(path)` read-only if you must.
 2. Take the smallest set of actions (analyze / edit / build) that unblocks the run.
 3. Fix all warnings you touch; never suppress without recorded approval.
+4. **If you changed files, append what happened to the task's `progress-details.md`** — what was
+   stuck, what you tried, what failed, and what you changed. Your diff is reviewed against that
+   record like any other, and nothing else records a blocker you worked past.
 
 ## What to return (compact, structured)
 

@@ -1,4 +1,4 @@
-# Worked Example: NuGet Gallery Authorization Subclasses
+# Worked Example: Contoso Authorization Subclasses
 
 This is an application binding, not a generic policy schema. Names, claim URIs,
 routes, headers and credential versions below belong only to this example. Inspect
@@ -13,18 +13,18 @@ the target repository's revision before applying it.
 
 ## Source Contract
 
-Baseline: `NuGet/NuGetGallery` commit
-`bc5a59e3cf5d4d357e40615639b78615f97b2cc0`.
+The Contoso sample application is a fictional, large ASP.NET MVC (.NET Framework)
+web application. Its authorization contract spans these illustrative source files:
 
-- [UiAuthorizeAttribute.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery/Filters/UiAuthorizeAttribute.cs)
-- [ApiAuthorizeAttribute.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery/Filters/ApiAuthorizeAttribute.cs)
-- [AdminControllerBase.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery/Areas/Admin/Controllers/AdminControllerBase.cs)
-- [ClaimsExtensions.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery.Services/Extensions/ClaimsExtensions.cs)
-- [AuthenticationService.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery.Services/Authentication/AuthenticationService.cs)
-- [AuthenticationController.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery/Controllers/AuthenticationController.cs)
-- [Home.cshtml](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery/Views/Pages/Home.cshtml)
-- [ApiKeyAuthenticationHandler.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery.Services/Authentication/Providers/ApiKey/ApiKeyAuthenticationHandler.cs)
-- [UserExtensions.cs](https://github.com/NuGet/NuGetGallery/blob/bc5a59e3cf5d4d357e40615639b78615f97b2cc0/src/NuGetGallery.Services/Extensions/UserExtensions.cs)
+- `Contoso.Web/Filters/UiAuthorizeAttribute.cs`
+- `Contoso.Web/Filters/ApiAuthorizeAttribute.cs`
+- `Contoso.Web/Areas/Admin/Controllers/AdminControllerBase.cs`
+- `Contoso.Services/Extensions/ClaimsExtensions.cs`
+- `Contoso.Services/Authentication/AuthenticationService.cs`
+- `Contoso.Web/Controllers/AuthenticationController.cs`
+- `Contoso.Web/Views/Pages/Home.cshtml`
+- `Contoso.Services/Authentication/Providers/ApiKey/ApiKeyAuthenticationHandler.cs`
+- `Contoso.Services/Extensions/UserExtensions.cs`
 
 The filename uses `Ui`, but the declared class is `UIAuthorizeAttribute`.
 Both subclasses derive from **MVC**, not Web API. Both run custom work **before**
@@ -35,8 +35,8 @@ Both subclasses derive from **MVC**, not Web API. Both run custom work **before*
 |---|---|
 | `ClaimTypes.Name` and `ClaimTypes.NameIdentifier` both contain username | Preserve name-based gates; do not substitute a numeric user ID |
 | `ClaimTypes.Role`, configured as the identity's role claim type | `IsInRole("Admins")` for inherited admin access |
-| `https://claims.nuget.org/discontinuedlogin` | Primary authenticated `ClaimsIdentity`, first matching claim, value `"true"` ignoring case |
-| `enabledmultifactorauthentication` / `wasmultifactorauthenticated` under `https://claims.nuget.org/` | Account MFA and session MFA are distinct; neither replaces the TempData nudge |
+| `https://claims.contoso.com/discontinuedlogin` | Primary authenticated `ClaimsIdentity`, first matching claim, value `"true"` ignoring case |
+| `enabledmultifactorauthentication` / `wasmultifactorauthenticated` under `https://claims.contoso.com/` | Account MFA and session MFA are distinct; neither replaces the TempData nudge |
 | Authentication types `"LocalUser"`, `"ApiKey"`, `"External"`, `"Federated"` | Preserve exact scheme names and existing defaults; the API warning selects `"ApiKey"` only |
 
 These are the authorization inputs to the shared-cookie claims-equivalence
@@ -48,7 +48,7 @@ Bind the generic reference to the existing flow:
 
 ```csharp
 builder.Services.AddSingleton(new UiFlowContract(
-    "https://claims.nuget.org/discontinuedlogin",
+    "https://claims.contoso.com/discontinuedlogin",
     "AskUserToEnable2FA",
     "Home",
     "Pages",
@@ -160,12 +160,12 @@ awaits the writer before evaluating authorization requirements:
    `AppController`. Record that applicability when porting the registration; a Core
    authorization filter cannot obtain an instantiated controller.
 2. Port `GetCurrentUser()` and credential lookup, including disabled/deleted-user
-   failure behavior. Read `https://claims.nuget.org/apikey` and select the first
+   failure behavior. Read `https://claims.contoso.com/apikey` and select the first
    credential with equal stored `Value`. The claim may contain a hash: do not log it,
    replace it with `credentialkey`, or compare it to the incoming plaintext header.
 3. With no credential or no expiry, emit nothing. Otherwise generate the existing
    absolute `ManageMyApiKeys(false)` URL and calculate remaining UTC lifetime.
-4. If expired, append `X-NuGet-Warning` using the existing expired-message resource,
+4. If expired, append `X-Contoso-Warning` using the existing expired-message resource,
    including for V5 credentials. Otherwise warn when remaining `TotalDays` is at
    most `WarnAboutExpirationInDaysForApiKeyV1` and the credential is **not V5**
    (`apikey.v5`, ignoring case). Despite the setting's name, do not narrow this to V1.
@@ -184,8 +184,8 @@ The **final** status belongs to the migrated authentication handler:
 
 | Request at challenge time | Existing API-key handler response |
 |---|---|
-| No nonempty `X-NuGet-ApiKey` header | 401 plus `WWW-Authenticate: ApiKey realm="<request host>"` |
-| Nonempty `X-NuGet-ApiKey` header | 403 with the existing not-authorized message |
+| No nonempty `X-Contoso-ApiKey` header | 401 plus `WWW-Authenticate: ApiKey realm="<request host>"` |
+| Nonempty `X-Contoso-ApiKey` header | 403 with the existing not-authorized message |
 
 Preserve that handler response using `migrating-owin-authentication-handler-to-core`.
 Do not assume the requested 401 is the final wire status, or change an authenticated
@@ -209,6 +209,6 @@ credentials alone, API keys alone and both together, with the browser still the
 default authenticate scheme; assert the selected primary identity in each case.
 
 The generic reference is exercised with synthetic identities in repository tests;
-these Gallery adapters require the target application's services and integration
+these Contoso adapters require the target application's services and integration
 tests. Neither reference compilation nor text guards prove that an agent performs
 the migration correctly.

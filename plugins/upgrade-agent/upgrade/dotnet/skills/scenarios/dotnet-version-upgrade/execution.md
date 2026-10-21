@@ -256,16 +256,39 @@ rather than creating separate chains per stub.
 
 ### Package Replacement Research
 
-**Trigger**: A task requires replacing an incompatible NuGet package and the
-assessment did not identify a known replacement.
+**Trigger**: the **Package actions** recorded during Research (Section 0) list a
+package as needing a *replacement* or *removal* rather than a version bump — or
+you hit a build error from a package the assessment did not flag. A version bump
+that restores compatibility needs none of this.
 
-This is a specialization of the stub resolution pattern. The research subtask
-should:
+For each such package, before researching anything, call:
+
+```
+get_instructions(kind='skill', query='<package id>')
+```
+
+**This search is required, not a judgement call.** A shipped skill carries the
+full API mapping; research rediscovers it at far greater cost. Knowing the
+replacement package is not a substitute — that tells you what to reference,
+never how to port the call sites.
+
+Use the **package id verbatim**, not a description of what it does: skill
+descriptions name the packages they migrate, so a paraphrase may fall below the
+match threshold. If the id returns nothing, query the types the code uses — a
+skill may cover the same API under a successor package's name.
+
+Open a research subtask only when nothing matches. The ranker returns its best
+candidate whenever one clears the threshold, so confirm the result names the
+package in hand before treating it as a hit. Then:
 1. Search NuGet for packages providing the same namespace/types
-2. Check the original package's repository for migration guidance or successor packages
-3. Evaluate whether the functionality can be replaced with built-in .NET APIs
-4. If multiple candidates exist, document trade-offs in `task.md` and pick the
-   closest API-compatible option (or ask the user in Guided mode)
+2. Check the original package's repository for migration guidance or successors
+3. Evaluate whether built-in .NET APIs cover the functionality
+4. If several candidates exist, record the trade-offs in `task.md` and take the
+   closest API-compatible one (or ask the user in Guided mode)
+
+On a match, write the skill's name as a `#skill:` pin in the subtask description
+instead. A pin attaches to the task it is written on and nothing below it, so
+restate it on every subtask touching the replaced package's call sites.
 
 ---
 

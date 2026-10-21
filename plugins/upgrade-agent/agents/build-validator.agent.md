@@ -99,7 +99,7 @@ Lead with a `STATUS: ready` line (you completed the validation — the build **v
 payload, not a lifecycle state). `STATUS: blocked` has one meaning in the shared worker
 protocol — a **missing capability/tool**, which the Orchestrator re-routes to BreakGlass — so
 use it only for that. A command you stopped is **not** a capability gap: report it in the
-verdict channel, where the Orchestrator already routes to TaskExecutor/ErrorFixer. Then:
+verdict channel instead. Then:
 
 - Verdict: **GREEN** (0 errors, 0 warnings, tests pass), **RED**, or **RED (stopped)**.
 - If RED: the ≤N distinct, root-cause errors/warnings — file, unit, message — and

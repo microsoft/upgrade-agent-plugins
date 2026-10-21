@@ -38,11 +38,12 @@ upgrade-agent/
 │   ├── branch-sync.agent.md
 │   ├── break-glass.agent.md
 │   ├── build-validator.agent.md
-│   ├── code-reviewer.agent.md
+│   ├── dotnet-investigator.agent.md
 │   ├── dotnet-version-assessor.agent.md
 │   ├── dotnet-version-estimator.agent.md
 │   ├── dotnet-version-scenario-initializer.agent.md
 │   ├── error-fixer.agent.md
+│   ├── integrity-reviewer.agent.md
 │   ├── jsts-playwright-spec-author.agent.md
 │   ├── planner.agent.md
 │   ├── report-generator.agent.md
@@ -51,6 +52,7 @@ upgrade-agent/
 │   ├── task-breaker.agent.md
 │   ├── task-executor.agent.md
 │   ├── terminal-executor.agent.md
+│   ├── upgrade-advisor.agent.md
 │   └── upgrade.agent.md
 ├── assets/
 │   └── preview.png
@@ -66,6 +68,10 @@ upgrade-agent/
 ├── upgrade/
 │   ├── dotnet/
 │   │   ├── skills/
+│   │   │   ├── extensions/
+│   │   │   │   └── IntegrityReview/
+│   │   │   │       └── reviewing-execution-integrity/
+│   │   │   │           └── SKILL.md
 │   │   │   ├── lazy/
 │   │   │   │   ├── cloud/
 │   │   │   │   │   ├── migrating-azure-functions-startup/
@@ -121,7 +127,9 @@ upgrade-agent/
 │   │   │   │   │   │   ├── csharp-9.md
 │   │   │   │   │   │   ├── dotnet-format-rules.md
 │   │   │   │   │   │   └── SKILL.md
-│   │   │   │   │   └── modifying-project-properties/
+│   │   │   │   │   ├── modifying-project-properties/
+│   │   │   │   │   │   └── SKILL.md
+│   │   │   │   │   └── recovering-from-blocked-dependency-resolution/
 │   │   │   │   │       └── SKILL.md
 │   │   │   │   ├── data/
 │   │   │   │   │   ├── managing-shared-database-schema/
@@ -244,6 +252,8 @@ upgrade-agent/
 │   │   │   │   │   ├── migrating-system-spatial/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-to-msmq-messaging/
+│   │   │   │   │   │   └── SKILL.md
+│   │   │   │   │   ├── migrating-transient-fault-handling-to-polly/
 │   │   │   │   │   │   └── SKILL.md
 │   │   │   │   │   ├── migrating-webapi-cors/
 │   │   │   │   │   │   └── SKILL.md

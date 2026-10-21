@@ -83,6 +83,10 @@ Analyzes the solution and produces the assessment document:
 - Package update and vulnerability detection
 - Risk identification
 
+**What the analysis answers:** which projects are affected, which breaking changes apply, which
+packages are incompatible or vulnerable, and where the risk is. These are computed from the code —
+they cannot be answered by reading project files or from memory.
+
 **Assessment gatherer:** this stage is handled by the dedicated `DotnetVersionAssessor` (the generic
 **Assessor** is the fallback if the dedicated one is unavailable or returns `BLOCKED`). It works from
 these inputs:

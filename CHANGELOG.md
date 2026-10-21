@@ -4,6 +4,19 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.718] - 2026-10-20
+
+### Added
+
+- New skill for migrating Enterprise Library Transient Fault Handling to Microsoft.Extensions.Resilience and Polly v8, including retry policies, SQL helpers, and legacy Azure companion packages.
+- Modernization questions and standalone assessments now have a read-only advisory path that does not start an upgrade or change application source.
+
+### Changed
+
+- Upgrade tasks now require a review of both code quality and execution integrity before completion, including resumed work and build repairs. The review checks for unverified dependencies, unauthorized stand-in code, scope drift, and suppressed failures.
+- Package replacement and missing-API fixes now look up migration guidance by the original package ID before researching alternatives or changing call sites.
+- New dependency-recovery guidance distinguishes feed and authentication failures from unavailable package versions. When recovery cannot establish a required version or API, the agent reports the blocker rather than guessing or writing substitute dependencies.
+
 ## [1.1.685] - 2026-10-09
 
 ### Added
