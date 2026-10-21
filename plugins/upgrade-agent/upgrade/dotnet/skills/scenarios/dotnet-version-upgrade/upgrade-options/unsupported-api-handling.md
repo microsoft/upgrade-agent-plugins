@@ -41,9 +41,10 @@ behavioral differences, or needs architectural decisions (e.g., replacing
   complex ones. May take longer per task but leaves no deferred work. No stubs to
   clean up later.
 - **Defer Complex Changes** — apply simple replacements inline. For complex changes,
-  generate a minimal compilable stub (`// STUB: replaces {API}`) to keep the project
-  building and create a resolution subtask. See `execution.md` Decomposition Rules
-  for stub resolution task structure.
+  generate a minimal compilable stub, marked with the canonical `// STUB:api` form, to
+  keep the project building and create a resolution subtask. See `execution.md`
+  Stub Marker Format for the marker's exact shape, and Decomposition Rules for the
+  stub resolution task structure.
 
 **Stored as**: `Upgrade Options > Compatibility > Unsupported API Handling`
 

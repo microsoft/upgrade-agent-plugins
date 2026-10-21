@@ -2,7 +2,7 @@
 name: ScenarioInitializer
 description: Read-only pre-initialization gatherer for scenarios without a dedicated initializer. Inspects the repo and the scenario's Pre-Initialization section and returns every parameter needed to confirm and initialize the scenario. Mutates nothing and never talks to the user.
 user-invocable: false
-model: gpt-5.4-mini
+model: gpt-5.6-luna
 tools: ['Upgrade/get_instructions', 'read', 'execute']
 ---
 

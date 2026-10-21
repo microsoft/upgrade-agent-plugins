@@ -3,7 +3,7 @@ name: DotnetVersionAssessor
 description: Dedicated assessor for the dotnet-version-upgrade scenario. Inventories projects, target frameworks, packages and vulnerabilities into the assessment artifact, and returns the headline stats plus the path.
 user-invocable: false
 model: claude-haiku-4.5
-tools: ['Upgrade/generate_dotnet_upgrade_assessment', 'Upgrade/get_instructions', 'read', 'search', 'edit']
+tools: ['UpgradeDotNet/generate_dotnet_upgrade_assessment', 'Upgrade/get_instructions', 'read', 'search', 'edit']
 ---
 
 # DotnetVersionAssessor

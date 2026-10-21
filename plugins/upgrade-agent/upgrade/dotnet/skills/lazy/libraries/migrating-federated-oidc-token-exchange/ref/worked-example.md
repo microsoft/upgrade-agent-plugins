@@ -1,6 +1,6 @@
 # A Worked Example
 
-One production implementation of the exchange shape, end to end. It is **an** implementation,
+One illustrative implementation of the exchange shape, end to end. It is **an** implementation,
 not the target architecture: the type names, the folder layout, and the credential format
 below belong to this application, and a different application will name every one of them
 differently. What transfers is the *arrangement* — which control sits where, and which seam
@@ -8,7 +8,7 @@ crosses which boundary.
 
 Read `SKILL.md` first. Everything here is an instance of a rule stated there.
 
-The example is the trusted-publishing feature of the NuGet Gallery, whose source is public.
+The example is the trusted-publishing feature of Contoso, a fictional package-hosting web application.
 A CI job holds no API key; it presents the OIDC token its platform minted for the job to a
 token endpoint, and receives a short-lived API key scoped to the package it is allowed to
 publish.
@@ -17,7 +17,7 @@ publish.
 
 ### The compile island
 
-The exchange lives in `NuGetGallery.Services`, a project that is **already SDK-style** and
+The exchange lives in `Contoso.Services`, a project that is **already SDK-style** and
 already multi-targets:
 
 ```xml
@@ -56,14 +56,14 @@ question of which neighbors have to come with it.
 
 ### What actually blocks it
 
-`FederatedCredentialService` depends on `IGalleryConfigurationService` from `Configuration\`,
+`FederatedCredentialService` depends on `IAppConfigurationService` from `Configuration\`,
 which the **same item group** excludes. And `FederatedCredentialConfiguration` binds through
-a `TypeConverter` from `NuGet.Services.Configuration`, whose `ProjectReference` is itself
+a `TypeConverter` from `Contoso.Configuration`, whose `ProjectReference` is itself
 inside the `net472`-only item group.
 
 `IAuditingService` is the instructive contrast, and the reason to check the closure rather
 than infer it. It is *not* excluded: it lives in a different project
-(`NuGetGallery.Core\Auditing\`, which `NuGetGallery.Services` references unconditionally),
+(`Contoso.Core\Auditing\`, which `Contoso.Services` references unconditionally),
 and that project curates its portable surface **per file** rather than per folder — it
 removes `AuditingService.cs`, `CloudAuditingService.cs`, and `FileSystemAuditingService.cs`
 while keeping `IAuditingService.cs`. The abstraction is already available on the portable
@@ -302,7 +302,7 @@ public class FederatedCredentialService
         var apiKeyCredential = _credentialBuilder.CreateShortLivedApiKey(
             _configuration.ShortLivedApiKeyDuration,
             policyEvaluation.MatchedPolicy,
-            _galleryConfigurationService.Current.Environment,
+            _appConfigurationService.Current.Environment,
             out var plaintextApiKey);
 
         if (!_credentialBuilder.VerifyScopes(currentUser, apiKeyCredential.Scopes))
@@ -401,7 +401,7 @@ public class CredentialBuilder
     public Credential CreateShortLivedApiKey(
         TimeSpan expiration,
         FederatedCredentialPolicy policy,
-        string galleryEnvironment,
+        string appEnvironment,
         out string plaintextApiKey)
     {
         if (policy.PackageOwner is null)
@@ -420,7 +420,7 @@ public class CredentialBuilder
 
         var apiKey = ApiKeyV5.Create(
             allocationTime,
-            ApiKeyV5.GetEnvironment(galleryEnvironment),
+            ApiKeyV5.GetEnvironment(appEnvironment),
             policy.PackageOwnerUserKey,
             ApiKeyV5.KnownApiKeyTypes.ShortLived,
             expiration);
@@ -925,7 +925,7 @@ Note also the base constructor: three arguments, so the token identifier claim d
 |---|---|---|
 | `EntraIdTokenValidator.cs`, `GitHubTokenPolicyValidator.cs`, `GitLabTokenPolicyValidator.cs` | `Microsoft.IdentityModel.*`, `Microsoft.Identity.Web`, `System.Text.Json` — plus `System.Data.Entity.Infrastructure` in the two CI validators | Mostly portable; **the ORM concurrency catch is the one coupled line** |
 | `FederatedCredentialPolicyEvaluator.cs` | `NameValueCollection` only | Portable; adapter decision at the boundary |
-| `FederatedCredentialService.cs` | No framework types, but depends on `IGalleryConfigurationService` from an excluded folder | **Portable, blocked** |
+| `FederatedCredentialService.cs` | No framework types, but depends on `IAppConfigurationService` from an excluded folder | **Portable, blocked** |
 | `FederatedCredentialConfiguration.cs` | `TypeConverter` from a `net472`-only project reference | Coupled — via its dependency, not its own code |
 | `TokenApiController.cs` | `System.Web.Mvc`, `OwinContext` | **Coupled** — and carries the challenge suppression |
 | `DefaultDependenciesModule` registration | Autofac, `System.Web` | **Coupled** — and carries the singleton/scoped split |

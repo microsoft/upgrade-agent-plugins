@@ -1,8 +1,3 @@
-<!-- Provenance: the two mechanisms, their tradeoffs, and the staged sequencing below are
-     distilled from specs/repos/nuget-gallery/nugetgallery-crossapp-auth-spec.md (sections 5,
-     7.3, 7.4, 8, 9). That spec is a maintainer reference and does not ship with the plugin,
-     so it is cited here rather than linked. -->
-
 # Cross-App Cookie Authentication
 
 **Category**: Compatibility

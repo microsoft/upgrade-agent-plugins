@@ -60,8 +60,8 @@ selection is correct — the problem is in the code, not the build infrastructur
 |------------|-------------|--------------|-----------------|
 | NU1100 | Unable to resolve package | Package doesn't exist in configured sources | Check NuGet source configuration; verify package name spelling |
 | NU1101 | Package not found on any source | Package name is wrong or the source requires authentication | Verify package name; check `nuget.config` for source credentials |
-| NU1102 | Package version not found | Specific version doesn't exist | Use a valid version; check available versions on nuget.org |
-| NU1202 | Package not compatible with target framework | Package doesn't support the project's TFM | Find a newer package version that supports the TFM, or find an alternative |
+| NU1102 | Package version not found | Specific version doesn't exist | Resolve the version with a tool — never assert one. See `recovering-from-blocked-dependency-resolution` |
+| NU1202 | Package not compatible with target framework | Package doesn't support the project's TFM | Resolve a TFM-compatible version with a tool, or find an alternative — never assert one. See `recovering-from-blocked-dependency-resolution` |
 | NU1301 | Unable to load the service index for a source | NuGet source is unreachable | Check network connectivity; verify the source URL in `nuget.config` |
 | NU1605 | Detected package downgrade | A transitive dependency pulls in a higher version than explicitly referenced | Update the explicit `<PackageReference>` to at least the transitive version |
 

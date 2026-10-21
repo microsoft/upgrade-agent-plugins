@@ -89,7 +89,7 @@ language-independent.
 
 - [Provider protocol facts](ref/providers.md) — issuer authorities, audiences, identifier
   claims, and matchable claims for the common workload issuers.
-- [A worked example](ref/worked-example.md) — one production implementation end to end,
+- [A worked example](ref/worked-example.md) — one illustrative implementation end to end,
   including its starting state and the seams it has to cross.
 
 ## Workflow

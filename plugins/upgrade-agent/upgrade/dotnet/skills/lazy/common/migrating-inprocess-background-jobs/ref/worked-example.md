@@ -1,4 +1,4 @@
-# Worked Example: NuGet Gallery Background Jobs
+# Worked Example: Contoso Background Jobs
 
 This is an application binding, not a generic recipe. Type names, file paths, and intervals below belong
 only to this example. Inspect the target repository's revision before applying any of it.
@@ -13,23 +13,24 @@ only to this example. Inspect the target repository's revision before applying a
 
 ## Source Contract
 
-Baseline: `NuGet/NuGetGallery` commit `e551580c011f65eb2a062955c8fdbb371a171208`, and the scheduler it
-uses, `NuGet/WebBackgrounder` commit `aa52a997b902a5776e13f2cac4c93dbd5b35a80f`.
+The Contoso sample application is a fictional, large ASP.NET MVC (.NET Framework) web application,
+`Contoso.Web`, that schedules its in-process jobs with WebBackgrounder and ships a set of console jobs
+beside it. The illustrative files this example reads:
 
-- [AppActivator.cs:274-319](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/App_Start/AppActivator.cs#L274-L319) — `BackgroundJobsPostStart` and `BackgroundJobsStop`, wired through WebActivatorEx at lines 27-29
-- [NuGetJobCoordinator.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/Infrastructure/Jobs/NuGetJobCoordinator.cs)
-- [PackageVulnerabilitiesCacheRefreshJob.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/Infrastructure/Jobs/PackageVulnerabilitiesCacheRefreshJob.cs)
-- [CloudDownloadCountServiceRefreshJob.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/Infrastructure/Lucene/CloudDownloadCountServiceRefreshJob.cs)
-- [LuceneIndexingJob.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/Infrastructure/Lucene/LuceneIndexingJob.cs) and [LuceneIndexingService.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/Infrastructure/Lucene/LuceneIndexingService.cs)
-- [OwinStartup.cs:75-84](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery/App_Start/OwinStartup.cs#L75-L84)
-- [JobRunner.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGet.Jobs.Common/JobRunner.cs) and, as one of its callers, [Gallery.Maintenance/Program.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/Gallery.Maintenance/Program.cs)
-- [NuGetGallery.AppHost/Program.cs](https://github.com/NuGet/NuGetGallery/blob/e551580c011f65eb2a062955c8fdbb371a171208/src/NuGetGallery.AppHost/Program.cs)
-- WebBackgrounder [JobManager.cs](https://github.com/NuGet/WebBackgrounder/blob/aa52a997b902a5776e13f2cac4c93dbd5b35a80f/src/WebBackgrounder/JobManager.cs), [JobHost.cs](https://github.com/NuGet/WebBackgrounder/blob/aa52a997b902a5776e13f2cac4c93dbd5b35a80f/src/WebBackgrounder/JobHost.cs), [Schedule.cs](https://github.com/NuGet/WebBackgrounder/blob/aa52a997b902a5776e13f2cac4c93dbd5b35a80f/src/WebBackgrounder/Schedule.cs), [WebFarmJobCoordinator.cs](https://github.com/NuGet/WebBackgrounder/blob/aa52a997b902a5776e13f2cac4c93dbd5b35a80f/src/WebBackgrounder/WebFarmJobCoordinator.cs)
+- `Contoso.Web/App_Start/AppActivator.cs` — `BackgroundJobsPostStart` and `BackgroundJobsStop`, wired through WebActivatorEx assembly attributes
+- `Contoso.Web/Infrastructure/Jobs/ContosoJobCoordinator.cs`
+- `Contoso.Web/Infrastructure/Jobs/PackageVulnerabilitiesCacheRefreshJob.cs`
+- `Contoso.Web/Infrastructure/Lucene/CloudDownloadCountServiceRefreshJob.cs`
+- `Contoso.Web/Infrastructure/Lucene/LuceneIndexingJob.cs` and `LuceneIndexingService.cs`
+- `Contoso.Web/App_Start/OwinStartup.cs` — the startup QBWI kicks
+- `Contoso.Jobs.Common/JobRunner.cs` and, as one of its callers, `Contoso.Maintenance/Program.cs`
+- `Contoso.AppHost/Program.cs`
+- WebBackgrounder's `JobManager`, `JobHost`, `Schedule`, and `WebFarmJobCoordinator`
 
 ## Inventory and Classification
 
 `BackgroundJobsPostStart` builds one `JobManager` with `RestartSchedulerOnFailure = true` and a `Fail`
-handler that traces the message. Its coordinator, `NuGetJobCoordinator`, calls `job.Execute()` directly,
+handler that traces the message. Its coordinator, `ContosoJobCoordinator`, calls `job.Execute()` directly,
 logs a faulted task, and returns a dummy task when `Execute` throws. There is no cross-instance
 coordination: **every web instance runs every job**.
 
@@ -113,7 +114,7 @@ one that writes shared state takes the claim from
 [duplicate-execution-guard.md](duplicate-execution-guard.md), in both copies, with aligned windows matched
 to the scheduler's cadence.
 
-`NuGetGallery.AppHost` declares each job as one Aspire resource for local orchestration. That gives one
+`Contoso.AppHost` declares each job as one Aspire resource for local orchestration. That gives one
 process per job on a developer machine; the production replica count is set by the deployment target,
 and a rolling deployment still overlaps old and new — so the claim is still needed there.
 

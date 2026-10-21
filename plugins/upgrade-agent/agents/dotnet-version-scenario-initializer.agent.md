@@ -3,7 +3,7 @@ name: DotnetVersionScenarioInitializer
 description: Read-only pre-initialization gatherer for the dotnet-version-upgrade scenario. Inspects the repo and gathers every scenario + source-control parameter needed to confirm and initialize it, including the dotnet target-framework options. Mutates nothing and never talks to the user.
 user-invocable: false
 model: claude-haiku-4.5
-tools: ['Upgrade/get_instructions', 'Upgrade/get_dotnet_upgrade_options', 'read', 'execute']
+tools: ['Upgrade/get_instructions', 'UpgradeDotNet/get_dotnet_upgrade_options', 'read', 'execute']
 ---
 
 # DotnetVersionScenarioInitializer
