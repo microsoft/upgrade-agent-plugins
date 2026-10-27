@@ -56,6 +56,14 @@ available. Responses are capped at 20 items, so filter rather than expecting a f
 
 Also extract: dependency graph (leaf → root ordering), project-to-project references.
 
+### Behavioral API notices
+
+Treat behavioral API notices (`Api.0003`) as review items, advisory by default,
+not automatic fixes, extra tasks, or Done when runtime-test criteria.
+Carry assessment references and known risk notes; leave detailed applicability research to execution.
+Promote a notice into required work only with evidence of significant impact or a user request.
+Test Coverage = Skip does not create a per-notice manual-test obligation.
+
 ### SDK-Style Project Detection
 
 If any project uses old-style csproj format (identified by `<Project ToolsVersion=...>`,
@@ -279,8 +287,11 @@ Before loading the strategy file, evaluate these rules against the assessment.
   not standalone tasks
 - When generating migration tasks that move code between
   projects, note in the description that test references must be updated
-- The strategy task template is the authoritative task shape — it includes
-  prerequisites as the first task and final validation as the last task
+- The strategy task template defines prerequisites and upgrade work. Include a
+  whole-solution build and applicable existing test suite in the last implementation task's
+  Done-when criteria. Add a separate validation task only for distinct remaining checks,
+  not to repeat that validation. Record applicable deferred post-upgrade recommendations in
+  that task's Done-when criteria too.
 - **Shared-database pin.** When Project Approach is **Side-by-side** and the Framework host's
   configuration carries a connection string to an application database the assessment does not
   show being replaced, both hosts will run against one live database. Add

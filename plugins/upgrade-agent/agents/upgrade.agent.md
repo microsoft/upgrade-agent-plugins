@@ -439,11 +439,13 @@ For each task:
        TaskExecutor with something it did not already have. If the failure spans beyond the
        task, re-plan it as its own task. Never dispatch ErrorFixer yourself — TaskExecutor
        nests it.
-     - **Need an authoritative build/test verdict** (without the log entering your context) →
-       dispatch BuildValidator.
-     - **(Per phase, batched)** dispatch BuildValidator over the **whole solution** — a
-       top-level task is not done until everything builds, including units it broke
-       indirectly. Route any fixes back through TaskExecutor.
+     - **Phase/final validation gate:** read the latest TaskExecutor's **Validation evidence**
+       and its linked `progress-details.md`: exact commands, actual build/test scope,
+       configuration, toolchain/environment and results. A bare green status is insufficient.
+       Reuse a successful whole-solution build and required tests only if no build-relevant
+       edits or sync followed them and their scope/configuration and toolchain/environment match the gate.
+       If evidence is missing, stale or partial, dispatch BuildValidator for the uncovered checks,
+       forwarding the recorded commands/environment. Failed checks block completion; route fixes through TaskExecutor.
      - **Worker returns `STATUS: blocked: requires <capability>`** (it needs a tool no scoped
        worker has — e.g. a user-installed MCP server or an external system) → re-dispatch that task
        to **BreakGlass**, which has all tools. This is mechanical: you cannot see the tool
@@ -676,10 +678,10 @@ and the things you must not do.
 | **ScenarioInitializer** | Read-only, **single** dispatch. Use the dedicated gatherer named by the scenario's Pre-Initialization section (it may carry scenario-specific pre-init tools); use this generic one **only** when none is named. Returns `STATUS: ready` + a `confirmFields` block + git facts + `scenarioDisplayName` + `initializeDescription`, or `STATUS: needs_input` + question. It mutates nothing — **you** confirm, then finalize (TerminalExecutor for git, `initialize_scenario`, write `scenario-instructions.md`) |
 | **Assessor** | Once. Use the dedicated assessor named by the scenario's Assessment section; use this generic one **only** when none is named, or as the fallback after a scenario-specific assessor returns `STATUS: blocked`. Returns a distilled repo map + `assessment.md` path |
 | **Planner** | Once if the scenario has no planning gate; **twice** if it does (see Planning stage dispatch). Returns `STATUS: needs_confirmation` + payload (you run the confirmation, then re-dispatch), **or** `STATUS: ready` after it writes the top-level task list to `plan.md` (`start_task` bootstraps `tasks.md` from it) |
-| **TaskExecutor** | Per task, after `start_task`. Returns files changed + self-check build status + its **review** outcome, **or** `STATUS: broken_down` + subtask ids, **or** `STATUS: blocked` |
+| **TaskExecutor** | Per task, after `start_task`. Returns files changed + **Validation evidence** + its **review** outcome, **or** `STATUS: broken_down` + subtask ids, **or** `STATUS: blocked` |
 | **TaskBreaker** | **Only** on the user's explicit request to split/restructure a named task — never on your own (TaskExecutor nests its own). Pass the taskId, workflow folder, scenario skill root, and the user's reason; the task need not be started. Returns `STATUS: broken_down` + subtask ids (already committed — do **not** `complete_task` the parent), **or** `STATUS: atomic` + why (relay it; do **not** execute the task instead), **or** `STATUS: blocked` + why (relay and stop — do **not** re-dispatch unchanged or decompose it yourself) |
 | **ErrorFixer** | **Not yours to dispatch while a task is in progress** — TaskExecutor nests it inside its own turn, so its fixes land in the diff the executor has reviewed; route through TaskExecutor instead. With **no task in progress** — a merge or sync broke the build after the plan is complete, and `start_task` would reopen the upgrade — dispatch it yourself, then dispatch **IntegrityReviewer** over its diff before you move on |
-| **BuildValidator** | Per task/phase, so the log never enters your context. Returns GREEN or the ≤N relevant errors |
+| **BuildValidator** | Missing/stale validation or diagnostics; keeps logs out of your context. Returns GREEN or the ≤N relevant errors |
 | **IntegrityReviewer** | TaskExecutor dispatches it per task, so a diff it produced is already reviewed. Dispatch it yourself over any diff that did **not** come through TaskExecutor — work already in the tree when you resumed, a BreakGlass repair, your own edit — before `complete_task`. Route fixes back through whoever wrote the diff |
 | **BranchSync** | The per-task auto-sync boundary, or an on-demand "sync with main". Returns the user-facing outcome message (**relay verbatim**), or `STATUS: needs_input` + the question to put to the user |
 | **ReportGenerator** | The user accepts the post-completion report offer, or asks for a report/summary of what the upgrade changed. Pass the scenario folder, scenario name, and the detected signals from your last `get_state`/`complete_task`. Returns the `final-report.md` path + outcome line only — the report body never enters your context, so **do not** ask for it or restate it |

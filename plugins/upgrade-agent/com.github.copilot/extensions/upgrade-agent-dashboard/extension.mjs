@@ -1278,7 +1278,7 @@ function resolveRepoRootFromDisk(startDir = process.cwd()) {
     if (parent === dir) break;
     dir = parent;
   }
-  return { path: startDir, source: `process.cwd() fallback (no .git or .github/upgrades found): ${startDir}` };
+  return { path: startDir, source: `starting directory fallback (no .git or .github/upgrades/scenarios found): ${startDir}` };
 }
 
 // lib/server.ts
@@ -2519,7 +2519,7 @@ function resolveRepo(workingDirectory) {
     return { path: process.env.UPGRADE_AGENT_DASHBOARD_REPO, source: "UPGRADE_AGENT_DASHBOARD_REPO env var", confident: true };
   }
   if (workingDirectory && existsSync2(workingDirectory)) {
-    return { path: workingDirectory, source: "session.workingDirectory", confident: true };
+    return { ...resolveRepoRootFromDisk(workingDirectory), confident: true };
   }
   return { ...resolveRepoRootFromDisk(), confident: false };
 }

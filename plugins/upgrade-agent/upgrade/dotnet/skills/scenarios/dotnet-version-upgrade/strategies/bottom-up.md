@@ -118,9 +118,6 @@ Tier 1: [Domain] [Utilities] [Contracts]
      testing higher-tier projects, etc.)
    - Check assessment's full project list against tasks generated so far
 
-5. **Final validation**
-   - Full solution build, test suite, document deferred recommendations
-
 ### Adaptation Rules
 
 - If only one tier exists (flat dependency graph), use All-at-Once instead

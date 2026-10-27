@@ -52,15 +52,15 @@ and technologies detected. Then for any project with issues:
 { "query": "list_issues", "scope": "global/project", "params": { "projectPath": "{path}" } }
 ```
 
-This returns the actual issues — breaking API changes, incompatible packages,
-deprecated patterns — that the task must address.
+This returns findings to triage: breaking API changes, incompatible packages,
+deprecated patterns, and behavioral notices.
 
 ### What to record
 
 Enrich `task.md` with per-project findings:
 
-- **Issues to address** — list issues from the assessment relevant to this
-  task's work (package incompatibilities, API breaks, deprecated patterns)
+- **Issues and dispositions** — relevant findings, required fixes, and advisory
+  review items; distinguish behavioral notices using the policy below
 - **Features detected** — technologies the assessment flagged for this project
   (e.g., EF6, Autofac, OWIN, System.Web usage patterns) that affect how
   the work should be done
@@ -69,10 +69,35 @@ Enrich `task.md` with per-project findings:
 
 ### Why this matters
 
-The task description gives research *starting points* — the assessment gives
-the *complete inventory* of what needs to change in each project. Without
-consulting it, you'll miss issues that weren't mentioned in the plan summary
-and discover them only when builds fail.
+The assessment supplies findings to triage, not a list of mandatory edits.
+Record why relevant findings do or do not require work; compilation alone
+cannot settle runtime behavior.
+
+### Behavioral API review
+
+`Api.0003` describes a potential runtime difference, not a compilation failure.
+It is advisory by default; this does not relax required compatibility fixes or
+regression checks.
+
+Start from existing review notes. Research each distinct change once and group
+its call sites; reuse notes across tasks and retries. Check differing configurations separately.
+Read the change's conditions in authoritative documentation and compare with
+the affected code and configuration before choosing a disposition:
+
+| Disposition | Evidence and action |
+|---|---|
+| Not applicable | The documented trigger is absent in the affected configuration; cite local evidence. No code change or extra test for this notice. |
+| Applicable, low impact | Explain the expected effect; reuse existing coverage and record a focused user check for unverified behavior. No automatic code change or new test infrastructure. |
+| Uncertain | If documentation or local evidence does not settle applicability or impact, record what is unknown and a concrete follow-up rather than repeatedly broadening research. Credible high-consequence risk belongs in the next row. |
+| Significant risk | Concrete or credible high-consequence impact on security, authorization, data integrity, or external contracts requires targeted action. Block completion until a targeted fix/check settles the risk or an explicit user decision is recorded. A passing build does not settle it. |
+
+Record a `## Behavioral API review` section in `task.md`: underlying change and affected scope,
+documentation link, local evidence, disposition, checks actually performed, and
+any remaining user check (what changes and why it matters). Append final entries
+under `## Behavioral API review` in `progress-details.md` for review, reporting,
+and resume. Keep ordinary advisories in these records for the optional final report,
+not in the compact return. Escalate significant risks or required user decisions during the task,
+not at upgrade completion. Never describe an unperformed check as verified.
 
 ---
 

@@ -55,6 +55,7 @@ Scenario id, workflow folder, the target **taskId** and its `task.md` +
 `progress-details.md` paths, `scenario-instructions.md`, the `assessment.md` path, the
 **scenario skill root** folder, and the task's `<task_related_skills>` (paths). **Rehydrate from
 disk** — read these; do not rely on prior conversation.
+On retries or resumes, also read `review.md` beside `task.md` if present.
 
 **Read the scenario's Execution stage before you assess decomposition.** From the scenario skill
 root, open its `SKILL.md` stage index and load the file the **Execution** stage names (commonly
@@ -152,7 +153,8 @@ work standing in for something you could not obtain passes a build and fails thi
    Enrichment is an **edit to `task.md` that lands before your first source edit**. Writing it
    afterwards as a summary does not satisfy the gate.
 3. **Already-done check.** After research, verify whether the objective is **already met**
-   (a prior task may have done it as a side effect). If so: write `progress-details.md`
+   (a prior task may have done it as a side effect). If so and no blocking review findings
+   remain open: write `progress-details.md`
    noting the evidence, skip execution/validation, and report it as already-done — do not
    redo the work.
 4. **Assess decomposition — escalate, don't design the split.** This is a **gate, not advice**:
@@ -209,11 +211,11 @@ work standing in for something you could not obtain passes a build and fails thi
 5. **Apply the changes** with `edit`, in the order the skills prescribe. Use the scoped MCP
    helpers when a skill calls for them: project/config conversion, symbol/API-shape analysis,
    dependency-version lookups, and feed authentication when a restore needs a feed.
-6. **Self-check build/test** with `execute`, using the build/test command the scenario skills
-   specify for this stack, on the units you touched. Fix errors and warnings per the
-   Definition of done. **No-change short-circuit:** if you produced no file modifications,
-   skip the build (a prior green build is still valid) and only re-run tests if you're unsure
-   they already passed this session.
+6. **Self-check build/test** with `execute`, using `task.md`'s required scope and the scenario
+   skills' commands for this stack (targeted by default). Fix errors and warnings per the
+   Definition of done. **No-change short-circuit:** if you made no build-relevant changes and
+   current recorded checks cover the task's required scope, cite that evidence instead of
+   rerunning; never describe reused checks as new runs.
    **Every command is single-line, shell-neutral, bounded, and observable.** You run in
    whatever shell the *user* configured — often Git Bash or WSL, not PowerShell — so a
    trailing `` ` `` or `^` continuation, or a `%VAR%` reference, breaks or (worse) exits 0
@@ -239,35 +241,44 @@ work standing in for something you could not obtain passes a build and fails thi
      (touches other projects/tasks, needs a scope or plan change), or you've tried the same
      fix 3+ times and a nested `ErrorFixer` didn't clear it, **stop and report it** — the
      Orchestrator owns cross-cutting routing. Do not thrash, and do not loop nested agents.
-8. **Write `progress-details.md`** — files modified, build/test result, issues resolved,
-   deviations from `task.md`, and blockers hit (including ones you worked past). Append if it
-   already exists (see Definition of Done item 5). This comes **before** the review, not after:
-   the reviewer reads it.
+8. **Write `progress-details.md`** — files modified, restore/build/test commands and results
+   (working directory, toolchain/configuration, environment overrides, exit codes, and log paths or relevant output),
+   issues resolved, deviations from `task.md`, and blockers hit (including ones you worked past).
+   Append if it already exists (see Definition of Done item 5). Write it before review so
+   context is available if needed.
 9. **Review — MANDATORY, not a judgement call.** Once the build is green, dispatch
    `IntegrityReviewer` over the changes you just made. **Skip only when the task produced no
-   content diff outside its workflow artifacts** — a project file, dependency manifest, or build
-   property is a diff like any other.
+   content diff outside its workflow artifacts and no open blocking review findings** — a project
+   file, dependency manifest, or build property is a diff like any other.
    - **Pass it what it needs to do its job:** the **task id**, the **complete** change set —
      staged, unstaged, and untracked, since a new stand-in file is exactly the artifact that is
      untracked; a git range only when every task change is already committed — the repo path,
-     `scenario-instructions.md`, and **your `task.md` and `progress-details.md`
-     paths**. Both must already be on disk; a reviewer handed a path you have not written yet
-     returns that as a finding.
-   - **React before you report.** Every **`CHANGES NEEDED`** finding must be fixed, or — where you
-     genuinely cannot fix it — returned as **`STATUS: blocked`** with what you tried and what
-     blocked you.
-     Re-dispatch the reviewer after a material fix, telling it what you fixed. `CHANGES SUGGESTED`
+     `scenario-instructions.md`, `task.md`, and `progress-details.md` as optional context.
+     Include the sibling `review.md` path for continuity.
+   - **React before you report.** Read the returned `Review file:` and address the full open
+     blocking set before another review, not one finding at a time. Only IntegrityReviewer
+     updates that record. Findings without a readable record are a recording blocker.
+     Every **blocking** finding must be fixed, or — where you genuinely cannot fix it —
+     returned as **`STATUS: blocked`** with what you tried and what blocked you.
+     After fixing blockers or making material advisory fixes, rerun affected checks as needed
+     and refresh `progress-details.md` before
+     re-dispatching the reviewer with the same record path and an ID-to-fix/evidence summary.
+     `CHANGES SUGGESTED`
      findings your change introduced are worth folding in; ones about code you did not touch
      are not this task's job.
+     Advisory-only hygiene/prose fixes need targeted verification, not another review, unless
+     they materially change source, dependencies, or build/runtime behavior.
+     Record fixes/checks in `progress-details.md`, preserving the reviewer's verdict; never
+     relabel it `PASS`. Do not rebuild or delete outputs solely to tidy the workspace.
    - **An integrity finding is about something that was never real**, so making it tidier does
      not fix it. Follow the reviewer's suggested fix and your own judgement — usually that means
      establishing the fact you assumed, or obtaining the real dependency you stood in for. If the
      original blocker is still there and no legitimate path exists, say so and report it rather
      than reaching for a second workaround. Returning `STATUS: ready` on a task with an
      unresolved `CHANGES NEEDED` integrity finding is a **failed task**.
-   - **Append the final verdict to `progress-details.md`** before you report. Your **Review
-     outcome** line is conversational and dies with the turn; a session resuming an interrupted
-     task reads this file to tell a reviewed task from an unreviewed one, and re-reviews
+   - **Append the final verdict and review-file path, if any, to `progress-details.md`** before
+     you report. Your **Review outcome** line is conversational and dies with the turn; a session
+     resuming an interrupted task reads this file to tell a reviewed task from an unreviewed one, and re-reviews
      whatever it cannot find a verdict for.
 
 ## What to return (compact, structured)
@@ -276,8 +287,9 @@ Lead with a `STATUS: ready` line (or `STATUS: blocked` + reason if a missing cap
 environment stopped you), then the payload:
 
 - Files changed (list of paths).
-- Self-check status: errors/warnings count (0/0 = clean) or the ≤N blocking errors you could
-  not resolve.
+- **Validation evidence**: self-check errors/warnings; **whole-solution build: PASS / FAIL / NOT RUN**
+  (a project build is not a whole-solution build), configuration, test result, and the
+  absolute `progress-details.md` path. Report only checks supported by recorded commands/results.
 - **Decomposition verdict** (always — step 4 is a gate): one line naming the Execution stage
   file and the Breakdown Hints files you evaluated, and the verdict (`atomic` / escalated).
   If you executed the task, this line is your evidence that you assessed decomposition rather
@@ -289,9 +301,9 @@ environment stopped you), then the payload:
   subtask.
 - Already-done verdict (if step 3 fired), with the evidence.
 - Whether `task.md` and `progress-details.md` were written.
-- **Review outcome**: the verdict IntegrityReviewer returned and what you did about it. One
-  line. The Orchestrator needs it because `STATUS: ready` is only honest when no blocking
-  finding is left open.
+- **Review outcome**: the verdict IntegrityReviewer returned, what you did, and the review-file
+  path, if any. One line. The Orchestrator needs it because `STATUS: ready` is only honest when
+  no blocking finding is left open.
 - Anything the Orchestrator needs to decide (deep/cross-cutting escalation, ambiguous choice).
 
 Keep the return compact. Do not paste build logs or file contents — they live in

@@ -92,7 +92,7 @@ appropriate position within the strategy's task ordering.
 > subtasks. See "Shared database between the old and new host".
 
 > **Old project removal** is NOT a plan task. After all migration and validation
-> is complete, final validation documents removal as a post-upgrade step for the
+> is complete, the last implementation task records removal as a post-upgrade step for the
 > user to perform when they've confirmed production readiness. The agent performs
 > reference cleanup (re-pointing test projects, removing multi-targeting) as part
 > of the migrate task, but does not delete the old project.

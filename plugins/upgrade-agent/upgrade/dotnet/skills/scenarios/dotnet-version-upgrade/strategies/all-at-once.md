@@ -83,9 +83,6 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
 
    *(If side-by-side web migration: scaffold + migrate tasks insert here.)*
 
-4. **Final validation**
-   - Full solution build, test suite, document deferred recommendations
-
 ### Adaptation Rules
 
 - If all projects are already SDK-style, skip conversion task
@@ -112,7 +109,7 @@ During execution, tasks may be broken into subtasks
 
 **Important**: This is one pass, not a retry loop. Use "build and fix all compilation errors" — not "build → fix → rebuild → fix again" ambiguity.
 
-Testing comes AFTER the atomic upgrade completes successfully.
+Run tests after the atomic code changes build successfully, before completing the task.
 
 ---
 

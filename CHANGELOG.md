@@ -4,6 +4,24 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.757] - 2026-10-27
+
+### Added
+
+- Project edits, builds, and restores are now reported as activity even when no upgrade task is running.
+
+### Changed
+
+- Behavioral API notices (`Api.0003`) are now treated as evidence-based advisories during upgrade tasks. Each distinct change is researched once and given a recorded disposition, and only significant risks to security, authorization, data integrity, or external contracts block task completion. Ordinary follow-ups go to the optional final report.
+- The dashboard's current-task previews render richer content, and task-details navigation is improved.
+
+### Fixed
+
+- Interactive confirmation and option-selection tools no longer hang when a host advertises MCP Apps but never shows the card. After 15 seconds they fall back to a text prompt.
+- The dashboard now finds the repository when a session starts in a subfolder.
+- Expanded activity details in the dashboard now have correct text contrast in every theme.
+- Extension watching and scenario artifact deduplication now follow each operating system's path-case rules, so extenders are no longer missed or duplicated.
+
 ## [1.1.718] - 2026-10-20
 
 ### Added

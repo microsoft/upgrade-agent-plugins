@@ -149,7 +149,7 @@ with N failures), and at most two sentences on what it covers. Nothing else.
 
 ## Known Gaps & Follow-up Items
 
-{Anything left incomplete, deferred, or requiring manual attention.}
+{Anything left incomplete, deferred, or requiring manual attention. Consolidate recorded advisories and remaining user checks across tasks; deduplicate by finding and affected scope. State what was verified versus unverified, and link the task evidence. Use recorded facts only; do not repeat research or validation.}
 
 - **{Item}** — {description and recommended action}
 - ...

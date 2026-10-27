@@ -2,7 +2,7 @@
 name: DotnetInvestigator
 description: Read-only .NET lookup helper. Answers specific questions about package versions, namespaces, types, and members. Returns facts, never verdicts.
 user-invocable: false
-model: claude-haiku-4.5
+model: ['claude-haiku-5.5', 'gpt-6-luna', 'gpt-5.6-luna']
 tools: ['UpgradeDotNet/get_supported_package_version', 'UpgradeDotNet/get_namespace_info', 'UpgradeDotNet/get_type_info', 'UpgradeDotNet/get_member_info', 'read', 'search']
 ---
 

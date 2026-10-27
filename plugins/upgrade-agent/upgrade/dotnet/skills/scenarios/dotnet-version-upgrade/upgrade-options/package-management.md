@@ -47,15 +47,15 @@ the .NET Framework → modern .NET boundary.
   Best applied when all projects are SDK-style and on the same ecosystem.
 - **Per-Project (defer CPM to post-migration)** *(default for Framework migrations)* —
   each project retains its own versions during the active migration.
-  CPM is registered as a post-migration recommendation in the plan's final
-  cleanup phase. The assessment already surfaces version divergence data for
+  The last implementation task records CPM as a post-migration recommendation.
+  The assessment already surfaces version divergence data for
   visibility — CPM enforcement is deferred until the divergence resolves naturally.
 
 ## What is NOT configurable
 - When "Per-Project (defer CPM)" is selected, the plan MUST include a deferred
-  CPM recommendation in the final solution validation / cleanup phase with the
-  rationale: "All projects are now SDK-style and on a single TFM — CPM can be
-  added cleanly without VersionOverride friction."
+  CPM recommendation in the last implementation task's Done-when criteria with the
+  rationale: "Once projects are SDK-style and on a single TFM, CPM can be
+  added without migration-time VersionOverride friction."
 - When CPM is selected during an active Framework migration, warn in the `Why`
   column: "User override — expect VersionOverride usage in multi-targeted projects."
 
