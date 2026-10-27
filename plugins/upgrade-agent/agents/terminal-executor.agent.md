@@ -2,7 +2,7 @@
 name: TerminalExecutor
 description: Runs a short, well-defined set of terminal/shell commands (git operations, quick checks, one-off scripts) and returns a terse status — the command output never leaves its context. Runs on a cheap model.
 user-invocable: false
-model: claude-haiku-4.5
+model: ['claude-haiku-5.5', 'gpt-6-luna', 'gpt-5.6-luna']
 tools: ['execute', 'read']
 ---
 

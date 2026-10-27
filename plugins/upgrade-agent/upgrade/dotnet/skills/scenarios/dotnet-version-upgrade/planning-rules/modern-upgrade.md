@@ -21,7 +21,8 @@ For small solutions (1-5 projects), these may merge into a single task.
 
 - **Many projects (10+)**: consider splitting by dependency tier or logical group
 - **Mixed project types with different risk levels**: isolate higher-risk projects
-  (e.g., web apps with behavioral API changes) from lower-risk ones (class libraries)
+  with confirmed high-impact runtime risks from lower-risk ones.
+  Behavioral notices alone do not justify a split.
 - **Large package replacement scope**: if >5 packages have breaking changes, consider
   splitting package updates from code fixes
 

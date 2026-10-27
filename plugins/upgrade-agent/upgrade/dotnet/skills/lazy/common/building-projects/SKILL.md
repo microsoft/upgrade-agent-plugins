@@ -123,50 +123,44 @@ Escalate to the full Visual Studio MSBuild (`msbuild.exe`) when ANY of these con
 
 ### Step 2: Execute the Build
 
-#### Always Restore During Migration
+#### Restore When Inputs Require It
 
-During modernization, NuGet packages change constantly — versions get bumped, packages get
-swapped, new ones added, old ones removed. A stale `obj/project.assets.json` is one of the
-most common causes of phantom build failures.
+Restore after dependency, build-configuration or toolchain changes; stale
+`obj/project.assets.json` can cause phantom build failures.
 
-**Default behavior: always let restore run.**
-
-- For `dotnet build`: restore runs by default — do not add `--no-restore` during migration.
-  Package references change frequently, and skipping restore causes phantom build failures.
+- For `dotnet build`: restore runs by default.
 - For `msbuild.exe`: use `msbuild /restore` (or `/r`) to run NuGet restore before building.
-  This is especially important when already using `msbuild.exe` for the build — mixing
-  `dotnet restore` as a separate step with `msbuild /build` can cause resolver mismatches.
+  Do not mix a different toolchain's restore with the build.
 
-**When restore can be skipped:** Only when the current migration step modified nothing but
-`.cs` files — no `*proj`, `Directory.Build.props`, `Directory.Packages.props`, or
-`nuget.config` was touched. If in doubt, restore. The cost is a few seconds; the cost of
-a stale restore is a misleading build result.
+An existing successful restore may be reused for the same scope/configuration if
+no dependency, build-configuration or toolchain inputs changed afterward. Then
+`dotnet build --no-restore` is appropriate; a new worker or phase is not a reason to
+restore again. If the evidence or asset validity is uncertain, restore.
 
 #### Build Scope: Targeted vs Full Solution
 
-Building the entire solution on every change is too slow for iterative migration work.
-Use two tiers:
+First check successful validation for the same scope, configuration and build-relevant state.
+Reuse its recorded commands, toolchain/environment and results. Do not repeat a build just
+because a task or phase ended.
 
 **Targeted project build (default during iterative work):**
-When the agent modifies a project or its files, build only that specific project:
+When the agent modifies a project or its files, build that project and affected dependents:
 
 ```sh
-dotnet build <specific-project.csproj> -r
+dotnet build <specific-project.csproj>
 msbuild.exe <specific-project.csproj> /restore /t:Build /p:Configuration=Release
 ```
 
 This gives fast feedback (seconds, not minutes) on whether the migration change compiled.
 The agent is iterating — it needs signal on its change, not the entire dependency graph.
 
-**Full solution build (final validation only):**
-Build the entire solution when:
-- The agent is about to mark a task as complete
-- A batch of related migration tasks has finished
-- The migration step changed something that could ripple across projects (shared interfaces,
-  public API changes, package updates consumed by multiple projects)
+**Full solution build (phase/final gate):**
+If the full solution has not been successfully built in its final state, build it.
+This covers combined migration work and cross-project effects of shared interfaces,
+build configuration or package changes; project-only checks do not establish it.
 
 ```sh
-dotnet build <solution.sln> -r
+dotnet build <solution.sln>
 msbuild.exe <solution.sln> /restore /t:Build /p:Configuration=Release
 ```
 
@@ -177,13 +171,7 @@ Do NOT default to solution builds for every change. Reserve them as a gate check
 **Simple SDK build (happy path):**
 
 ```sh
-dotnet build <project.csproj> -r
-```
-
-**MSBuild build:**
-
-```sh
-msbuild.exe <project.csproj> /restore /t:Build /p:Configuration=Release /v:minimal
+dotnet build <project.csproj>
 ```
 
 **Clean build (when incremental build is suspect):**

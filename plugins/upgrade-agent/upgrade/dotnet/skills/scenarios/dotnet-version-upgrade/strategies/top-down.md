@@ -103,9 +103,6 @@ plan.md should be a lightweight task list — not a duplicate of assessment.md.
    - Projects not covered by application tasks or consolidation
    - Check assessment's full project list against tasks generated so far
 
-6. **Final validation**
-   - Full solution build, test suite, document deferred recommendations
-
 ### Adaptation Rules
 
 - If only one application exists, the plan simplifies to:

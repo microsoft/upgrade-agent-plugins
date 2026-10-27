@@ -158,3 +158,4 @@ start rather than on a schedule. Port it as `Database.SetInitializer<TContext>(n
 and add `#skill:managing-shared-database-schema` to the subtask description — that skill decides
 which toolchain applies migrations during the window.
 **Priority**: SHOULD
+
