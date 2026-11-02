@@ -9,7 +9,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - .NET 11 is now treated as a Standard Term Support (STS) release, and .NET 10 remains the default target for .NET version upgrades. The upgrade options and user guidance reflect this.
-- When several skills match a request, the agent now receives a compact ranked shortlist instead of full skill listings, and ranked matches stay visible when tool output previews are truncated.
 
 ### Fixed
 
