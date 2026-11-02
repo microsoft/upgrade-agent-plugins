@@ -4,6 +4,20 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.777] - 2026-11-02
+
+### Changed
+
+- .NET 11 is now treated as a Standard Term Support (STS) release, and .NET 10 remains the default target for .NET version upgrades. The upgrade options and user guidance reflect this.
+
+### Fixed
+
+- Upgrade hooks now start correctly on Windows when their launcher (such as `npx` or `dnx`) must be found through `PATH` and `PATHEXT`.
+- The Copilot CLI is now found in runtime-only GitHub Copilot App sessions, and failures to start it are reported clearly.
+- Dependency discovery now attributes source types to the correct project in multi-project solutions.
+- Framework assessment no longer reports false positives for async LINQ usage, and WCF-to-CoreWCF feature detection now resolves catalog feature IDs correctly.
+- Assessment insights now compare NuGet packages by explicit identity, which removes mismatched or duplicated package results.
+
 ## [1.1.757] - 2026-10-27
 
 ### Added
