@@ -262,13 +262,13 @@ Example:
 ```markdown
 ## Current Facts
 
-<!-- Last updated: 2025-11-12 -->
+<!-- Last updated: 2026-10-26 -->
 
 | Version | Status | Support Level | End of Life |
 |---------|--------|---------------|-------------|
 | .NET 10 | GA | LTS | 2028-11-14 |
 | .NET 9 | GA | STS | 2026-11-10 |
-| .NET 11 | Preview | — | 2030-11-12 (projected) |
+| .NET 11 | GA | STS | 2028-11-14 |
 
 > **Staleness check:** If the user asks about a version listed as **Preview** above,
 > verify its current status using an internet search tool before answering —
