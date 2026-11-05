@@ -4,6 +4,12 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.784] - 2026-11-05
+
+### Fixed
+
+- Generated plugins now pin the orchestrator MCP server, .NET MCP server, and repository-facts hook to the plugin's package version, so installing a release no longer silently runs a newer package.
+
 ## [1.1.777] - 2026-11-02
 
 ### Changed
