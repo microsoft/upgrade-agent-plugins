@@ -7,7 +7,7 @@ mcp-servers:
     type: 'local'
     command: 'dnx'
     args: [
-      'Microsoft.GitHubCopilot.Upgrade.Mcp',
+      'Microsoft.GitHubCopilot.Upgrade.Mcp@1.1.784',
       '--yes',
       '--ignore-failed-sources'
     ]
@@ -40,7 +40,7 @@ mcp-servers:
   UpgradeDotNet:
     type: 'local'
     command: 'dnx'
-    args: ['Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp', '--yes', '--ignore-failed-sources']
+    args: ['Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp@1.1.784', '--yes', '--ignore-failed-sources']
     tools: ['*']
     timeout: 300000
     env:
