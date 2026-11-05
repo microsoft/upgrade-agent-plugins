@@ -8,29 +8,22 @@ GitHub Copilot upgrade is available from both the GitHub Copilot app and GitHub 
 
 ### GitHub Copilot app
 
-[**Add this marketplace in the GitHub Copilot app →**](https://github.com/copilot/app/launch?entry_point=upgrade_agent_plugins_readme&open=ghapp%3A%2F%2Fplugins%2Fmarketplace%2Fadd%3Fsource%3Dmicrosoft%2Fupgrade-agent-plugins)
+Click this [**link**](https://github.com/copilot/app/launch?entry_point=upgrade_agent_plugins_readme&open=ghapp%3A%2F%2Fplugins%2Fmarketplace%2Fadd%3Fsource%3Dmicrosoft%2Fupgrade-agent-plugins) to automatically open the Settings > Plugins window in the GitHub Copilot app.
 
-This opens the GitHub Copilot app to confirm your intention to add the marketplace: 
+In the **Add plugin marketplace** dialog, select **Allow**.
 
 <img width="411" height="252" alt="image" src="assets/Copilot-App-Allow-Add-Marketplace-Dark.png" />
 
-Once allowed, it will pre-populate the marketplace form: 
-
-<img width="670" height="336" alt="image" src="assets/Copilot-App-Add-Marketplace-Dark.png" />
-
-After adding the marketplace, installing the plugin is a single click from within the UI:
-
-<img width="650" height="131" alt="image" src="assets/Copilot-App-Install-Plugin-Dark.png" />
+Go to the **Customize** view and search for `upgrade-agent`. Under the **All marketplaces** dropdown, select the `upgrade-agent-plugins`, and select **Install** on the `upgrade-agent` plugin.
 
 _Note: Prior to v1.0.3 of the GitHub Copilot app, you will need to restart the app after installing the plugin before you can use the GitHub Copilot upgrade agent._
 
 Select the ```Upgrade``` agent from the Agent Picker:
-<img width="650" height="180" alt="image" src="assets/Copilot-App-Select-Agent-Dark.png" />
 
 Prompt the agent: 
 
 ```
-upgrade my project to .NET 10
+upgrade my project to .NET 11
 ```
 
 ### GitHub Copilot CLI
