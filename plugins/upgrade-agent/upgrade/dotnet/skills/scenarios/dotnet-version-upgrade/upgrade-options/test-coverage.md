@@ -19,7 +19,7 @@
 
 **The `dotnet-test` plugin's availability does NOT gate whether this option is offered** — only *how*
 **Generate** is fulfilled (see "Options" and "Generate flow"):
-- If the `code-testing-generator` agent is **available**, **Generate** runs it directly.
+- If the `test-engineer` agent is **available**, **Generate** runs it directly.
 - If it is **not available**, choosing **Generate** first prompts the user to install the `dotnet-test`
   plugin via the host-appropriate steps in `managing-dotnet-test-installation`. If the user declines,
   or the host can't install it, **Generate** falls back to **Skip**.
@@ -50,10 +50,10 @@
 
 Apply this section only after the user confirms **Generate**.
 
-1. Check whether `code-testing-generator` is visible to the main agent; do not probe the shell or
+1. Check whether `test-engineer` is visible to the main agent; do not probe the shell or
    file system.
 2. If it is unavailable, load and follow `managing-dotnet-test-installation`. Continue only when that
-   flow returns with `code-testing-generator` available. If it stops the current run or changes Test
+   flow returns with `test-engineer` available. If it stops the current run or changes Test
    Coverage to **Skip**, take no further action.
 3. Append this block to `scenario-instructions.md`, listing every project where
    `TestCoverageRecommended=true`:
@@ -71,7 +71,7 @@ The user can narrow the generation scope by deleting entries from `Projects` bef
 4. During plan generation, inject:
 
    - **`generate-test-baseline`** as the first task. It loads `generating-upgrade-test-baseline`,
-     invokes `code-testing-generator`, and establishes a passing pre-upgrade baseline.
+     invokes `test-engineer`, and establishes a passing pre-upgrade baseline.
    - **`validate-test-baseline`** as the last task. It re-runs the recorded baseline test projects
      after the upgrade and handles failures using the validation flow in `execution.md`.
 
@@ -79,7 +79,7 @@ These tasks are the exception to the rule that test work belongs to the upgrade 
 
 ## Generation failure
 
-If `code-testing-generator` cannot produce a green pre-upgrade baseline, explain the failure and ask
+If `test-engineer` cannot produce a green pre-upgrade baseline, explain the failure and ask
 the user how they want to proceed. Suggest continuing the upgrade without generated tests, but follow
 another direction if the user provides one.
 

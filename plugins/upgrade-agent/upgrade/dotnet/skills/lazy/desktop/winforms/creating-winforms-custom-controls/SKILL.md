@@ -25,11 +25,14 @@ Use it for designing UserControl to offload complex UI from forms, or when a reu
 
 ## Related Skills
 
-- [WinForms Development](../building-winforms-applications/SKILL.md)
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms Data Binding](../managing-winforms-data-binding/SKILL.md)
-- [WinForms Rendering](../managing-winforms-rendering/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../managing-winforms-high-dpi-layout/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-designer-code`
+- `managing-winforms-data-binding`
+- `managing-winforms-rendering`
+- `managing-winforms-high-dpi-layout`
 
 **Tenets:** Assume the project's house style:
 

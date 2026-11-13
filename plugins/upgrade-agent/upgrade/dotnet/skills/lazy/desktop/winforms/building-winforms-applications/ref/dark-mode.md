@@ -133,5 +133,6 @@ After enabling dark mode:
 
 ## Additional Resources
 
-- See [managing-winforms-rendering](../../managing-winforms-rendering/ref/detailed-guide.md) for custom drawing patterns
+- For custom drawing patterns, load the skill by exact name:
+  `get_instructions(kind='skill', query='managing-winforms-rendering')`
 - See [main detailed guide](detailed-guide.md) for comprehensive WinForms development guidance

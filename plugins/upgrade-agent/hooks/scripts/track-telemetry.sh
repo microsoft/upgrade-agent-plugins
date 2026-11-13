@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Older Bash disables process substitution in POSIX mode, including when sourced by sh.
+set +o posix
+
 # Return success and exit. The hook must never block the host tool call,
 # so all error paths funnel through this function.
 write_success() {
@@ -7,60 +10,21 @@ write_success() {
     exit 0
 }
 
-# Read entire stdin at once - hooks send one complete JSON per invocation
-INPUT=$(cat)
+# The wrapper passes buffered JSON; direct script calls still read stdin.
+if [ "$#" -gt 0 ]; then
+    INPUT=$1
+else
+    INPUT=$(cat)
+fi
 if [ -z "$INPUT" ]; then
     write_success
 fi
 
-# Setup log directory
-TEMP_ROOT="${TMPDIR:-/tmp}"
-LOG_DIR="${TEMP_ROOT%/}/UA/upgrades/skills-loaded"
-mkdir -p "$LOG_DIR" 2>/dev/null
-
-# Extract a JSON string field. Tries jq, then python3, then 
-# grep/sed fallback. Returns empty string if the field is missing or no
-# JSON parser is available.
-# Usage: extract_field <json> <key1> [key2 ...]
-# Returns the first non-empty value found among the candidate keys.
-extract_field() {
+# Last-resort extraction when no JSON parser is installed.
+extract_field_regex() {
     local json="$1"
     shift
     local key
-
-    if command -v jq >/dev/null 2>&1; then
-        for key in "$@"; do
-            local val
-            val=$(printf '%s' "$json" | jq -r --arg k "$key" '
-                (.[$k] // .tool_input[$k]? // .toolArgs[$k]? // empty)
-                | select(type == "string")
-            ' 2>/dev/null)
-            if [ -n "$val" ]; then
-                echo "$val"
-                return
-            fi
-        done
-        return
-    fi
-
-    if command -v python3 >/dev/null 2>&1; then
-        printf '%s' "$json" | KEYS="$*" python3 -c "
-import sys, json, os
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-keys = os.environ.get('KEYS', '').split()
-for k in keys:
-    for src in (d, d.get('tool_input') or {}, d.get('toolArgs') or {}):
-        if isinstance(src, dict):
-            v = src.get(k)
-            if isinstance(v, str) and v:
-                print(v)
-                sys.exit(0)
-" 2>/dev/null
-        return
-    fi
 
     # Last-resort: naive regex after flattening JSON to one line.
     # Searches anywhere in the payload, so works for nested fields.
@@ -81,9 +45,68 @@ for k in keys:
     done
 }
 
-# Extract tool name. Supports Copilot CLI (camelCase), VS Code
-# (snake_case), and Claude (PascalCase, e.g. "Read").
-TOOL_NAME=$(extract_field "$INPUT" tool_name toolName)
+# NUL-delimited fields preserve spaces, tabs and newlines without evaluating input.
+extract_fields() {
+    if command -v jq >/dev/null 2>&1; then
+        printf '%s' "$INPUT" | jq -j '
+            def field($keys):
+                . as $input |
+                first($keys[] as $k |
+                    ($input[$k] // $input.tool_input[$k]? // $input.toolArgs[$k]? // empty) |
+                    select(type == "string" and length > 0)) // "";
+            [field(["tool_name", "toolName"]),
+             field(["file_path", "filePath", "path"]),
+             field(["session_id"]),
+             ""] |
+            select(all(.[]; index("\u0000") == null)) |
+            .[] | ., "\u0000"
+        ' 2>/dev/null
+    elif command -v python3 >/dev/null 2>&1; then
+        printf '%s' "$INPUT" | python3 -c "
+import sys, json
+from datetime import datetime
+try:
+    d = json.load(sys.stdin)
+except (ValueError, UnicodeError):
+    sys.exit(0)
+if not isinstance(d, dict):
+    sys.exit(0)
+def field(keys):
+    for k in keys:
+        for src in (d, d.get('tool_input'), d.get('toolArgs')):
+            if isinstance(src, dict):
+                v = src.get(k)
+                if isinstance(v, str) and v:
+                    return v
+    return ''
+values = (field(('tool_name', 'toolName')),
+          field(('file_path', 'filePath', 'path')),
+          field(('session_id',)),
+          datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+if any('\0' in value for value in values):
+    sys.exit(0)
+for value in values:
+    sys.stdout.write(value + '\0')
+" 2>/dev/null
+    else
+        printf '%s\0' \
+            "$(extract_field_regex "$INPUT" tool_name toolName)" \
+            "$(extract_field_regex "$INPUT" file_path filePath path)" \
+            "$(extract_field_regex "$INPUT" session_id)" \
+            ""
+    fi
+}
+
+TOOL_NAME=""
+FILE_PATH=""
+SESSION_ID=""
+TIMESTAMP=""
+{
+    IFS= read -r -d '' TOOL_NAME
+    IFS= read -r -d '' FILE_PATH
+    IFS= read -r -d '' SESSION_ID
+    IFS= read -r -d '' TIMESTAMP
+} < <(extract_fields)
 
 # Only log file-read tools
 case "$TOOL_NAME" in
@@ -91,8 +114,6 @@ case "$TOOL_NAME" in
     *) write_success ;;
 esac
 
-# Extract file path from any of the known shapes
-FILE_PATH=$(extract_field "$INPUT" file_path filePath path)
 if [ -z "$FILE_PATH" ]; then
     write_success
 fi
@@ -107,21 +128,20 @@ FILE_PATH_NORMALIZED="${FILE_PATH//\\//}"
 #    (both hosts stage extenders under the same `upgrade` prefix, so
 #    one alternative covers the VSIX and the CLI plugin)
 if echo "$FILE_PATH_NORMALIZED" | grep -qiE '(/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/|/upgrade/([^/]+/)?skills/)([^/]+/)*[^/]+/SKILL\.md$'; then
+    # Setup log directory only for a matching skill read.
+    TEMP_ROOT="${TMPDIR:-/tmp}"
+    LOG_DIR="${TEMP_ROOT%/}/UA/upgrades/skills-loaded"
+    mkdir -p "$LOG_DIR" 2>/dev/null
+
     # Extract skill name from the parent directory of SKILL.md
     SKILL_NAME=$(basename "$(dirname "$FILE_PATH_NORMALIZED")")
 
-    # Extract session_id from hook input
-    SESSION_ID=$(extract_field "$INPUT" session_id)
-    
     # Use "unknown" if session_id not provided
     if [ -z "$SESSION_ID" ]; then
         SESSION_ID="unknown"
     fi
     
     # Generate timestamp
-    if command -v python3 >/dev/null 2>&1; then
-        TIMESTAMP=$(python3 -c "from datetime import datetime; print(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])" 2>/dev/null)
-    fi
     if [ -z "$TIMESTAMP" ]; then
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
     fi

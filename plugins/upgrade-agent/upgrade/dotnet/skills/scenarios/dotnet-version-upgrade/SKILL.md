@@ -11,7 +11,6 @@ metadata:
   post-completion-suggest-scenarios: >-
     aspire-integration|
     aspire-version-upgrade|
-    migrating-ef6-code-first-to-ef-core|
     winforms-feature-adoption|
     dotnet-arm64-migration
   post-completion-suggest-actions: "generate-report"

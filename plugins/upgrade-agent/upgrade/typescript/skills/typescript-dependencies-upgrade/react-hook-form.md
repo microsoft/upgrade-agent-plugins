@@ -7,7 +7,10 @@ compatible version; their version numbers do not move in lockstep.
 `@hookform/resolvers` v5 requires `react-hook-form` 7.55.0 or newer. It also relies on peer
 validation libraries such as Zod, Yup, Joi, Ajv, or Valibot. Check the target resolver package's
 published peer ranges and include an incompatible validation-library peer in the group rather than
-forcing the install.
+forcing the install. Requirements depend on the target resolver version: for example,
+`@hookform/resolvers` 7.0.3 requires `typebox` 1.x instead of legacy `@sinclair/typebox` 0.x,
+and `effect` v4 instead of v3. Resolver v5 supports the legacy TypeBox package and `effect` v3;
+do not apply newer resolver migrations when targeting v5.
 
 ## Strategy
 
@@ -31,13 +34,17 @@ Search the package directory before changing versions and record every match:
 | `NestedValue` / `UnpackNestedValue` | Remove the deprecated wrapper and use the field value type directly. |
 | `useForm<...>` next to a resolver schema with transforms/defaults/coercion | Verify schema input and output separately; do not assume one generic describes both. |
 | `schemaOptions.context` passed to `yupResolver` | Pass mutable resolver context through `useForm({ context })`. |
+| `@sinclair/typebox`, `TypeCompiler`, or `TypeRegistry` with `typeboxResolver` | Check the target resolver's published peer range. Only if it requires `typebox` 1.x, migrate the package and APIs; use `Compile` from `typebox/compile` for compiled schemas. Resolver v5 supports legacy `@sinclair/typebox`. |
+| `effectTsResolver` or imports from `effect` | Check the target resolver's published `effect` peer range. Migrate to v4 only when required by that target; resolver v5 supports `effect` v3. |
 
 ## Order of operations
 
 1. **Finish React first.** If React guidance is also in scope, complete it before this group.
 2. **Check runtime and peer floors.** Confirm the target packages support the project's Node and
    React versions. For `@hookform/resolvers` v5+, require `react-hook-form >= 7.55.0` and satisfy the
-   selected resolver's validation-library peer range.
+   selected resolver's validation-library peer range for the exact target version. Migrate legacy
+   `@sinclair/typebox` to `typebox` 1.x or `effect` v3 to v4 only when that target requires it;
+   targeting resolver v5 does not require either migration.
 3. **Upgrade the whole group.** Pass `react-hook-form`, all present `@hookform/*` packages, and any
    required validation-library peer to `typescript_upgrade_package_dependency_group`.
 4. **Install before editing source.** Call `typescript_install_dependencies`. Resolve peer conflicts

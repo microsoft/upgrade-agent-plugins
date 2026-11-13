@@ -44,7 +44,7 @@ discover_upgrade_scenarios(solutionPath: "<abs .sln path>", projectPath: "<abs .
 ```
 
 Pass `projectPath` only when the user scoped the request to one project; otherwise pass an empty
-string to scan the whole solution. The tool is read-only.
+string to scan the whole solution.
 
 ## What the tool returns
 

@@ -61,6 +61,8 @@ upgrade-agent/
 │       └── upgrade-agent-dashboard/
 ├── hooks/
 │   └── scripts/
+│       ├── track-build-telemetry.ps1
+│       ├── track-build-telemetry.sh
 │       ├── track-telemetry.ps1
 │       └── track-telemetry.sh
 ├── tests/

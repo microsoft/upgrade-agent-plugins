@@ -581,7 +581,8 @@ personBindingSource.DataSource = person ?? new Person();
 
 ## Related Skills
 
-For specialized topics:
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
 
 - **managing-winforms-mvvm** - MVVM pattern with ViewModels, Commands, and DataContext
 - **building-winforms-applications** - Overall WinForms development patterns

@@ -11,7 +11,7 @@ metadata:
 
 # Generating an Upgrade Test Baseline
 
-Use the external `code-testing-generator` agent to create tests that lock in current behavior before
+Use the external `test-engineer` agent to create tests that lock in current behavior before
 the upgrade changes production code. The generator owns test-framework detection, test-project
 selection or creation, implementation, build, test, fix, lint, and final validation.
 
@@ -20,7 +20,7 @@ selection or creation, implementation, build, test, fix, lint, and final validat
 Read the `## Test Baseline` status from `scenario-instructions.md`. If it is not `enabled`, complete
 `generate-test-baseline` as skipped without invoking the generator.
 
-The `code-testing-generator` agent from the `dotnet-test` plugin is required. If it is unavailable,
+The `test-engineer` agent from the `dotnet-test` plugin is required. If it is unavailable,
 load `managing-dotnet-test-installation` and follow it before continuing.
 
 ## Requirements
@@ -38,7 +38,7 @@ load `managing-dotnet-test-installation` and follow it before continuing.
    - `API.0003` issues as must-cover behavioral changes.
    - `API.0002` and `API.0001` issues as priority seeds.
    - The issue location, code sample, and documentation URL when available.
-3. Invoke `code-testing-generator` with a goal-oriented brief:
+3. Invoke `test-engineer` with a goal-oriented brief:
 
 ```text
 ## Goal
@@ -66,7 +66,7 @@ planning, or validation pipeline.
 
 ## Integrate the Result
 
-After `code-testing-generator` succeeds:
+After `test-engineer` succeeds:
 
 1. Update `scenario-instructions.md`: under `## Test Baseline`, add the project-file path of every
    test project used beneath `Test projects`.

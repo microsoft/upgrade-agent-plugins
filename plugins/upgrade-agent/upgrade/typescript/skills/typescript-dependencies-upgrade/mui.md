@@ -25,7 +25,7 @@ Bump versions and reinstall **before** touching source, then run codemods and ma
 
 1. **Bump the coordinated core cluster together** to the target major via `typescript_upgrade_package_dependency_group` — core, icons, and Emotion in one group. Do not automatically align MUI X to the core major; for Material UI v5 → v6 and v6 → v7, leave MUI X unchanged unless it is being migrated separately.
 2. **Reinstall** with `typescript_install_dependencies`. If install reports a peer conflict, inspect the reported peer range and align only the packages it identifies (see "Peer-dep resolution" in [peer-dependencies.md](./peer-dependencies.md)); do not infer that MUI X must share the Material UI major.
-3. **Run the official MUI codemods for each major crossed — REQUIRED.** Prefix `npx` with `--yes` (or use `yarn dlx` / `pnpm dlx`) so the npx install prompt doesn't stall the run. These codemods rewrite source only — they are **explicitly permitted** despite Key Principle #9 (they transform source, they do not install dependencies or repair the toolchain). If a codemod binary genuinely cannot run (offline/blocked registry), don't fabricate having run it — apply the per-major fixes manually instead.
+3. **Run the official MUI codemods for each major crossed — REQUIRED unless a Phase 2 fast-path checkpoint defined by SKILL.md already passed.** Prefix `npx` with `--yes` (or use `yarn dlx` / `pnpm dlx`) so the npx install prompt doesn't stall the run. These codemods rewrite source only — they are **explicitly permitted** despite Key Principle #9 (they transform source, they do not install dependencies or repair the toolchain). If a codemod binary genuinely cannot run (offline/blocked registry), don't fabricate having run it — apply the per-major fixes manually instead.
 
    **Material UI core (`@mui/codemod`):**
    - `@material-ui/*` → `@mui/*` rebrand (only if coming from v4): `npx --yes @mui/codemod@latest v5.0.0/preset-safe <path>`
@@ -87,7 +87,7 @@ After the MUI + Emotion upgrade attempt (success or failure), call `typescript_r
 - `fromVersion`: starting `@mui/material` major as a string (e.g. `"5"`)
 - `toVersion`: target `@mui/material` major as a string (e.g. `"9"`)
 - `strategy`: `"single-shot"`
-- `codemodsRun`: count of codemod recipes run (`@mui/codemod` + `@mui/x-codemod`); `0` if none could run (manual fixes only)
+- `codemodsRun`: count of codemod recipes run (`@mui/codemod` + `@mui/x-codemod`); `0` if none were run (the Phase 2 fast-path checkpoint passed, or codemods could not run and manual fixes were applied)
 - `failureReason`: if failed, e.g. `"mui_styles_blocker"`, `"peer_dep_unresolved"`, `"compile_errors_remaining"`
 
 This is **not** the terminal event. Return to the calling workflow, which finishes with `typescript_write_upgrade_summary`.

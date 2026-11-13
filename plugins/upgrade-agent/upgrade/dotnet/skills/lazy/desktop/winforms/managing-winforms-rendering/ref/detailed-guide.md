@@ -340,11 +340,14 @@ private float CalculateLineSpacing(Font font, Graphics g)
 
 ## Related Skills
 
-- [WinForms Custom Controls and UserControls](../../creating-winforms-custom-controls/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../../managing-winforms-high-dpi-layout/SKILL.md)
-- [WinForms Designer Code](../../managing-winforms-designer-code/SKILL.md)
-- [WinForms Development](../../building-winforms-applications/SKILL.md)
-- [WinForms Data Binding](../../managing-winforms-data-binding/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `creating-winforms-custom-controls`
+- `managing-winforms-high-dpi-layout`
+- `managing-winforms-designer-code`
+- `building-winforms-applications`
+- `managing-winforms-data-binding`
 
 ## Offscreen Rendering
 
@@ -623,7 +626,8 @@ Before implementing custom rendering:
 
 ## Related Skills
 
-For related topics:
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
 
 - **building-winforms-applications** - Overall WinForms development patterns
 - **managing-winforms-high-dpi-layout** - High-DPI fluent layout and control arrangement

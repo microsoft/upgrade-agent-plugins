@@ -30,13 +30,14 @@ Use this skill when:
 
 ## Related Skills
 
-For specialized topics, see:
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
 
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms Data Binding](../managing-winforms-data-binding/SKILL.md)
-- [WinForms MVVM](../managing-winforms-mvvm/SKILL.md)
-- [WinForms Rendering](../managing-winforms-rendering/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../managing-winforms-high-dpi-layout/SKILL.md)
+- `managing-winforms-designer-code`
+- `managing-winforms-data-binding`
+- `managing-winforms-mvvm`
+- `managing-winforms-rendering`
+- `managing-winforms-high-dpi-layout`
 
 
 ## Detailed Guidance

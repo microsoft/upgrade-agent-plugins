@@ -2,7 +2,8 @@
 
 **Prerequisite:** Application must target .NET 9.0 or higher.
 
-> **For general WinForms patterns**, see the [main detailed guide](detailed-guide.md). For comprehensive async guidance, see [managing-winforms-async-apis skill](../../managing-winforms-async-apis/SKILL.md).
+> **For general WinForms patterns**, see the [main detailed guide](detailed-guide.md). For comprehensive async guidance, load the skill by exact name:
+> `get_instructions(kind='skill', query='managing-winforms-async-apis')`.
 
 ## Overview
 
@@ -245,5 +246,6 @@ After modernizing async patterns:
 
 ## Additional Resources
 
-- See [managing-winforms-async-apis](../../managing-winforms-async-apis/SKILL.md) for comprehensive async guidance
+- For comprehensive async guidance, load the skill by exact name:
+  `get_instructions(kind='skill', query='managing-winforms-async-apis')`
 - See [main detailed guide](detailed-guide.md) for full WinForms development patterns

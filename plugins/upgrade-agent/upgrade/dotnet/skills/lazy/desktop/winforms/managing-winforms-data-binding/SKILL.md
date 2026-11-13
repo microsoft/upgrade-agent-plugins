@@ -35,11 +35,14 @@ Use this skill when:
 
 ## Related Skills
 
-- [WinForms Development](../building-winforms-applications/SKILL.md)
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms MVVM](../managing-winforms-mvvm/SKILL.md)
-- [WinForms Async APIs](../managing-winforms-async-apis/SKILL.md)
-- [WinForms Custom Controls and UserControls](../creating-winforms-custom-controls/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-designer-code`
+- `managing-winforms-mvvm`
+- `managing-winforms-async-apis`
+- `creating-winforms-custom-controls`
 
 
 ## Detailed Guidance

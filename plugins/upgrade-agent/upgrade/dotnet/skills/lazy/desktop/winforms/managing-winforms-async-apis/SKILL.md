@@ -331,10 +331,13 @@ setting a label color); skip it where the continuation must stay on the UI threa
 
 ## Related Skills
 
-- [WinForms Development](../building-winforms-applications/SKILL.md)
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms Data Binding](../managing-winforms-data-binding/SKILL.md)
-- [WinForms MVVM](../managing-winforms-mvvm/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../managing-winforms-high-dpi-layout/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-designer-code`
+- `managing-winforms-data-binding`
+- `managing-winforms-mvvm`
+- `managing-winforms-high-dpi-layout`
 
 Sample code: <https://github.com/microsoft/winforms-designer-extensibility/tree/main/Samples/NET%209/Async%20in%20NET%209>

@@ -39,11 +39,14 @@ Use this skill when:
 
 ## Related Skills
 
-- [WinForms Development](../building-winforms-applications/SKILL.md)
-- [WinForms Data Binding](../managing-winforms-data-binding/SKILL.md)
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms Async APIs](../managing-winforms-async-apis/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../managing-winforms-high-dpi-layout/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-data-binding`
+- `managing-winforms-designer-code`
+- `managing-winforms-async-apis`
+- `managing-winforms-high-dpi-layout`
 
 
 ## Detailed Guidance

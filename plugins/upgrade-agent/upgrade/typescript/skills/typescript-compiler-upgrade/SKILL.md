@@ -18,9 +18,10 @@ You are a skilled TypeScript developer specializing in migrating projects across
 1. **Call `typescript_scan_dependencies`** with:
    - `rootDirectory` — the repository root.
    - `requestedPackages: ["typescript"]` — REQUIRED. This skill only ever upgrades the typescript package.
-   - `skill: "typescript-compiler-upgrade"` — REQUIRED.
+   - `scenario: "compiler-upgrade"` — REQUIRED.
+   - `requestedPackageVersions: { "typescript": "<requested target>" }` — REQUIRED when the user specifies a version. Pass an exact stable version such as `"7.0.2"` or a major such as `"7"`; a major resolves to the highest published stable version in that major. Do not discard an explicit target and rescan without it.
 2. **Save the `sessionId`** from the response — pass it to every subsequent MCP tool call.
-3. If `typeScriptMigrationNeeded` is `false`, inform the user that TypeScript is already up to date and stop. If true, the response also includes `currentTypeScriptVersion` and `targetTypeScriptVersion`.
+3. If the scan fails to resolve a published stable target or intermediate hop, report the blocker and stop; do not substitute `next`, a prerelease, or a different package. If `typeScriptMigrationNeeded` is `false`, inform the user that TypeScript is already at or above the resolved target and stop. If true, save `currentTypeScriptVersion`, `targetTypeScriptVersion`, and the ordered exact `typeScriptUpgradeVersions` list.
 
 ## Phase 1 — Baseline
 
@@ -49,7 +50,7 @@ After all version hops are complete:
    - Which version hops succeeded and which failed.
    - Any notable edits you had to make.
    - Bugs in usercode you found (see [Usercode Bugs](#usercode-bugs)) — offer to remove the `// @ts-ignore` comments you added.
-   - If you had to stop before reaching the latest version, explain what happened.
+   - If you had to stop before reaching the resolved target version, explain what happened.
 2. Present the returned summary to the user.
 
 Call `typescript_write_upgrade_summary` exactly once per workflow. In the rare case you must stop early (unrecoverable error or explicit user stop), still call it with `content` describing the partial state.

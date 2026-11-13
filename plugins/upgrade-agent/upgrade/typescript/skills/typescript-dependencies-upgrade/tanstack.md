@@ -45,6 +45,7 @@ official migration steps.
 | Table v8 -> v9 | Pinning APIs using `left`/`right`, `columnSizingInfo`, `sortingFn`, underscore-prefixed internals | Apply the documented logical `start`/`end`, resizing, sorting, and public-API replacements. |
 | Router | Direct imports or reads of undocumented/internal router state, `RouterCore`, `RouteMatch`, or `RouterStores` members | Read every changelog entry between the installed and target versions. Router's v1 line has removed exported internals in patch releases; replace them only with the public alternatives named by the changelog. |
 | Router | `tsr.config.*`, `routeTree.gen.ts`, `@tanstack/router-plugin`, `@tanstack/router-cli` | Preserve the configured `routesDirectory` and `generatedRouteTree`; update the plugin/CLI with the adapter and regenerate the route tree after install. Never hand-edit the generated file. |
+| Router | `autoCodeSplitting: true` with an Esbuild-based Router Bundler Plugin setup | Disable automatic code splitting or move to Vite, Rspack/Rsbuild, or Webpack; enabling it with Esbuild is an error. |
 
 Official sources:
 
@@ -68,7 +69,7 @@ Official sources:
    `--force` or legacy-peer-deps to bypass an incompatible React floor.
 4. **Apply the official family migration.**
    - **Query v4 -> v5:** run the documented codemod from the installed package. For TypeScript:
-     `npx --yes jscodeshift@latest ./path/to/src --extensions=ts,tsx --parser=tsx --transform=./node_modules/@tanstack/react-query/build/codemods/src/v5/remove-overloads/remove-overloads.cjs`.
+     `npx --yes jscodeshift@latest ./path/to/src --extensions=ts,tsx --parser=tsx --transform=./node_modules/@tanstack/react-query/build/codemods/v5/remove-overloads/remove-overloads.cjs`.
      Review its output and manually fix every skipped/ambiguous call. Run the project's formatter
      or lint fix afterward because the official guide warns the codemod can change formatting.
    - **Table v7 -> v8:** perform the official package/API rewrite. This is architectural and is not

@@ -23,7 +23,7 @@ away after the task; return only a distilled summary.
 
 - You still do **not** own workflow state. Even though you can see workflow tools, do
   NOT call `start_task`, `complete_task`, `break_down_task`, `initialize_scenario`, or
-  `resume_scenario` — the Orchestrator owns those. You may call read-only `get_state`
+  `resume_scenario` — the Orchestrator owns those. You may call `get_state`
   only to reorient.
 - Do NOT dispatch other agents; you are the last resort.
 - Do the **minimum** needed to unblock, then return control. You are not the default
@@ -37,7 +37,7 @@ scenario/workflow paths, and `scenario-instructions.md`. **Rehydrate from disk.*
 ## What to do
 
 1. Reorient: read the workflow folder, `scenario-instructions.md`, and the failing
-   evidence. `get_state(path)` read-only if you must.
+   evidence. Call `get_state(path)` only if needed.
 2. Take the smallest set of actions (analyze / edit / build) that unblocks the run.
 3. Fix all warnings you touch; never suppress without recorded approval.
 4. **If you changed files, append what happened to the task's `progress-details.md`** — what was
