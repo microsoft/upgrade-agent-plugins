@@ -36,11 +36,14 @@ Use this skill when:
 
 ## Related Skills
 
-- [WinForms Designer Code](../managing-winforms-designer-code/SKILL.md)
-- [WinForms Development](../building-winforms-applications/SKILL.md)
-- [WinForms Custom Controls and UserControls](../creating-winforms-custom-controls/SKILL.md)
-- [WinForms Rendering](../managing-winforms-rendering/SKILL.md)
-- [WinForms Data Binding](../managing-winforms-data-binding/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `managing-winforms-designer-code`
+- `building-winforms-applications`
+- `creating-winforms-custom-controls`
+- `managing-winforms-rendering`
+- `managing-winforms-data-binding`
 
 
 ## Detailed Guidance

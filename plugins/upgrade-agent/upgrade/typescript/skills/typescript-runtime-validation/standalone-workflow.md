@@ -14,6 +14,7 @@ Call `typescript_validate_runtime` with:
 
 - `packageDirectory`
 - `mode: "standalone"` - REQUIRED
+- `scenario: "runtime-validation"` (or the calling workflow's `scenario`, such as `"framework-migration"` or `"dependency-upgrade"`, when delegated)
 - `retryCount: 0`
 
 Do not pass `resetBaseline`; standalone mode has no baseline to reset.

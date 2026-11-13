@@ -18,14 +18,15 @@ Bump them to the **same i18next generation together**; the biggest cause of fail
 
 ## Strategy: single-shot bump, cumulative per-major changes
 
-The tool resolves each package to its explicit requested target when present, otherwise to its **latest** version (currently `i18next` v26, `react-i18next` v17). Go directly to that target in one version bump, then apply the changes for **every major you cross**, in ascending order and cumulatively. Reading and upgrading are separate steps: understand every major's breaking changes first, bump once, then work through each major's fixes.
+The tool resolves each package to its explicit requested target when present, otherwise to its **latest** version. Go directly to that target in one version bump, then apply the changes for **every major you cross**, in ascending order and cumulatively. Reading and upgrading are separate steps: understand every major's breaking changes first, bump once, then work through each major's fixes.
 
 Major-by-major breaking changes (i18next core, from the official migration guide):
 
 - **v22 → v23 — TypeScript type redesign.** Types were rewritten for speed. Requires `strict` (or `strictNullChecks`) in `tsconfig` and **TypeScript 5**. Several exported types were renamed/removed: `TFuncKey` → `ParseKeys`, `StringMap` → `$Dictionary` (no longer exported), `KeysWithSeparator` → `JoinKeys`, `DefaultTFuncReturn`/`DefaultTFuncReturnWithObject` → `DefaultTReturn`, and `NormalizeByTypeOptions` / `NormalizeReturn` removed. `returnNull` now defaults to **`false`**. Official codemods (run via `npx codemod`): `i18next/23/add-namespace-type-annotation`, `i18next/23/replace-keys`, `i18next/23/remove-options`. `setDebug` was removed.
 - **v23 → v24 — runtime/env breaking.** The old i18next **JSON v3 format** was removed — convert resources to **v4** (see Blockers). The `Intl` API is now **mandatory** (no fallback) — add a polyfill on old runtimes. `initImmediate` was **renamed to `initAsync`**. The `jsonFormat` option was removed (`compatibilityJSON` now only accepts `v4`). Only TypeScript 5 is supported; Node < 14 dropped.
 - **v24 → v25 — language resolution.** `changeLanguage` call ordering was fixed and `getBestMatchFromCodes` now falls back to a language code with the same script. This can change which language resolves for a given input — verify fallback behavior after upgrading.
-- **v25 → v26 — legacy format removal.** The monolithic `interpolation.format` function is **removed**; use the Formatter API (`i18next.services.formatter.add()` / `.addCached()`) or a custom Formatter module. `initImmediate` (removed) and `showSupportNotice` (removed). `enableSelector` defaults to `true`.
+- **v25 → v26 — legacy format removal.** The monolithic `interpolation.format` function is **removed**; use the Formatter API (`i18next.services.formatter.add()` / `.addCached()`) or a custom Formatter module. `initImmediate` (removed) and `showSupportNotice` (removed). `enableSelector` remains opt-in, and string keys remain a first-class supported API; the previously announced plans to enable selectors by default in v26 and deprecate string-key types in v27 were dropped.
+- **v26 → v27 — runtime and TypeScript defaults.** Requires **Node.js 22 or later**. `fallbackLng` now defaults to **`false`** instead of `['dev']`; set it explicitly to the app's intended fallback language (`'dev'` restores v26 behavior). `returnEmptyString` changes from **`true` to `false` at runtime and in the types**: empty translations now fall back to another language, the default value, or the key. Projects that treat `''` as a valid translation must set it to `true` in both `CustomTypeOptions` and the init options. `strictInterpolationChecks` now defaults to **`true`**; with typed resources, calls for translations containing `{{variables}}` must supply the inferred options. Set it to `false` to retain the v26 types. With `keySeparator: false`, only flat keys are supported, and `keyPrefix` represents the portions before a `.` that `getFixedT()` joins. See the [official v27 migration guide](https://www.i18next.com/misc/migration-guide#v26.x.x-to-v27.0.0) for the remaining runtime changes and removed APIs.
 
 `react-i18next` moves with the core; its notable recent change is **v17.0.0**, where `transKeepBasicHtmlNodesFor` serialization was corrected — if you rely on **auto-generated** `Trans` keys (no explicit `i18nKey`) that contain indexed tags for kept HTML elements with interpolation children, those extracted translation strings change and the translation files need updating.
 
@@ -57,6 +58,10 @@ Before changing version pins, search the package directory (`grep`/`rg`) for pat
 | `interpolation: { format:` | The legacy format function is removed in v26 → migrate to `i18n.services.formatter.add('name', ...)`. |
 | `compatibilityJSON: 'v3'`, `jsonFormat`, plural keys like `key_plural` / `key_0` / `key_1` | i18next JSON v3 format — removed in v24. Convert resources to v4 (see Blockers). |
 | `returnNull` | Default flipped to `false` in v23. If code relies on `t()` returning `null` for missing keys, set `returnNull: true` explicitly (and in `CustomTypeOptions`). |
+| `fallbackLng` or init options that omit it | In v27 the default changes from `['dev']` to `false`. Configure the intended fallback language explicitly; use `'dev'` to preserve v26 behavior. With `supportedLngs` and no fallback, an unsupported language can leave `language` and `languages` unset. |
+| `returnEmptyString` or translations whose value is `''` | In v27 the default changes from `true` to `false` at runtime and in the types; empty translations now fall back instead of rendering blank. If empty strings are valid translations, set `returnEmptyString: true` in both init options and `CustomTypeOptions`. |
+| `strictInterpolationChecks` or translations containing `{{variables}}` | In v27 `strictInterpolationChecks` defaults to `true`; with typed resources, supply all inferred interpolation options, or set it to `false` to retain v26 type behavior. |
+| `keySeparator: false`, `keyPrefix`, `getFixedT(` | In v27, `keySeparator: false` supports only flat keys; verify that `keyPrefix` contains the dotted prefix portions that `getFixedT()` joins. |
 | `showSupportNotice` | Removed in v26 — delete from init options. |
 | `changeLanguage(` | v25 changed language resolution/`getBestMatchFromCodes`. Verify the resolved language/fallback is still correct. |
 | `Trans` with no `i18nKey` (auto-generated keys) | react-i18next v17 changed `transKeepBasicHtmlNodesFor` serialization for kept HTML with interpolation children — re-check/re-extract affected translation strings. |
@@ -78,7 +83,8 @@ i18next's redesigned types (v23+) are the dominant reason this cluster introduce
   }
   ```
 
-- If the project set `returnObjects: true` or `returnNull` behavior, mirror those in `CustomTypeOptions` so the `t` return type matches runtime.
+- If the project set `returnObjects: true`, `returnNull`, or `returnEmptyString` behavior, mirror those in `CustomTypeOptions` so the `t` return type matches runtime. For v27, enabling empty strings requires `returnEmptyString: true` in both `CustomTypeOptions` and the init options.
+- In v27, `strictInterpolationChecks` defaults to `true`; with typed resources, calls for translations containing interpolation variables must provide the inferred options. Set it to `false` in `CustomTypeOptions` only when retaining the v26 type behavior is intentional.
 - `react-i18next` reuses the same augmentation — no separate `react-i18next.d.ts` is required for key typing once `CustomTypeOptions` is set (react-i18next >= 13 + i18next >= 23).
 
 ## Manual-only changes (no codemod)
@@ -86,9 +92,12 @@ i18next's redesigned types (v23+) are the dominant reason this cluster introduce
 - **`interpolation.format` → Formatter API (v26).** Move each `format` branch to `i18next.services.formatter.add('name', (value, lng, options) => ...)` and reference it as `{{value, name}}` in translations.
 - **`initImmediate` → `initAsync` (v24).**
 - **Language-resolution check (v25).** Re-verify `changeLanguage`/detector fallback picks the intended language after the `getBestMatchFromCodes` behavior change.
+- **Runtime-default checks (v27).** Configure the intended `fallbackLng` explicitly if the app relied on the implicit `['dev']` fallback. Empty translations now fall back instead of rendering blank; if empty strings are valid translations, set `returnEmptyString: true` in both init options and `CustomTypeOptions`. Verify missing-key and empty-translation behavior at runtime.
+- **Type-default checks (v27).** With typed resources, supply options for translations containing `{{variables}}` now that `strictInterpolationChecks` defaults to `true`. When using `keySeparator: false`, keep keys flat and verify `keyPrefix`/`getFixedT()` composition.
 
 ## Blockers
 
+- **Node.js floor (v27+).** Requires Node.js 22 or later. Check the project's development, CI, and deployed Node.js runtimes before bumping to v27; if they cannot meet this floor, report the upgrade as blocked rather than treating a successful local compile as compatibility.
 - **JSON v3 → v4 translation-format migration.** If the project uses `compatibilityJSON: 'v3'` or v3 plural suffixes (`_plural`, `_0`, `_1`, …), the **translation resource files** (not code) must be converted to the v4 ICU-style suffixes (`_one`, `_other`, …). Use the [i18next-v4-format-converter](https://github.com/i18next/i18next-v4-format-converter) tool when the resources use the default `_` plural separator; the converter only handles that separator. This is a data migration that can be substantial and is easy to get subtly wrong — treat it as its own tracked work item and report it; don't hand-edit plural keys blindly.
 - **`Intl` polyfill (v24+).** i18next no longer falls back when `Intl` is missing. On old runtimes/browsers add polyfills for `Intl.PluralRules` and `Intl.getCanonicalLocales` before init.
 - **`next-i18next` present.** `next-i18next` bundles compatible `i18next`/`react-i18next` ranges. Bump `next-i18next` to its own matching major **together** with the cluster; do not advance `i18next`/`react-i18next` past what the installed `next-i18next` supports, or SSR translation loading breaks. If no compatible `next-i18next` exists yet, treat the i18next bump as blocked and report it.
@@ -107,7 +116,7 @@ After the i18next upgrade attempt (success or failure), call `typescript_report_
 - `sessionId`: from the scan response
 - `success`: whether the upgrade landed (compile + install both passed)
 - `fromVersion`: starting `i18next` major as a string (e.g. `"22"`)
-- `toVersion`: target `i18next` major as a string (e.g. `"26"`)
+- `toVersion`: target `i18next` major as a string
 - `strategy`: `"single-shot"`
 - `codemodsRun`: count of codemod recipes run (the `i18next/23/*` transforms); `0` if none could run (manual fixes only)
 - `failureReason`: if failed, e.g. `"json_v4_migration_blocker"`, `"peer_dep_unresolved"`, `"next_i18next_incompatible"`, `"compile_errors_remaining"`

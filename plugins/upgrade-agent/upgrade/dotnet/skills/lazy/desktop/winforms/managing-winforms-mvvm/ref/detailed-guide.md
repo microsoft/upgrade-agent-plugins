@@ -768,7 +768,8 @@ partial void OnSelectedPersonChanged(PersonViewModel? value)
 
 ## Related Skills
 
-For related topics:
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
 - **managing-winforms-data-binding** - Core data binding patterns and BindingSource
 - **building-winforms-applications** - Overall WinForms development patterns
 - **managing-winforms-high-dpi-layout** - High-DPI fluent layout and control arrangement

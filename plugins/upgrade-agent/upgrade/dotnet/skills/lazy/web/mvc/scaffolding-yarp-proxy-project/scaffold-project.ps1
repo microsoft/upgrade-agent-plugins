@@ -973,11 +973,45 @@ dotnet sln $SolutionPath add $NewProjectPath
 if ($LASTEXITCODE -ne 0) { Write-Error "Failed to add '$NewProjectPath' to solution '$SolutionPath'. The project directory '$NewProjectDir' was already created and is left in place; delete it before retrying, or add the project to the solution manually."; return }
 Write-Host "  Added to solution." -ForegroundColor Green
 
-# Find new project GUID and link old project
-$slnContent = Get-Content -LiteralPath $SolutionPath -Raw
-$escapedName = [regex]::Escape($NewProjectName)
-$slnMatch = [regex]::Match($slnContent, "Project\([^)]+\)\s*=\s*`"$escapedName`"\s*,\s*`"[^`"]+`"\s*,\s*`"\{([0-9A-Fa-f-]+)\}`"")
-$newProjectGuid = if ($slnMatch.Success) { $slnMatch.Groups[1].Value } else { $null }
+function Assert-SlnxProjectLinkage {
+    param([string]$Content, [string]$PropertyName, [string]$ExpectedValue, [string]$ProjectPath)
+
+    $projectXml = [System.Xml.XmlDocument]::new()
+    try {
+        $projectXml.LoadXml($Content)
+    } catch {
+        throw "Cannot write $PropertyName to '$ProjectPath': project XML is invalid. $($_.Exception.Message)"
+    }
+    $properties = $projectXml.SelectNodes("/*[local-name()='Project']/*[local-name()='PropertyGroup']/*[local-name()='$PropertyName']")
+    if ($properties.Count -ne 1 -or $properties[0].HasAttributes -or
+        $properties[0].ParentNode.HasAttribute('Condition') -or $properties[0].InnerText.Trim() -ne $ExpectedValue) {
+        throw "Cannot write $PropertyName to '$ProjectPath': expected one matching linkage property in an unconditional project-level PropertyGroup."
+    }
+}
+
+# .slnx stores no GUIDs; persist one in both projects instead of trying to extract it.
+$isSlnx = [System.IO.Path]::GetExtension($SolutionPath) -eq '.slnx'
+if ($isSlnx) {
+    $newProjectGuid = [guid]::NewGuid().ToString().ToUpperInvariant()
+    $newCsproj = [System.IO.File]::ReadAllText($NewProjectPath)
+    $closeTagIndex = $newCsproj.IndexOf('</PropertyGroup>')
+    if ($closeTagIndex -lt 0) {
+        throw "Cannot write ProjectGuid to '$NewProjectPath': no </PropertyGroup> was found."
+    }
+    $nl = if ($newCsproj.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $newCsproj = $newCsproj.Insert($closeTagIndex, "  <ProjectGuid>{$newProjectGuid}</ProjectGuid>$nl  ")
+    Assert-SlnxProjectLinkage -Content $newCsproj -PropertyName 'ProjectGuid' -ExpectedValue "{$newProjectGuid}" -ProjectPath $NewProjectPath
+    try {
+        [System.IO.File]::WriteAllText($NewProjectPath, $newCsproj, [System.Text.UTF8Encoding]::new($false))
+    } catch {
+        throw "Cannot write ProjectGuid to '$NewProjectPath': $($_.Exception.Message)"
+    }
+} else {
+    $slnContent = Get-Content -LiteralPath $SolutionPath -Raw
+    $escapedName = [regex]::Escape($NewProjectName)
+    $slnMatch = [regex]::Match($slnContent, "Project\([^)]+\)\s*=\s*`"$escapedName`"\s*,\s*`"[^`"]+`"\s*,\s*`"\{([0-9A-Fa-f-]+)\}`"")
+    $newProjectGuid = if ($slnMatch.Success) { $slnMatch.Groups[1].Value } else { $null }
+}
 
 if ($newProjectGuid) {
     Write-Host "  New project GUID: $newProjectGuid" -ForegroundColor Cyan
@@ -999,17 +1033,44 @@ if ($newProjectGuid) {
     # script, so both are reachable.
     $ansiEncoding = [System.Text.Encoding]::GetEncoding(0)
     $oldWasAnsi = $false
-    try {
-        $oldCsproj = ([System.Text.UTF8Encoding]::new($false, $true)).GetString($oldBytes, $oldBomOffset, $oldBytes.Length - $oldBomOffset)
-    } catch [System.Text.DecoderFallbackException] {
-        # Decodes the whole array, BOM bytes included, unlike the UTF-8 path above. That is
-        # deliberate: the ANSI encoding emits no preamble, so a BOM skipped here would be dropped by
-        # the write rather than preserved. Round-tripped through ANSI the three bytes are 'i>>?',
-        # which re-encodes to EF BB BF unchanged.
-        $oldCsproj = $ansiEncoding.GetString($oldBytes)
-        $oldWasAnsi = $true
+    $oldEncoding = $null
+    if ($isSlnx -and $oldBytes.Length -ge 2 -and
+        (($oldBytes[0] -eq 0xFF -and $oldBytes[1] -eq 0xFE) -or
+         ($oldBytes[0] -eq 0xFE -and $oldBytes[1] -eq 0xFF))) {
+        $oldEncoding = [System.Text.UnicodeEncoding]::new($oldBytes[0] -eq 0xFE, $true, $true)
+        $oldCsproj = $oldEncoding.GetString($oldBytes, 2, $oldBytes.Length - 2)
+    } else {
+        try {
+            $oldCsproj = ([System.Text.UTF8Encoding]::new($false, $true)).GetString($oldBytes, $oldBomOffset, $oldBytes.Length - $oldBomOffset)
+        } catch [System.Text.DecoderFallbackException] {
+            # Decodes the whole array, BOM bytes included, unlike the UTF-8 path above. That is
+            # deliberate: the ANSI encoding emits no preamble, so a BOM skipped here would be dropped by
+            # the write rather than preserved. Round-tripped through ANSI the three bytes are 'i>>?',
+            # which re-encodes to EF BB BF unchanged.
+            $oldCsproj = $ansiEncoding.GetString($oldBytes)
+            $oldWasAnsi = $true
+        }
+        $oldEncoding = if ($oldWasAnsi) { $ansiEncoding } else { [System.Text.UTF8Encoding]::new($oldHadBom) }
     }
-    if ($oldCsproj -notmatch '_MigrateToProjectGuid') {
+    if ($isSlnx -and $oldCsproj -match '_MigrateToProjectGuid') {
+        $oldXml = [xml]$oldCsproj
+        $linkNodes = $oldXml.SelectNodes("/*[local-name()='Project']/*[local-name()='PropertyGroup']/*[local-name()='_MigrateToProjectGuid']")
+        # Skip commented/CDATA examples so a lexical match must refer to the live property.
+        $linkPattern = [regex]::new('<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|(?<link><_MigrateToProjectGuid>\s*[^<]*</_MigrateToProjectGuid>)')
+        $linkMatches = @($linkPattern.Matches($oldCsproj) | Where-Object { $_.Groups['link'].Success })
+        if ($linkNodes.Count -ne 1 -or $linkMatches.Count -ne 1 -or $linkNodes[0].ParentNode.HasAttribute('Condition')) {
+            throw "Cannot update _MigrateToProjectGuid in '$OldProjectPath': expected one plain linkage property in an unconditional PropertyGroup."
+        }
+        Write-Warning "Replacing the existing _MigrateToProjectGuid in '$OldProjectPath' to link '$NewProjectPath'."
+        $linkMatch = $linkMatches[0]
+        $oldCsproj = $oldCsproj.Remove($linkMatch.Index, $linkMatch.Length).Insert($linkMatch.Index, "<_MigrateToProjectGuid>$newProjectGuid</_MigrateToProjectGuid>")
+        Assert-SlnxProjectLinkage -Content $oldCsproj -PropertyName '_MigrateToProjectGuid' -ExpectedValue $newProjectGuid -ProjectPath $OldProjectPath
+        try {
+            [System.IO.File]::WriteAllText($OldProjectPath, $oldCsproj, $oldEncoding)
+        } catch {
+            throw "Cannot write _MigrateToProjectGuid to '$OldProjectPath': $($_.Exception.Message)"
+        }
+    } elseif ($oldCsproj -notmatch '_MigrateToProjectGuid') {
         # Insert into the FIRST (unconditional) PropertyGroup only. The previous `-replace` rewrote
         # EVERY match, and a classic Framework csproj carries one PropertyGroup per configuration, so
         # three duplicate copies landed in a project file the customer owns. String .Insert() is used
@@ -1037,23 +1098,24 @@ if ($newProjectGuid) {
             # Write back in the encoding the file already used. Unconditionally emitting UTF-8-no-BOM
             # would rewrite every byte of a BOM'd or ANSI project file, turning a one-property edit
             # into a whole-file change in the customer's next diff.
-            $oldEncoding = if ($oldWasAnsi) { $ansiEncoding } else { [System.Text.UTF8Encoding]::new($oldHadBom) }
-            [System.IO.File]::WriteAllText($OldProjectPath, $oldCsproj, $oldEncoding)
+            if ($isSlnx) {
+                Assert-SlnxProjectLinkage -Content $oldCsproj -PropertyName '_MigrateToProjectGuid' -ExpectedValue $newProjectGuid -ProjectPath $OldProjectPath
+            }
+            try {
+                [System.IO.File]::WriteAllText($OldProjectPath, $oldCsproj, $oldEncoding)
+            } catch {
+                throw "Cannot write _MigrateToProjectGuid to '$OldProjectPath': $($_.Exception.Message)"
+            }
             Write-Host "  Linked old project via _MigrateToProjectGuid." -ForegroundColor Green
         } else {
+            if ($isSlnx) {
+                throw "Cannot write _MigrateToProjectGuid to '$OldProjectPath': no </PropertyGroup> was found."
+            }
             Write-Warning "Could not find a </PropertyGroup> in '$OldProjectPath' to add _MigrateToProjectGuid to. Add <_MigrateToProjectGuid>$newProjectGuid</_MigrateToProjectGuid> manually."
         }
     }
 } else {
-    # .slnx does not record project GUIDs at all -- the format deliberately drops them -- so the
-    # match above can never succeed there. Saying "add it manually" without naming a GUID is not
-    # actionable, so distinguish the two causes and give the caller something to act on.
-    if ([System.IO.Path]::GetExtension($SolutionPath) -eq '.slnx') {
-        $generatedGuid = [guid]::NewGuid().ToString().ToUpperInvariant()
-        Write-Warning "'$SolutionPath' is a .slnx solution, which does not store project GUIDs, so the old project could not be linked automatically. Add <_MigrateToProjectGuid>$generatedGuid</_MigrateToProjectGuid> to a PropertyGroup in '$OldProjectPath', and add <ProjectGuid>{$generatedGuid}</ProjectGuid> to '$NewProjectPath' so the two agree."
-    } else {
-        Write-Warning "Could not find a GUID for '$NewProjectName' in '$SolutionPath', so the old project was not linked. Add <_MigrateToProjectGuid> to '$OldProjectPath' manually, using the GUID the solution records for the new project."
-    }
+    Write-Warning "Could not find a GUID for '$NewProjectName' in '$SolutionPath', so the old project was not linked. Add <_MigrateToProjectGuid> to '$OldProjectPath' manually, using the GUID the solution records for the new project."
 }
 
 $buildFailed = $false

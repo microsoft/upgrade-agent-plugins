@@ -1,12 +1,26 @@
 {
   "version": 1,
   "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "matcher": "bash|Bash|powershell|PowerShell|run_in_terminal|execute|shell",
+        "bash": "UPGRADE_HOOK_INPUT=$(cat); case \"$UPGRADE_HOOK_INPUT\" in *[bB][uU][iI][lL][dD]*|*'\\u'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]*) if [ -n \"${PLUGIN_ROOT:-}\" ] && [ -f \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" ]; then if [ -n \"${BASH_VERSION:-}\" ]; then . \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" pre \"$UPGRADE_HOOK_INPUT\"; else exec bash \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" pre <<UPGRADE_HOOK_EOF\n$UPGRADE_HOOK_INPUT\nUPGRADE_HOOK_EOF\nfi; else echo '{\"continue\":true}'; fi ;; *) echo '{\"continue\":true}' ;; esac",
+        "powershell": "Set-Variable -Name UpgradeHookReader -Value ([IO.StreamReader]::new([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)); try { Set-Variable -Name UpgradeHookInput -Value ((Get-Variable UpgradeHookReader -ValueOnly).ReadToEnd()) } finally { (Get-Variable UpgradeHookReader -ValueOnly).Dispose() }; if (((Get-Variable UpgradeHookInput -ValueOnly) -match 'build|\\\\u[0-9a-f]{4}') -and ([Environment]::GetEnvironmentVariable('PLUGIN_ROOT')) -and [IO.File]::Exists([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-build-telemetry.ps1'))) { & ([ScriptBlock]::Create([IO.File]::ReadAllText([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-build-telemetry.ps1')))) -Phase pre -HookInputJson (Get-Variable UpgradeHookInput -ValueOnly) } else { Write-Output ('{'+[char]34+'continue'+[char]34+':true}') }"
+      }
+    ],
     "PostToolUse": [
       {
         "type": "command",
+        "matcher": "bash|Bash|powershell|PowerShell|run_in_terminal|execute|shell",
+        "bash": "UPGRADE_HOOK_INPUT=$(cat); case \"$UPGRADE_HOOK_INPUT\" in *[bB][uU][iI][lL][dD]*|*'\\u'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]*) if [ -n \"${PLUGIN_ROOT:-}\" ] && [ -f \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" ]; then if [ -n \"${BASH_VERSION:-}\" ]; then . \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" post \"$UPGRADE_HOOK_INPUT\"; else exec bash \"${PLUGIN_ROOT}/hooks/scripts/track-build-telemetry.sh\" post <<UPGRADE_HOOK_EOF\n$UPGRADE_HOOK_INPUT\nUPGRADE_HOOK_EOF\nfi; else echo '{\"continue\":true}'; fi ;; *) echo '{\"continue\":true}' ;; esac",
+        "powershell": "Set-Variable -Name UpgradeHookReader -Value ([IO.StreamReader]::new([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)); try { Set-Variable -Name UpgradeHookInput -Value ((Get-Variable UpgradeHookReader -ValueOnly).ReadToEnd()) } finally { (Get-Variable UpgradeHookReader -ValueOnly).Dispose() }; if (((Get-Variable UpgradeHookInput -ValueOnly) -match 'build|\\\\u[0-9a-f]{4}') -and ([Environment]::GetEnvironmentVariable('PLUGIN_ROOT')) -and [IO.File]::Exists([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-build-telemetry.ps1'))) { & ([ScriptBlock]::Create([IO.File]::ReadAllText([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-build-telemetry.ps1')))) -Phase post -HookInputJson (Get-Variable UpgradeHookInput -ValueOnly) } else { Write-Output ('{'+[char]34+'continue'+[char]34+':true}') }"
+      },
+      {
+        "type": "command",
         "matcher": "read_file|view|Read",
-        "bash": "if [ -n \"${PLUGIN_ROOT:-}\" ] && [ -f \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\" ]; then bash \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\"; else echo '{\"continue\":true}'; fi",
-        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"if(([Environment]::GetEnvironmentVariable('PLUGIN_ROOT')) -and [IO.File]::Exists([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1'))){& ([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1'))}else{Write-Output ('{'+[char]34+'continue'+[char]34+':true}')}\""
+        "bash": "UPGRADE_HOOK_INPUT=$(cat); case \"$UPGRADE_HOOK_INPUT\" in *[sS][kK][iI][lL][lL].[mM][dD]*|*'\\u'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]*) if [ -n \"${PLUGIN_ROOT:-}\" ] && [ -f \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\" ]; then if [ -n \"${BASH_VERSION:-}\" ]; then . \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\" \"$UPGRADE_HOOK_INPUT\"; else exec bash \"${PLUGIN_ROOT}/hooks/scripts/track-telemetry.sh\" <<UPGRADE_HOOK_EOF\n$UPGRADE_HOOK_INPUT\nUPGRADE_HOOK_EOF\nfi; else echo '{\"continue\":true}'; fi ;; *) echo '{\"continue\":true}' ;; esac",
+        "powershell": "Set-Variable -Name UpgradeHookReader -Value ([IO.StreamReader]::new([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)); try { Set-Variable -Name UpgradeHookInput -Value ((Get-Variable UpgradeHookReader -ValueOnly).ReadToEnd()) } finally { (Get-Variable UpgradeHookReader -ValueOnly).Dispose() }; if (([Regex]::IsMatch((Get-Variable UpgradeHookInput -ValueOnly),'sk[i\\u0130\\u0131]ll[.]md|\\\\u[0-9a-f]{4}','IgnoreCase,CultureInvariant')) -and ([Environment]::GetEnvironmentVariable('PLUGIN_ROOT')) -and [IO.File]::Exists([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1'))) { & ([ScriptBlock]::Create([IO.File]::ReadAllText([IO.Path]::Combine([Environment]::GetEnvironmentVariable('PLUGIN_ROOT'),'hooks','scripts','track-telemetry.ps1')))) -HookInputJson (Get-Variable UpgradeHookInput -ValueOnly) } else { Write-Output ('{'+[char]34+'continue'+[char]34+':true}') }"
       }
     ]
   }

@@ -36,11 +36,15 @@ Use this skill when:
 
 
 ## Related Skills
-- [building-winforms-applications](../building-winforms-applications/SKILL.md)
-- [managing-winforms-data-binding](../managing-winforms-data-binding/SKILL.md)
-- [managing-winforms-mvvm](../managing-winforms-mvvm/SKILL.md)
-- [managing-winforms-high-dpi-layout](../managing-winforms-high-dpi-layout/SKILL.md)
-- [creating-winforms-custom-controls](../creating-winforms-custom-controls/SKILL.md)
+
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-data-binding`
+- `managing-winforms-mvvm`
+- `managing-winforms-high-dpi-layout`
+- `creating-winforms-custom-controls`
 
 
 ## Detailed Guidance

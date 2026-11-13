@@ -1,3 +1,6 @@
+# The plugin wrapper executes this file as a script block; do not rely on $PSScriptRoot.
+param([string]$HookInputJson)
+
 # Return success and exit
 function Write-Success {
     [Console]::Out.WriteLine('{"continue":true}')
@@ -6,17 +9,14 @@ function Write-Success {
 
 # Read entire stdin at once - hooks send one complete JSON per invocation
 try {
-    $inputJson = [Console]::In.ReadToEnd()
+    $inputJson = if ($PSBoundParameters.ContainsKey('HookInputJson')) {
+        $HookInputJson
+    } else {
+        [Console]::In.ReadToEnd()
+    }
 } catch {
     Write-Success
 }
-
-# Setup log directory
-$tempRoot = if ($env:TEMP) { $env:TEMP } else { [System.IO.Path]::GetTempPath() }
-$logDir = Join-Path $tempRoot "UA"
-$logDir = Join-Path $logDir "upgrades"
-$logDir = Join-Path $logDir "skills-loaded"
-New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
 if ($inputJson) {
     try {
@@ -42,6 +42,13 @@ if ($inputJson) {
             #    (both hosts stage extenders under the same `upgrade`
             #    prefix, so one alternative covers the VSIX and the CLI plugin)
             if ($filePathNormalized -match '(?:/extensions/ms-dotnettools\.upgrade-agent-[^/]+/skills/|/upgrade/(?:[^/]+/)?skills/)(?:[^/]+/)*[^/]+/SKILL\.md$') {
+                # Setup log directory
+                $tempRoot = if ($env:TEMP) { $env:TEMP } else { [System.IO.Path]::GetTempPath() }
+                $logDir = Join-Path $tempRoot "UA"
+                $logDir = Join-Path $logDir "upgrades"
+                $logDir = Join-Path $logDir "skills-loaded"
+                New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
                 # Extract skill name from the parent directory of SKILL.md
                 $skillName = Split-Path -Leaf (Split-Path -Parent $filePathNormalized)
                 

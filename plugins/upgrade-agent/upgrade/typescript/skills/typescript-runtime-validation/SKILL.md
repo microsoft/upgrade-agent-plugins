@@ -9,8 +9,9 @@ Here, **runtime validation means the complete project-specific validation plan**
 
 ## Choose the workflow
 
-- **Called from `typescript-dependencies-upgrade` or `typescript-compiler-upgrade`:** read [upgrade-workflow.md](./upgrade-workflow.md). Use `mode: "upgrade"` and preserve the caller's `rootDirectory`, `packageDirectory`, and `sessionId`.
-- **Invoked directly by the user:** read [standalone-workflow.md](./standalone-workflow.md). Use `mode: "standalone"` so the health check cannot create, consume, reset, or satisfy an upgrade baseline.
+- **Called from `typescript-dependencies-upgrade` or `typescript-compiler-upgrade`:** read [upgrade-workflow.md](./upgrade-workflow.md). Use `mode: "upgrade"` and preserve the caller's `rootDirectory`, `packageDirectory`, `sessionId`, and `scenario` (`"dependency-upgrade"` or `"compiler-upgrade"`).
+- **Called from `jsts-framework-migration`:** use `mode: "standalone"` when the migration changes the eval plan across cutover (or `mode: "upgrade"` when the plan is identical), and pass `scenario: "framework-migration"` with the caller's `sessionId`.
+- **Invoked directly by the user:** read [standalone-workflow.md](./standalone-workflow.md). Use `mode: "standalone"` and pass `scenario: "runtime-validation"` so the health check cannot create, consume, reset, or satisfy an upgrade baseline.
 
 Never use standalone mode during an upgrade, and never fabricate an upgrade workflow for a direct health check.
 

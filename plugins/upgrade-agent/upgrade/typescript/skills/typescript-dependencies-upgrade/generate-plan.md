@@ -7,7 +7,7 @@ Call `typescript_scan_dependencies` with:
 - `requestedPackages` — REQUIRED npm dependency scope. Pass the explicit npm package names the user requested (e.g., `["react", "axios"]`), or `[]` when the user asked to upgrade all outdated dependencies. Omit only if intent is genuinely unknown.
 - `requestedPackageVersions` — optional exact stable versions keyed by package name (e.g., `{"react":"18.3.1"}`). Every key must also appear in `requestedPackages`. **Only** set a key when the user explicitly named that exact version for that package. Do **not** infer a version, and do **not** pass the latest version as a target — omit a package to upgrade it to latest (the default). When the user simply says "upgrade react" (no version), pass `requestedPackages` only and omit `requestedPackageVersions`.
 - `packageDirectory` — optional package-project/workspace scope, independent of `requestedPackages`. Omit it to discover packages repository-wide. Set it only when the user explicitly names a workspace/path, or after repository discovery deliberately narrows the workflow to one package project. Supplying it targets exactly that project; `packageDirectory` equal to `rootDirectory` means the root package only.
-- `skill` — REQUIRED. Pass `"typescript-dependencies-upgrade"`.
+- `scenario` — REQUIRED. Pass `"dependency-upgrade"`.
 
 **A named npm dependency does not imply a package-project scope.** For a repository-level request such as “upgrade React in this repository,” the initial scan MUST pass `requestedPackages: ["react"]` and omit `packageDirectory`, so React can be discovered in any root or nested package. Do not copy `rootDirectory` into `packageDirectory` by default.
 

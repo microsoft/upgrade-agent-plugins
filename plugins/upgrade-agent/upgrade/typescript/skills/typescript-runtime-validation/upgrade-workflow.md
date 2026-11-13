@@ -57,7 +57,7 @@ The response includes baseline and post-upgrade output samples side by side.
 
 ## Plan-hash mismatch
 
-If the plan on disk has been edited between baseline and post-upgrade, the tool aborts and tells you to pass `resetBaseline: true` to start over. Do not edit the plan mid-upgrade.
+The plan hash covers execution fields (including runtime, setup, dev server, and assertions) but ignores generated metadata and environment-variable insertion order. If the plan on disk has been edited between baseline and post-upgrade, the tool aborts and tells you to pass `resetBaseline: true` to start over. A baseline created by a version using the old JSON hash also requires a fresh baseline. Restore the pre-upgrade project state before resetting; never replace a pre-upgrade baseline with one recorded after upgrading. Do not edit the plan mid-upgrade.
 
 ## Retry loop
 

@@ -4,6 +4,26 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.816] - 2026-11-12
+
+### Changed
+
+- **Skills**: Updated WinForms guidance, test-baseline integration, and .NET version-upgrade follow-up recommendations.
+- Reduced the overhead of skill-read and build telemetry hooks, and improved how observed build outcomes are recorded.
+- Updated the bundled TypeScript extender to 0.1.18.
+
+### Fixed
+
+- Scenario discovery now reports when it cannot determine a match rather than incorrectly reporting no applicable scenarios.
+- Package and ARM64 assessment queries now retain project and dependency data when the repository has no solution file.
+- Removing subtasks during task breakdown no longer leaves stale task states.
+- Cached skills retain their extender requirements.
+- YARP proxy scaffolding now links both projects correctly in `.slnx` solutions.
+
+### Security
+
+- MCP tools that can execute code or change project state are no longer marked read-only, allowing clients to apply appropriate permission checks.
+
 ## [1.1.784] - 2026-11-05
 
 ### Fixed

@@ -334,11 +334,14 @@ private void BtnOK_Click(object? sender, EventArgs e)
 
 ## Related Skills
 
-- [WinForms Development](../../building-winforms-applications/SKILL.md)
-- [WinForms High-DPI Fluent Layout](../../managing-winforms-high-dpi-layout/SKILL.md)
-- [WinForms Data Binding](../../managing-winforms-data-binding/SKILL.md)
-- [WinForms Rendering](../../managing-winforms-rendering/SKILL.md)
-- [WinForms Custom Controls and UserControls](../../creating-winforms-custom-controls/SKILL.md)
+When one applies, load it by exact name with
+`get_instructions(kind='skill', query='<name>')`:
+
+- `building-winforms-applications`
+- `managing-winforms-high-dpi-layout`
+- `managing-winforms-data-binding`
+- `managing-winforms-rendering`
+- `creating-winforms-custom-controls`
 
 ### Visual Basic - Handles Clause Preferred
 

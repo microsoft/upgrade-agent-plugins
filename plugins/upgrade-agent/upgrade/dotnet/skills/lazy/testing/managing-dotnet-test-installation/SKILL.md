@@ -2,7 +2,7 @@
 name: managing-dotnet-test-installation
 description: >
   Installs the external dotnet-test plugin when its test-generation agent is unavailable. Use when a
-  user selects AI test generation during an upgrade but code-testing-generator is not loaded.
+  user selects AI test generation during an upgrade but test-engineer is not loaded.
 metadata:
   traits: (CopilotCli|VsCode|GitHubCopilotApp) & (.NET|CSharp|VisualBasic|DotNetCore)
   discovery: lazy
@@ -38,11 +38,11 @@ When VS Code shows the plugins available from that source, ask the user to selec
 
 Alternatively, add `dotnet/skills` to `chat.plugins.marketplaces`, then ask the user to install
 `dotnet-test` from the `@agentPlugins` Extensions view. After installation, ask the user to continue
-the current upgrade. Re-check that `code-testing-generator` is available, then resume planning.
+the current upgrade. Re-check that `test-engineer` is available, then resume planning.
 {{/if}}
 
 {{#if GitHubCopilotApp}}
 Ask the user to open **Settings → Plugins** or use the **Extensions** menu in the GitHub Copilot App,
 find the `dotnet-test` plugin from `dotnet/skills`, and install it. Then ask the user to continue the
-current upgrade. Re-check that `code-testing-generator` is available before resuming planning.
+current upgrade. Re-check that `test-engineer` is available before resuming planning.
 {{/if}}
