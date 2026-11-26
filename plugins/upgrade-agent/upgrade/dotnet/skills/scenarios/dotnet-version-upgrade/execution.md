@@ -194,6 +194,25 @@ so they can be reliably discovered later via grep.
 Place the marker as the **first line** of each stub file. If adding stub types
 inline within an existing file, place the marker directly above the stub class/method.
 
+### What is not a stub
+
+A stub is a placeholder this upgrade writes. Code the source app already contains is existing
+behavior, even when it is named or described as a mock, fake, in-memory, sample-data or demo
+implementation. When existing configuration selects it (for example a `UseMockData` flag choosing
+between a real and an in-memory service), migrate the selector with it: the config key, the value
+it selects in each environment, and every branch. Removing a branch, hard-wiring the real
+implementation, or changing the value the key selects is a behavior change that
+needs a recorded user decision explicitly allowing that branch removal or selection change in
+`scenario-instructions.md`. An agent-written plan, research note or review assertion is not user
+authorization. A "no stubs", "use real data access", "keep EF6" or "preserve working functionality"
+constraint does not authorize it. Without that decision, preserve the source selection even when
+the plan calls for the real implementation.
+
+For a migrated selector, check the resolved implementation and representative behavior for the
+source default, each branch, and environment overrides. An unavailable real database blocks only
+that branch's runtime check; it does not waive an existing database-free mode. Record checks
+actually run; a build or HTTP success code alone does not establish preservation.
+
 ### Example
 
 ```csharp

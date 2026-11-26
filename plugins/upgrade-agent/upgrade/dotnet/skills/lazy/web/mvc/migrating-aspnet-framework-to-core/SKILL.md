@@ -241,6 +241,17 @@ Connection strings are config, auth settings are not.
   `managing-shared-database-schema`
 - Add `IHttpContextAccessor` registration if `HttpContext.Current` usage was found during baseline capture
 - Register session services if session usage was found (`builder.Services.AddSession()`)
+- Keep config-selected registrations as a selector plus every branch. A legacy registration chosen
+  by a config key — a real service versus a mock, in-memory, sample-data or demo one — is existing
+  behavior and is not a stub: read the same key through `IConfiguration` and register every
+  branch. Keep the key's original source and default (a base file, an environment override or a
+  deployment transform, carried to the matching `appsettings.json` or
+  `appsettings.{Environment}.json`, since ASP.NET Core never applies `Web.config` transforms) so
+  the migrated host selects the same branch the legacy host did in each
+  environment; do not promote an environment-only value into base settings. Hard-wiring one branch,
+  carrying the key but no longer reading it, or changing the value it selects, changes behavior and
+  needs a decision recorded in `scenario-instructions.md`; a "no stubs" or "preserve working
+  functionality" constraint does not authorize it. Without a recorded decision, keep both.
 - Do not implement services that still have `System.Web` dependencies — stub them with
   `NotImplementedException` and a TODO comment, resolve during controller migration
 

@@ -133,7 +133,7 @@ aspire --version
 dotnet tool update -g aspire.cli
 ```
 
-Always run when CLI is present — idempotent. Ensures aspireify-required features (`--non-interactive`, `aspire init`, `aspire docs search`, `aspire list integrations`) are available.
+Always run when CLI is present — idempotent. Ensures aspireify-required features (`--non-interactive`, `aspire init`, `aspire docs search`, `aspire add`) are available.
 
 If the command fails and cannot be retried automatically, **pause and ask the user to run it manually**:
 > Please run this in your terminal:
@@ -155,6 +155,8 @@ Search the repository for existing skill files:
   ```bash
   aspire agent init --non-interactive --nologo --skills aspire,aspireify --skill-locations github
   ```
+  Never pass `all` to `--skills` or `--skill-locations`: `--skills all` also installs `playwright-cli` via npm (can fail the run) and writes `.vscode/mcp.json` and user-global `~/.copilot/mcp-config.json`; `--skill-locations all` writes user-global `~/.agents/skills`.
+
   If the command succeeds, verify both files now exist at `.github/skills/aspire/SKILL.md` and `.github/skills/aspireify/SKILL.md`. Then read both to load the Aspire-specific context before continuing.
 
   If the command fails and cannot be retried automatically, **pause and ask the user to run it manually**:
@@ -281,9 +283,9 @@ Mark each task done in `plan.md` as you complete it.
 ## Phase 6: Completion
 
 1. Confirm all tasks in `plan.md` are marked done
-2. Re-run `aspire describe` if the AppHost was stopped — get current resource status
+2. Run `aspire describe` for current resource status; if the AppHost was stopped, run `aspire start` first
 3. Surface to the user:
-   - **Dashboard URL** (with full login token — from aspireify's completion summary; if missing, run `aspire start` and read the URL from its output — that is the canonical source)
+   - **Dashboard URL** (with full login token — from the latest `aspire start` output, or aspireify's completion summary if the AppHost was not restarted; a restart can change the token. If missing, run `aspire start` and read the URL from its output — that is the canonical source)
    - **Resource list** — name, type, status (Healthy / Skipped / Deferred)
    - **Skipped incompatible projects** — each with actionable next step (link to .NET Version Upgrade)
    - **Deferred items** from aspireify (e.g., OTel not wired for a service) — each with actionable next step

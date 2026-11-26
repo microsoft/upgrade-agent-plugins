@@ -28,7 +28,7 @@ Produce two outputs that feed into Phase 3 (user config) and the aspireify deleg
 1. **TFM-compatible project list** — which projects aspireify should include
 2. **Inter-service communication graph** — which services talk to which, so aspireify can wire `WithReference()` and `WaitFor()` correctly
 
-Infrastructure detection (databases, caches, messaging, etc.) is **owned entirely by aspireify** via live `aspire docs search` and `aspire list integrations`. Do not duplicate that work here.
+Infrastructure detection (databases, caches, messaging, etc.) is **owned entirely by aspireify** via live `aspire docs search` (and `aspire add <integration>`). Do not duplicate that work here.
 
 ## Entry Criteria
 

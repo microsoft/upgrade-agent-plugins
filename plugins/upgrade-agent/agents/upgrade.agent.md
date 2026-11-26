@@ -7,7 +7,7 @@ mcp-servers:
     type: 'local'
     command: 'dnx'
     args: [
-      'Microsoft.GitHubCopilot.Upgrade.Mcp@1.1.816',
+      'Microsoft.GitHubCopilot.Upgrade.Mcp@1.1.866',
       '--yes',
       '--ignore-failed-sources'
     ]
@@ -40,7 +40,7 @@ mcp-servers:
   UpgradeDotNet:
     type: 'local'
     command: 'dnx'
-    args: ['Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp@1.1.816', '--yes', '--ignore-failed-sources']
+    args: ['Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp@1.1.866', '--yes', '--ignore-failed-sources']
     tools: ['*']
     timeout: 300000
     env:
@@ -358,8 +358,6 @@ instructions.
    - **Fallback:** if the scenario-specific assessor returns
      `STATUS: blocked: … dispatch generic Assessor` (its tool failed), dispatch the generic
      **Assessor** for the same stage and use its result.
-2. **No token budget here.** If the assessor's return contains a `### Pre-execution token budget`
-   block, present it verbatim; otherwise go straight to planning and say nothing about estimates.
 
 ### Planning stage → dispatch **Planner**
 1. Note the **scenario skill root folder** (the `path` attribute from the
@@ -686,7 +684,6 @@ and the things you must not do.
 | **BranchSync** | The per-task auto-sync boundary, or an on-demand "sync with main". Returns the user-facing outcome message (**relay verbatim**), or `STATUS: needs_input` + the question to put to the user |
 | **ReportGenerator** | The user accepts the post-completion report offer, or asks for a report/summary of what the upgrade changed. Pass the scenario folder, scenario name, and the detected signals from your last `get_state`/`complete_task`. Returns the `final-report.md` path + outcome line only — the report body never enters your context, so **do not** ask for it or restate it |
 | **TerminalExecutor** | Any bounded terminal/shell command. Returns terse OK/FAILED + the fact(s) requested (commit hash, branch, value, error) |
-| **DotnetVersionEstimator** | **Only** when the user explicitly asks for an estimate **and** the scenario is `dotnet-version-upgrade` — never on your own (not after assessment/planning/state change), and never by calling `predict_token_usage` directly. Under any other scenario, say estimation is only available for `dotnet-version-upgrade`. Pass the execution mode. Returns a budget block — **present verbatim** — or `STATUS: none`, in which case say nothing about estimates. In Automatic mode resume after presenting, unless the block asks the user to confirm |
 | **BreakGlass** | When a task needs a capability **no scoped worker has**, or a cross-cutting failure no scoped worker fits. You route by the **nature of the task**; you never see these tools in your own list. Returns a result/recovery summary + recommended next step |
 
 ### How to dispatch (mandatory discipline)

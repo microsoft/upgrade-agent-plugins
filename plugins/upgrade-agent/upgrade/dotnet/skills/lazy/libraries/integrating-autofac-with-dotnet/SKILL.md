@@ -69,6 +69,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
 
 Omit any calls to `builder.Build()` or resolver setup — the host handles container building automatically.
 
+Read any configuration flag that existing modules or conditional registrations take (such as `useMockData` in `new ApplicationModule(useMockData)`) from `builder.Configuration`, keeping its original default and every registered branch unless `scenario-instructions.md` records a user decision to change them.
+
 ### Step 6: Remove obsolete integration code
 
 Delete ASP.NET Framework-specific Autofac wiring such as:

@@ -40,7 +40,6 @@ upgrade-agent/
 │   ├── build-validator.agent.md
 │   ├── dotnet-investigator.agent.md
 │   ├── dotnet-version-assessor.agent.md
-│   ├── dotnet-version-estimator.agent.md
 │   ├── dotnet-version-scenario-initializer.agent.md
 │   ├── error-fixer.agent.md
 │   ├── integrity-reviewer.agent.md
