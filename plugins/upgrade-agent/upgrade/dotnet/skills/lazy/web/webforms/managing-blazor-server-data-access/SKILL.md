@@ -255,6 +255,8 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 ```
 
+If the Web Forms app chooses between a database-backed service and an existing in-memory, mock or offline one through a `Web.config` `appSettings` key, read that key from `builder.Configuration` with its original source, default and per-environment values, and register every branch unless `scenario-instructions.md` records a user decision to drop one.
+
 ---
 
 ## Step 3: Convert State Management Patterns

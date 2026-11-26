@@ -67,6 +67,8 @@ Document all service registrations from the existing container configuration. Ma
 
 Per-thread lifetime maps to Scoped because ASP.NET Core processes each request on a single thread from the thread pool, making the semantics equivalent for web scenarios.
 
+Include conditional registrations in the inventory. A registration inside an `if` on a config value (for example `ConfigurationManager.AppSettings["UseMockData"]` choosing a real service or an in-memory one) is a selector plus every branch. Record the key, its value in each environment, and each branch, and migrate all of them: read the key from `IConfiguration`, keep its original source and default, and register every branch. Dropping a branch, or changing the value the key selects, needs a decision recorded in `scenario-instructions.md`.
+
 ### Step 3: Register Services in Program.cs
 
 Move all service registrations to `builder.Services` in `Program.cs`. Create an extension method to keep `Program.cs` clean when there are many registrations:

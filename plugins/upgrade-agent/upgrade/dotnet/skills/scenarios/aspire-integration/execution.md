@@ -60,7 +60,7 @@ Because this skill was dropped onto disk **after this session started**, the age
 3. **Read referenced files on demand**: aspireify references supporting files under `.github/skills/aspireify/references/`. Open each one when aspireify's workflow tells you to.
 4. **Pass the context block below**: Before executing any aspireify step, paste the context block in the next section as your initial framing prompt — this seeds aspireify's decisions and lets it skip git/discovery checks UA already did.
 
-If the file is not present at that path, Phase 0.3c failed silently — re-run `aspire agent init --non-interactive --nologo --skills aspire,aspireify --skill-locations github` and retry.
+If the file is not present at that path, Phase 0.3c failed silently — re-run `aspire agent init --non-interactive --nologo --skills aspire,aspireify --skill-locations github` and retry. Never pass `all` to `--skills` or `--skill-locations` (see SKILL.md Phase 0.3c).
 
 ### Delegation Context
 
@@ -211,6 +211,8 @@ var api = builder.AddProject<Projects.MyApi>("api")
 
 ### Step 4: Build AppHost
 
+If the AppHost is still running (aspireify leaves it running), run `aspire stop` first so the build is not blocked by locked files.
+
 ```bash
 dotnet build {AppHost.csproj}
 ```
@@ -228,8 +230,9 @@ Build passing is not sufficient — publisher packages and `Publish*` configurat
 aspire start
 aspire wait {first-resource-name}
 aspire describe
-aspire stop
 ```
+
+Leave the AppHost running. If it was stopped, run `aspire start` again and take the dashboard URL, including its `?t=` login token, from that output before printing the completion summary.
 
 **What to check in `aspire describe` output:**
 - All expected resources appear (projects + infrastructure)
@@ -239,7 +242,7 @@ aspire stop
 **If startup fails:**
 - `aspire logs {resource-name}` to get failure details
 - Common causes: publisher package version mismatch with AppHost SDK, `Publish*` call on an unsupported resource type
-- Fix the issue and repeat Steps 4–5
+- Run `aspire stop`, fix the issue and repeat Steps 4–5
 
 ---
 
@@ -252,7 +255,7 @@ After all tasks are marked done, surface the following.
 ```
 ✅ Aspire integration complete!
 
-Dashboard: {full dashboard URL with login token — from aspireify summary}
+Dashboard: {full dashboard URL with login token — from the latest `aspire start` output, or aspireify's summary if the AppHost was not restarted}
 
 Resources:
   {name}  {type}  {status}

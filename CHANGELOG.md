@@ -4,6 +4,26 @@ All notable changes to the upgrade-agent plugin are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.866] - 2026-11-26
+
+### Added
+
+- The orchestrator MCP server now ships as platform-specific packages that bundle the Copilot CLI it uses for internal model calls, so it no longer depends on a separately installed CLI.
+
+### Changed
+
+- **Skills**: Reworked the Aspire scenarios to use the Aspire CLI and current documentation, and updated .NET upgrade guidance to preserve configuration-selected implementations (for example, dependency injection and data-access choices) when migrating a legacy host.
+- In VS Code, the upgrade dashboard now opens in the integrated browser.
+
+### Removed
+
+- Removed the pre-execution token usage estimation feature, including the `predict_token_usage` tool and the `dotnet-version-estimator` agent.
+
+### Fixed
+
+- .NET assessment now restores NuGet packages for `packages.config` projects before analysis, so it no longer reports 0 APIs when packages are missing.
+- The dashboard no longer shows Assess and Plan as complete before those stages actually finish.
+
 ## [1.1.816] - 2026-11-12
 
 ### Changed

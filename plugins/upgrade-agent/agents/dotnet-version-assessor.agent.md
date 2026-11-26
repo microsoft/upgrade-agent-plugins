@@ -187,12 +187,7 @@ user, not to learn the repo. Give it the headline numbers and the path.
   links. The Orchestrator reads it on demand, so it never needs you to restate any of it.
 - Do not paste the raw tool output, per-project tables, or file dumps. Anything that does
   not fit belongs in the assessment, not in this handoff.
-- **Exception to the line cap:** if the tool output contains a `### Pre-execution token budget`
-  block, append it **verbatim** after the summary and do not count it against the cap. That
-  block is opt-in (off unless the host enables it), already carries its own presentation
-  guidance, and is the Orchestrator's only copy — truncating or paraphrasing it loses it. Do
-  not reformat it, and never compute a budget yourself.
-- **Second exception to the line cap:** if `get_instructions` returned guidance, append an
+- **Exception to the line cap:** if `get_instructions` returned guidance, append an
   `EXTENSION GUIDANCE (Assessment):` section after the summary, naming each contributing
   extension and condensing its asks to the points that bear on this repo. State what you
   wrote on each one's behalf — any separate file you created, any document you added under

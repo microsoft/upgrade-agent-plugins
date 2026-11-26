@@ -11,20 +11,18 @@ Each suggestion below has an **applicability check** you MUST perform. Only incl
 ## Candidate 1: Add Aspire (emoji: 🚀)
 
 **Signal-based check:** If signals do NOT include `HasAspire`, Aspire is not present — suggest adding it.
-**Fallback check (no signals):** Look at the upgraded project files for `Aspire.Hosting` or `Aspire.AppHost` package references.
+**Fallback check (no signals):** Look at the upgraded project files for an `Aspire.AppHost.Sdk` reference (`<Sdk Name="Aspire.AppHost.Sdk" .../>` or `<Project Sdk="Aspire.AppHost.Sdk/...">`) or an `Aspire.Hosting*` package reference.
 
 **If Aspire is NOT present:**
 - **Title:** Add Aspire for better development experience
 - **Description:** Your solution doesn't use Aspire yet. Aspire can improve your inner-loop development experience with a unified dashboard for logs, traces, and metrics across all services — and it also provides an optional deployment story to Azure Container Apps or AKS.
 - **CTA:** Would you like me to integrate Aspire into your solution?
 
-**If Aspire IS present — check the version:**
-Read the `Aspire.Hosting` or `Aspire.AppHost` package version and compare to the latest stable (currently 9.x). If the version is older:
+**If Aspire IS present:**
+Read the current version from the AppHost's `Aspire.AppHost.Sdk` reference — the `Version` attribute of `<Sdk Name="Aspire.AppHost.Sdk" Version="..."/>`, or the suffix of `<Project Sdk="Aspire.AppHost.Sdk/...">`. If neither is present, use the `Aspire.Hosting*` package version (check `Directory.Packages.props` when the reference has no version). Only read files here: do not run any `aspire` or `dotnet package search` command, and do not look up the latest version. The Aspire upgrade scenario checks that only if the user picks this suggestion, and reports when the app is already current.
 - **Title:** Upgrade Aspire to the latest version
-- **Description:** Your solution uses Aspire {current version}. A newer version is available — upgrading Aspire will give you the latest dashboard improvements and component APIs.
+- **Description:** Your solution uses Aspire {current version}. Upgrading Aspire to the latest version will give you the latest dashboard improvements and component APIs.
 - **CTA:** Would you like me to upgrade Aspire to the latest version?
-
-If the version is already current, skip Aspire entirely.
 
 ## Candidate 2: Migrate to EF Core (emoji: 🗄️)
 
